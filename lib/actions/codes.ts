@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
 import { checked, dbError, decimal, done, failed, Invalid, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
-import { RARITIES } from "../hunt";
+import { RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
 import { PIN_AREA } from "../venue";
@@ -22,7 +22,17 @@ function readCode(fd: FormData) {
     x: decimal(fd, "x", "The pin", 0, 360),
     y: decimal(fd, "y", "The pin", 0, 520),
     live: checked(fd, "live"),
+    task: oneOf(fd, "task", "Extra task", TASKS.map((t) => t.id)),
   };
+}
+
+const NEEDS_NETWORKING =
+  "Extra tasks need the networking update first: run supabase/migrations/20261019000000_networking.sql in Supabase's SQL Editor.";
+
+/** Has the database got the networking update (codes.task)? */
+async function hasTasks() {
+  const { error } = await (await supabase()).from("codes").select("task").limit(1);
+  return !error;
 }
 
 /** Saves a QR code (`id` null: adds one, with a new code value for its 3D pattern). */
@@ -37,15 +47,20 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   }
   const sb = await supabase();
   const taken = `Number ${v.num} is already used by another QR code.`;
+  // A database without the networking update yet has no extra task: save the rest (no task chosen)
+  const { task, ...rest } = v;
+  const tasks = await hasTasks();
+  if (!tasks && task !== "none") return failed(NEEDS_NETWORKING);
+  const row = tasks ? v : rest;
   if (!id) {
     const newId = "c" + pick(6, "abcdefghjkmnpqrstuvwxyz23456789");
     const code = `I8AR-${String(v.num).padStart(2, "0")}-${pick(4)}`;
-    const { error } = await sb.from("codes").insert({ ...v, id: newId, code });
+    const { error } = await sb.from("codes").insert({ ...row, id: newId, code });
     if (error) return failed(dbError(error, taken));
     revalidatePath("/", "layout");
     redirect(`/codes/${newId}?added=1`);
   }
-  const { data, error } = await sb.from("codes").update(v).eq("id", id).select("id");
+  const { data, error } = await sb.from("codes").update(row).eq("id", id).select("id");
   if (error) return failed(dbError(error, taken));
   if (!data?.length) return failed("This QR code was removed by someone else.");
   revalidatePath("/", "layout");

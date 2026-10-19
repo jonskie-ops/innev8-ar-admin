@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { FormState } from "@/lib/form";
-import { GAME_URL, POINTS, RARITIES, RARITY_LABEL, type Code, type Rarity, type Zone } from "@/lib/hunt";
+import { GAME_URL, POINTS, RARITIES, RARITY_LABEL, TASKS, taskOf, type Code, type Rarity, type Task, type Zone } from "@/lib/hunt";
 import { ConfirmButton, Counter, SaveButton, Status, useForm } from "./form";
 import { ExternalIcon, PinIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
@@ -35,6 +35,7 @@ export function CodeForm({
   const [clue, setClue] = useState(code.clue.length);
   const [blurb, setBlurb] = useState(code.blurb.length);
   const [num, setNum] = useState(String(code.num));
+  const [task, setTask] = useState<Task>(code.task ?? "none");
 
   const pickRarity = (r: Rarity) => {
     if (points === String(POINTS[rarity])) setPoints(String(POINTS[r]));
@@ -84,6 +85,31 @@ export function CodeForm({
             />
             <span className="field__hint">Shown on the card once it&apos;s caught.</span>
           </label>
+        </section>
+
+        <section className="panel">
+          <h2 className="panel__title">Extra task</h2>
+          <p className="field__hint">
+            Networking: something players do after reading the clue. The code stays locked until it&apos;s done, and
+            each task needs someone they haven&apos;t met for another code.
+          </p>
+          <div className="roles tasks" role="radiogroup" aria-label="Extra task">
+            {TASKS.map((t) => (
+              <label key={t.id} className="roles__opt">
+                <input type="radio" name="task" value={t.id} checked={task === t.id} onChange={() => setTask(t.id)} />
+                <span>
+                  <b>{t.label}</b>
+                  <small>{t.hint}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+          {task !== "none" && (
+            <p className="task-preview">
+              <small>Under the clue, players read</small>
+              {taskOf(task).player}
+            </p>
+          )}
         </section>
 
         <section className="panel">

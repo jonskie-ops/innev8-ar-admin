@@ -22,8 +22,35 @@ export type Code = {
   x: number;
   y: number;
   live: boolean;
+  /** An extra task players do before they can find it (networking) */
+  task: Task;
   updated_at: string;
 };
+
+/** The extra tasks a code can have: players do it after reading the clue, and only then can find it. */
+export type Task = "none" | "any" | "province" | "selfie";
+export const TASKS: { id: Task; label: string; hint: string; player: string }[] = [
+  { id: "none", label: "No extra task", hint: "Players can look for it straight after reading the clue.", player: "" },
+  {
+    id: "any",
+    label: "Meet a hunter",
+    hint: "They scan another player's hunter QR, or let them scan theirs.",
+    player: "Meet another hunter: scan their hunter QR, or let them scan yours.",
+  },
+  {
+    id: "province",
+    label: "Meet another province",
+    hint: "The same, with a hunter from a different province than theirs.",
+    player: "Meet a hunter from another province: scan their hunter QR, or let them scan yours.",
+  },
+  {
+    id: "selfie",
+    label: "Selfie together",
+    hint: "They take a selfie with another hunter. On trust: the game can't check the photo.",
+    player: "Take a selfie with another hunter.",
+  },
+];
+export const taskOf = (id: Task) => TASKS.find((t) => t.id === id) ?? TASKS[0];
 
 export type PrizeRule = "all" | "count" | "legendary" | "points";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [

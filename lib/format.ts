@@ -91,6 +91,7 @@ const FIELD: Record<string, string> = {
   points: "points",
   clue: "clue",
   blurb: "description",
+  task: "extra task",
   x: "map pin",
   y: "map pin",
   description: "description",

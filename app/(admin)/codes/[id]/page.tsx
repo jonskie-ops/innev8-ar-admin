@@ -40,6 +40,7 @@ export default async function CodePage({
     x: 160,
     y: 128,
     live: true,
+    task: "none",
     updated_at: "",
   };
   const { added } = await searchParams;

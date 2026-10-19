@@ -2215,6 +2215,19 @@ a.more:hover .ico {
   background: rgba(18, 191, 234, 0.12);
   color: var(--cyan);
 }
+.pill__ico--turq {
+  background: rgba(32, 201, 188, 0.14);
+  color: var(--turq);
+}
+/* Not a link: no hover glow */
+.pill--plain:hover {
+  box-shadow:
+    inset 0 0 0 1px rgba(140, 190, 255, 0.16),
+    0 18px 40px -22px rgba(18, 191, 234, 0.6);
+}
+.pill--plain {
+  padding-right: 22px;
+}
 .pill__ico .ico {
   width: 24px;
   height: 24px;
@@ -2890,6 +2903,29 @@ button.vpin:focus-visible .vpin__head {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.55;
+}
+/* The extra task: in the code's details, and as players will read it on its page */
+.qd__task,
+.task-preview {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(32, 201, 188, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(32, 201, 188, 0.35);
+  color: var(--text);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.qd__task b {
+  color: var(--turq);
+  font: 700 13.5px/1.4 var(--font-h);
+}
+.task-preview small {
+  color: var(--turq);
+  font: 600 10px/1.3 var(--font-m);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 .qd__facts {
   display: grid;

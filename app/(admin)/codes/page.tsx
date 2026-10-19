@@ -27,6 +27,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     spot: c.spot,
     clue: c.clue,
     blurb: c.blurb,
+    task: c.task ?? "none",
     x: c.x,
     y: c.y,
     ago: ago(c.updated_at),

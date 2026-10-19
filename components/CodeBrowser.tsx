@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { GAME_URL, RARITIES, RARITY_LABEL, type Rarity, type Zone } from "@/lib/hunt";
+import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Rarity, type Task, type Zone } from "@/lib/hunt";
 import { pad } from "./bits";
 import {
   ArrowLeftIcon,
@@ -33,6 +33,7 @@ export type CodeItem = {
   spot: string;
   clue: string;
   blurb: string;
+  task: Task;
   x: number;
   y: number;
   /** "2 hours ago", and the exact time */
@@ -221,6 +222,15 @@ export function CodeBrowser({
             <p className="qd__label">Clue</p>
             {c.clue ? <blockquote className="qd__clue">{c.clue}</blockquote> : <p className="empty">No clue yet.</p>}
           </div>
+          {c.task !== "none" && (
+            <div>
+              <p className="qd__label">Extra task</p>
+              <p className="qd__task">
+                <b>{taskOf(c.task).label}</b>
+                {taskOf(c.task).player}
+              </p>
+            </div>
+          )}
           <div>
             <p className="qd__label">When it&apos;s found</p>
             {c.blurb ? <p className="qd__blurb">{c.blurb}</p> : <p className="empty">No description yet.</p>}

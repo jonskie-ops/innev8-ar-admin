@@ -4,12 +4,12 @@ import Link from "next/link";
 import { Avatar, pad } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
-import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon } from "@/components/icons";
+import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon, TeamIcon } from "@/components/icons";
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { VenueMap } from "@/components/VenueMap";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, listCodes, listPrizes, listTeam, listZones, photoUrl, recentActivity } from "@/lib/data";
+import { getSettings, hunterStats, listCodes, listPrizes, listTeam, listZones, photoUrl, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL } from "@/lib/hunt";
 
@@ -24,13 +24,14 @@ const BADGE = {
 export default async function OverviewPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, prizes, settings, activity, team] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, team, stats] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
     getSettings(),
     recentActivity(8),
     listTeam(),
+    hunterStats(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live);
@@ -289,6 +290,23 @@ export default async function OverviewPage() {
               <span>{Math.round(share * 100)}%</span>
             </span>
           </Link>
+
+          {/* Networking: players who have a hunter QR, and how many times two of them have met */}
+          {stats && (
+            <div className="pill pill--plain">
+              <span className="pill__ico pill__ico--turq">
+                <TeamIcon />
+              </span>
+              <span className="pill__text">
+                <b>
+                  {stats.hunters.toLocaleString("en-PH")} hunter{stats.hunters === 1 ? "" : "s"}
+                </b>
+                <small>
+                  {stats.meetings.toLocaleString("en-PH")} meeting{stats.meetings === 1 ? "" : "s"} so far
+                </small>
+              </span>
+            </div>
+          )}
         </div>
       </aside>
     </div>
