@@ -24,6 +24,8 @@ export type Code = {
   live: boolean;
   /** An extra task players do before they can find it (networking) */
   task: Task;
+  /** Its sponsor's id (SPONSORS), or "none" */
+  sponsor: string;
   updated_at: string;
 };
 
@@ -51,6 +53,25 @@ export const TASKS: { id: Task; label: string; hint: string; player: string }[] 
   },
 ];
 export const taskOf = (id: Task) => TASKS.find((t) => t.id === id) ?? TASKS[0];
+
+/**
+ * A QR code's sponsor: the game shows their logo in a circle on the code's top-right corner. The
+ * logos come with the game (its scripts/sponsors.mjs makes them), copied to public/sponsors.
+ */
+export const SPONSORS: { id: string; name: string }[] = [
+  { id: "converge", name: "Converge" },
+  { id: "dost", name: "DOST" },
+  { id: "gcash", name: "GCash" },
+  { id: "globe", name: "Globe" },
+  { id: "oppo", name: "OPPO" },
+  { id: "prodigy", name: "Prodigy" },
+  { id: "samsung", name: "Samsung" },
+  { id: "symphonics", name: "Symphonics" },
+];
+export const sponsorOf = (id: string | undefined) => SPONSORS.find((s) => s.id === id) ?? null;
+export const sponsorBadge = (id: string) => `/sponsors/${id}.webp`;
+/** Code #n's sponsor before the sponsors update (and a new code's to start with): the nth. */
+export const firstSponsor = (num: number) => SPONSORS[(Math.max(1, num) - 1) % SPONSORS.length].id;
 
 export type PrizeRule = "all" | "count" | "legendary" | "points";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [

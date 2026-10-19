@@ -31,6 +31,10 @@ insert into public.codes (id, code, num, name, zone_id, spot, rarity, points, cl
     'Smile! This one hides where everyone takes their picture.',
     'Strike a pose. Every hunter needs a summit selfie.', 220, 228);
 
+-- Their sponsors, in order of number (as the sponsors update starts them)
+update public.codes
+set sponsor = (array['converge', 'dost', 'gcash', 'globe', 'oppo', 'prodigy', 'samsung', 'symphonics'])[((num - 1) % 8) + 1];
+
 insert into public.settings (starts_at, ends_at, test_mode, claim_place) values
   ('2026-11-20T08:00:00+08:00', '2026-11-21T18:00:00+08:00', true, 'INNEV8 help desk');
 

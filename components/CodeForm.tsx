@@ -1,8 +1,24 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- the sponsors' small round badges */
 
 import { useState } from "react";
 import type { FormState } from "@/lib/form";
-import { GAME_URL, POINTS, RARITIES, RARITY_LABEL, TASKS, taskOf, type Code, type Rarity, type Task, type Zone } from "@/lib/hunt";
+import {
+  firstSponsor,
+  GAME_URL,
+  POINTS,
+  RARITIES,
+  RARITY_LABEL,
+  SPONSORS,
+  sponsorBadge,
+  TASKS,
+  taskOf,
+  type Code,
+  type Rarity,
+  type Task,
+  type Zone,
+} from "@/lib/hunt";
+import { pad } from "./bits";
 import { ConfirmButton, Counter, SaveButton, Status, useForm } from "./form";
 import { ExternalIcon, PinIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
@@ -23,7 +39,7 @@ export function CodeForm({
 }: {
   code: Code;
   zones: Zone[];
-  others: Pin[];
+  others: (Pin & { sponsor?: string })[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
   canEdit: boolean;
@@ -36,6 +52,9 @@ export function CodeForm({
   const [blurb, setBlurb] = useState(code.blurb.length);
   const [num, setNum] = useState(String(code.num));
   const [task, setTask] = useState<Task>(code.task ?? "none");
+  const [sponsor, setSponsor] = useState(code.sponsor ?? firstSponsor(code.num));
+  // Which other codes each sponsor is on already
+  const onCodes = (id: string) => others.filter((o) => (o.sponsor ?? firstSponsor(o.num)) === id).map((o) => `#${pad(o.num)}`);
 
   const pickRarity = (r: Rarity) => {
     if (points === String(POINTS[rarity])) setPoints(String(POINTS[r]));
@@ -85,6 +104,37 @@ export function CodeForm({
             />
             <span className="field__hint">Shown on the card once it&apos;s caught.</span>
           </label>
+        </section>
+
+        <section className="panel">
+          <h2 className="panel__title">Sponsor</h2>
+          <p className="field__hint">
+            Their logo shows in a circle on the QR code&apos;s top-right corner: on the map, in the collection and in the
+            camera.
+          </p>
+          <div className="sponsors" role="radiogroup" aria-label="Sponsor">
+            {SPONSORS.map((s) => {
+              const also = onCodes(s.id);
+              return (
+                <label key={s.id} className="sponsors__opt">
+                  <input type="radio" name="sponsor" value={s.id} checked={sponsor === s.id} onChange={() => setSponsor(s.id)} />
+                  <span>
+                    <img src={sponsorBadge(s.id)} alt="" width={52} height={52} />
+                    <b>{s.name}</b>
+                    <small>{also.length ? `Also on ${also.join(", ")}` : "On no other code"}</small>
+                  </span>
+                </label>
+              );
+            })}
+            <label className="sponsors__opt">
+              <input type="radio" name="sponsor" value="none" checked={sponsor === "none"} onChange={() => setSponsor("none")} />
+              <span>
+                <i className="sponsors__none" aria-hidden="true" />
+                <b>No sponsor</b>
+                <small>No logo on the code</small>
+              </span>
+            </label>
+          </div>
         </section>
 
         <section className="panel">

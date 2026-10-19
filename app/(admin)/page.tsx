@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Qufoo is a small, already sized sprite */
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Avatar, pad } from "@/components/bits";
+import { Avatar, pad, SponsorBadge } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
 import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon, TeamIcon } from "@/components/icons";
@@ -11,7 +11,7 @@ import { VenueMap } from "@/components/VenueMap";
 import { requireTeammate } from "@/lib/dal";
 import { getSettings, hunterStats, listCodes, listPrizes, listTeam, listZones, photoUrl, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
-import { GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL } from "@/lib/hunt";
+import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL } from "@/lib/hunt";
 
 const RING = 2 * Math.PI * 22;
 const BADGE = {
@@ -142,7 +142,10 @@ export default async function OverviewPage() {
                       <span className="ccard__floor" aria-hidden="true" />
                       <span className="ccard__qr" style={{ "--i": i } as CSSProperties} aria-hidden="true">
                         <QrGlyph seed={c.id} />
-                        <span className="ccard__beam" />
+                        <span className="qr-clip">
+                          <span className="ccard__beam" />
+                        </span>
+                        <SponsorBadge id={c.sponsor ?? firstSponsor(c.num)} />
                       </span>
                       <span className="ccard__zone">
                         {zoneName[c.zone_id] ?? c.zone_id}

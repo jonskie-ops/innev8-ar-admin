@@ -7,7 +7,7 @@ import { deleteCode, saveCode } from "@/lib/actions/codes";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listZones } from "@/lib/data";
 import { stamp } from "@/lib/format";
-import type { Code } from "@/lib/hunt";
+import { firstSponsor, type Code } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "QR code" };
 
@@ -26,10 +26,11 @@ export default async function CodePage({
   const [codes, zones] = await Promise.all([listCodes(), listZones()]);
   const found = codes.find((c) => c.id === id);
   if (!isNew && !found) notFound();
+  const next = Math.max(0, ...codes.map((c) => c.num)) + 1;
   const code: Code = found ?? {
     id: "new",
     code: "",
-    num: Math.max(0, ...codes.map((c) => c.num)) + 1,
+    num: next,
     name: "",
     zone_id: zones[0]?.id ?? "",
     spot: "",
@@ -41,6 +42,7 @@ export default async function CodePage({
     y: 128,
     live: true,
     task: "none",
+    sponsor: firstSponsor(next),
     updated_at: "",
   };
   const { added } = await searchParams;

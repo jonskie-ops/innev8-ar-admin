@@ -58,8 +58,9 @@ On top of that:
 ## Set up
 
 1. **Create a Supabase project** at supabase.com. Singapore is the closest region.
-2. **SQL Editor:** run `supabase/migrations/20261017000000_admin.sql`, then `supabase/seed.sql`. The
-   seed loads the game's current 8 codes, its zones and the event dates.
+2. **SQL Editor:** run each file in `supabase/migrations/` in order (oldest first), then
+   `supabase/seed.sql`. The seed loads the game's current 8 codes (with their sponsors), its zones
+   and the event dates. A later update comes as a new file there: run it the same way.
 3. **Authentication → Sign In / Providers → Email:**
    - turn **off** "Allow new users to sign up"
    - set the minimum password length to 10
@@ -83,6 +84,7 @@ On top of that:
 | --- | --- |
 | `supabase/migrations/` | The database: tables, rules, change log, sign-in throttle, prize photo bucket |
 | `supabase/seed.sql` | The game's current codes, zones and dates |
+| `public/sponsors/`, `SPONSORS` in `lib/hunt.ts` | The sponsors a code can have: their round badges, made by the game's `scripts/sponsors.mjs` |
 | `proxy.ts` | Signed out → sign in; keeps the session fresh |
 | `lib/dal.ts` | Who's signed in and their role (`requireTeammate`, `adminOnly`) |
 | `lib/actions/` | Every change (server actions), each checking for an admin first |

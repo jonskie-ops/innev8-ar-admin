@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
 import { checked, dbError, decimal, done, failed, Invalid, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
-import { RARITIES, TASKS } from "../hunt";
+import { firstSponsor, RARITIES, SPONSORS, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
 import { PIN_AREA } from "../venue";
@@ -23,15 +23,19 @@ function readCode(fd: FormData) {
     y: decimal(fd, "y", "The pin", 0, 520),
     live: checked(fd, "live"),
     task: oneOf(fd, "task", "Extra task", TASKS.map((t) => t.id)),
+    sponsor: oneOf(fd, "sponsor", "Sponsor", ["none", ...SPONSORS.map((s) => s.id)]),
   };
 }
 
 const NEEDS_NETWORKING =
   "Extra tasks need the networking update first: run supabase/migrations/20261019000000_networking.sql in Supabase's SQL Editor.";
 
-/** Has the database got the networking update (codes.task)? */
-async function hasTasks() {
-  const { error } = await (await supabase()).from("codes").select("task").limit(1);
+const NEEDS_SPONSORS =
+  "Choosing a sponsor needs the sponsors update first: run supabase/migrations/20261019010000_sponsors.sql in Supabase's SQL Editor.";
+
+/** Has the database got this column yet (codes.task: the networking update; codes.sponsor: sponsors)? */
+async function has(column: "task" | "sponsor") {
+  const { error } = await (await supabase()).from("codes").select(column).limit(1);
   return !error;
 }
 
@@ -47,11 +51,12 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   }
   const sb = await supabase();
   const taken = `Number ${v.num} is already used by another QR code.`;
-  // A database without the networking update yet has no extra task: save the rest (no task chosen)
-  const { task, ...rest } = v;
-  const tasks = await hasTasks();
+  // A database without the networking or sponsors update yet: save the rest (when neither was changed)
+  const { task, sponsor, ...rest } = v;
+  const [tasks, sponsors] = await Promise.all([has("task"), has("sponsor")]);
   if (!tasks && task !== "none") return failed(NEEDS_NETWORKING);
-  const row = tasks ? v : rest;
+  if (!sponsors && sponsor !== firstSponsor(v.num)) return failed(NEEDS_SPONSORS);
+  const row = { ...rest, ...(tasks && { task }), ...(sponsors && { sponsor }) };
   if (!id) {
     const newId = "c" + pick(6, "abcdefghjkmnpqrstuvwxyz23456789");
     const code = `I8AR-${String(v.num).padStart(2, "0")}-${pick(4)}`;

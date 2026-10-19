@@ -6,6 +6,7 @@ import { PlusIcon, QrIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listZones } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
+import { firstSponsor } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "QR codes" };
 
@@ -28,6 +29,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     clue: c.clue,
     blurb: c.blurb,
     task: c.task ?? "none",
+    sponsor: c.sponsor ?? firstSponsor(c.num),
     x: c.x,
     y: c.y,
     ago: ago(c.updated_at),

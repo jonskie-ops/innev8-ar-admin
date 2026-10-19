@@ -5350,3 +5350,111 @@ html[data-full-map] .navbar {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------------------------------------------------------------- sponsors */
+/* A QR code's sponsor: their logo in a circle on its top-right corner, as in the game. The code's
+   scan line keeps to the code (qr-clip), so the circle can sit over the corner. */
+.ccard__qr,
+.qd__qr {
+  overflow: visible;
+}
+.qr-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.qr-sponsor {
+  position: absolute;
+  top: -14%;
+  right: -14%;
+  width: 40%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 0 1.5px rgb(var(--rc)),
+    0 0 0 3px var(--bg),
+    0 0 12px rgba(var(--rc), 0.7);
+}
+.qd__sponsor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 14px/1.3 var(--font-h);
+}
+.qd__sponsor img {
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+/* Choosing one, on the code's page */
+.sponsors {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 10px;
+}
+.sponsors__opt {
+  position: relative;
+  cursor: pointer;
+}
+.sponsors__opt > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.sponsors__opt span {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  height: 100%;
+  padding: 14px 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(var(--shade-rgb), 0.5);
+  text-align: center;
+  transition:
+    border-color 0.2s,
+    background-color 0.2s;
+}
+.sponsors__opt img,
+.sponsors__none {
+  width: 52px;
+  height: 52px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.sponsors__none {
+  display: block;
+  border: 2px dashed var(--line);
+  box-shadow: none;
+}
+.sponsors__opt b {
+  font: 700 14px/1.3 var(--font-h);
+}
+.sponsors__opt small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--faint);
+}
+.sponsors__opt input:checked + span {
+  border-color: var(--cyan);
+  background: rgba(18, 191, 234, 0.1);
+}
+.sponsors__opt input:checked + span img {
+  box-shadow:
+    0 0 0 2px var(--cyan),
+    0 0 14px rgba(18, 191, 234, 0.5);
+}
+.sponsors__opt input:focus-visible + span {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  /* The code a little lower, so its sponsor's circle clears the ‹ › arrows above it */
+  .qd__cover {
+    height: 210px;
+    padding-top: 58px;
+  }
+}

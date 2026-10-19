@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { sponsorBadge, sponsorOf } from "@/lib/hunt";
 import { ArrowLeftIcon, LockIcon } from "./icons";
 
 /** A page's title block, with its main button on the right. */
@@ -55,4 +56,12 @@ export function Avatar({ name, className }: { name: string; className?: string }
       {name.charAt(0).toUpperCase()}
     </span>
   );
+}
+
+/** A QR code's sponsor: their logo in a circle on the code's top-right corner (as in the game). */
+export function SponsorBadge({ id }: { id: string }) {
+  const sponsor = sponsorOf(id);
+  if (!sponsor) return null;
+  // eslint-disable-next-line @next/next/no-img-element -- a small, fixed-size badge
+  return <img className="qr-sponsor" src={sponsorBadge(sponsor.id)} alt="" title={`Sponsored by ${sponsor.name}`} />;
 }
