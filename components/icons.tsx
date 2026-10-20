@@ -143,6 +143,13 @@ export const ExternalIcon = (p: P) => (
     <path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 4 18.5v-10A1.5 1.5 0 0 1 5.5 7H10" />
   </Svg>
 );
+/** A rosette: a sponsor */
+export const SponsorIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="9" r="5.5" />
+    <path d="m8.6 13.4-1.6 7.6 5-2.6 5 2.6-1.6-7.6" />
+  </Svg>
+);
 export const ImageIcon = (p: P) => (
   <Svg {...p}>
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" />

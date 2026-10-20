@@ -19,6 +19,7 @@ import {
   MapIcon,
   QrIcon,
   ShieldIcon,
+  SponsorIcon,
   TeamIcon,
 } from "./icons";
 import { LinkPending, NavProgress, Spinner } from "./Progress";
@@ -28,6 +29,7 @@ const NAV = [
   { href: "/codes", label: "QR codes", short: "Codes", Icon: QrIcon },
   { href: "/map", label: "Map", short: "Map", Icon: MapIcon },
   { href: "/prizes", label: "Prizes", short: "Prizes", Icon: GiftIcon },
+  { href: "/sponsors", label: "Sponsors", short: "Sponsors", Icon: SponsorIcon },
   { href: "/event", label: "Event", short: "Event", Icon: CalendarIcon },
   { href: "/team", label: "Team", short: "Team", Icon: TeamIcon },
 ] as const;

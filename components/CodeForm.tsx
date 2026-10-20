@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- the sponsors' small round badges */
 
+import Link from "next/link";
 import { useState } from "react";
 import type { FormState } from "@/lib/form";
 import {
@@ -10,12 +11,11 @@ import {
   RADIUS,
   RARITIES,
   RARITY_LABEL,
-  SPONSORS,
-  sponsorBadge,
   TASKS,
   taskOf,
   type Code,
   type Rarity,
+  type SponsorView,
   type Task,
   type Zone,
 } from "@/lib/hunt";
@@ -23,7 +23,7 @@ import { fromVenue, intoPinArea, latLngText, parseLatLng, spotOf, spotUrl, toLat
 import { pad } from "./bits";
 import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
-import { ExternalIcon, LocateIcon, PinIcon, TrashIcon } from "./icons";
+import { ExternalIcon, LocateIcon, PinIcon, PlusIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 import { VenueMap, type Pin } from "./VenueMap";
 
@@ -47,6 +47,8 @@ function geoLabel(g: Geo) {
 export function CodeForm({
   code,
   zones,
+  sponsors,
+  canAddSponsor,
   others,
   save,
   remove,
@@ -54,6 +56,10 @@ export function CodeForm({
 }: {
   code: Code;
   zones: Zone[];
+  /** Who can sponsor it (the Sponsors page's) */
+  sponsors: SponsorView[];
+  /** A link to add a sponsor (an admin, with the sponsor logos update) */
+  canAddSponsor: boolean;
   others: (Pin & { sponsor?: string })[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
@@ -147,13 +153,13 @@ export function CodeForm({
             camera.
           </p>
           <div className="sponsors" role="radiogroup" aria-label="Sponsor">
-            {SPONSORS.map((s) => {
+            {sponsors.map((s) => {
               const also = onCodes(s.id);
               return (
                 <label key={s.id} className="sponsors__opt">
                   <input type="radio" name="sponsor" value={s.id} checked={sponsor === s.id} onChange={() => setSponsor(s.id)} />
                   <span>
-                    <img src={sponsorBadge(s.id)} alt="" width={52} height={52} />
+                    <img src={s.badge} alt="" width={52} height={52} />
                     <b>{s.name}</b>
                     <small>{also.length ? `Also on ${also.join(", ")}` : "On no other code"}</small>
                   </span>
@@ -169,6 +175,12 @@ export function CodeForm({
               </span>
             </label>
           </div>
+          {canAddSponsor && remove && (
+            <Link href="/sponsors/new" className="btn btn--ghost btn--sm sponsors__add">
+              <PlusIcon />
+              Add a sponsor
+            </Link>
+          )}
         </section>
 
         <section className="panel">

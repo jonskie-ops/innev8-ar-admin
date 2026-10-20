@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import type { Activity, Code, Member, Prize, Settings, Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -51,3 +51,24 @@ export const hunterStats = cache(async (): Promise<{ hunters: number; meetings: 
 /** A prize photo's address (the bucket is public, like the game's own images). */
 export const photoUrl = (path: string | null) =>
   path ? `${supabaseUrl()}/storage/v1/object/public/prizes/${path}` : null;
+
+/** A sponsor badge's address: theirs in the "sponsors" bucket, or the one that came with the game. */
+export const badgeUrl = (s: { id: string; badge_path: string | null }) =>
+  s.badge_path ? `${supabaseUrl()}/storage/v1/object/public/sponsors/${s.badge_path}` : builtInBadge(s.id);
+
+/**
+ * The sponsors, by name. `ready` false: the database hasn't got the sponsor logos update yet, so
+ * these are the ones that came with the game, and they can't be changed.
+ */
+export const listSponsors = cache(async (): Promise<{ sponsors: Sponsor[]; ready: boolean }> => {
+  const { data, error } = await (await supabase()).from("sponsors").select("*");
+  if (error) {
+    if (error.code !== "PGRST205" && error.code !== "42P01") throw new Error(error.message);
+    const sponsors = BUILT_IN_SPONSORS.map((s) => ({ ...s, badge_path: null, created_at: "", updated_at: "", badge: builtInBadge(s.id) }));
+    return { sponsors, ready: false };
+  }
+  const sponsors = (data as Omit<Sponsor, "badge">[])
+    .map((s) => ({ ...s, badge: badgeUrl(s) }))
+    .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+  return { sponsors, ready: true };
+});

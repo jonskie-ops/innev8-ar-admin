@@ -10,13 +10,14 @@ will read from.
 | **QR codes** | The venue map and every code's number: tap one (or use ← →) and its details show beside it, with its switch, its code value and a link to try it in the game. Edit opens its page: name, clue, description, rarity and points, zone and spot, its pin (drag it), and **On the ground**: its GPS spot and how close players must be to see it (below). Codes can be added and deleted. Changes save by themselves |
 | **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at; directions |
 | **Prizes** | Name, photo, description, who wins it (all the codes, a number of codes, the legendary code, or a number of points) and how many are in stock |
+| **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
 | **Team** | Who can sign in, as **admin** (changes everything) or **staff** (looks, can't change) |
 | **Account** | Your password |
 
 Every page has the same frame: the pages as icons down the side, with your account and sign out at
 its foot (on phones, a tab bar along the bottom and sign out in the top bar), and a top bar with
-search (QR codes, prizes and pages; press `/`), the latest changes, a link to the summit page (innev8.org/ict-summit-2026), and who's
+search (QR codes, prizes, sponsors and pages; press `/`), the latest changes, a link to the summit page (innev8.org/ict-summit-2026), and who's
 signed in.
 
 Next 16 (App Router, `proxy.ts`), React 19, Supabase (Auth, Postgres, Storage) through
@@ -49,6 +50,30 @@ The GPS spots need the update `supabase/migrations/20261020000000_gps.sql` (run 
 Until then both apps keep working with each code at its pin, 10 m, and the admin asks for the update
 only when a GPS setting is changed. Location only works on the live `https://` address (and
 `localhost`), not over a local network address.
+
+## Sponsors
+
+Each QR code can carry a sponsor's logo in a circle on its top-right corner, in the game (on the
+map, in the collection and on the 3D code in the camera). On the **Sponsors** page:
+
+- **Add sponsor:** their name and logo (PNG, JPG, WebP or SVG). The page turns the logo into the
+  round badge the game shows, right there: a plain white background is taken out, the empty edges
+  trimmed, and the logo set as big as fits on a white circle (256 px, WebP), shown on a QR code as
+  players will see it. A coloured background stays (it may be part of the logo) unless
+  **Take out the background** is ticked. Only the badge is stored (the "sponsors" storage bucket),
+  never the file itself.
+- **Change** the name or logo on the sponsor's page: it saves by itself, like the other pages, and
+  the old badge is deleted.
+- **Delete** (on the list or the sponsor's page) asks first and names the codes they're on: those
+  codes then have no sponsor.
+
+Then choose each code's sponsor on its page (**Add a sponsor** is there too). The game picks up
+changes within a minute, and keeps the badges on the phone for weak signal.
+
+Adding and changing sponsors needs the update `supabase/migrations/20261021000000_sponsor_logos.sql`
+(run it in the SQL Editor). It starts with the 8 sponsors the game came with, on their own badges.
+Until it's run, the Sponsors page shows those 8 and says what to run, and codes can still be given
+any of them.
 
 ## Security
 
@@ -110,9 +135,10 @@ On top of that:
 
 | Path | What it is |
 | --- | --- |
-| `supabase/migrations/` | The database: tables, rules, change log, sign-in throttle, prize photo bucket |
+| `supabase/migrations/` | The database: tables, rules, change log, sign-in throttle, prize photo and sponsor badge buckets |
 | `supabase/seed.sql` | The game's current codes, zones and dates |
-| `public/sponsors/`, `SPONSORS` in `lib/hunt.ts` | The sponsors a code can have: their round badges, made by the game's `scripts/sponsors.mjs` |
+| `components/badge.ts`, `components/SponsorForm.tsx` | A sponsor's round badge, made in the browser from their logo; their page |
+| `public/sponsors/`, `BUILT_IN_SPONSORS` in `lib/hunt.ts` | The 8 sponsors the game came with: their badges (made by the game's `scripts/sponsors.mjs`), until one gets a new logo |
 | `proxy.ts` | Signed out → sign in; keeps the session fresh |
 | `lib/dal.ts` | Who's signed in and their role (`requireTeammate`, `adminOnly`) |
 | `lib/actions/` | Every change (server actions), each checking for an admin first |

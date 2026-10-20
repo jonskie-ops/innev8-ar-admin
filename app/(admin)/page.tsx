@@ -9,9 +9,9 @@ import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { VenueMap } from "@/components/VenueMap";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, hunterStats, listCodes, listPrizes, listZones, photoUrl, recentActivity } from "@/lib/data";
+import { getSettings, hunterStats, listCodes, listPrizes, listSponsors, listZones, photoUrl, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
-import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL } from "@/lib/hunt";
+import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
 const RING = 2 * Math.PI * 22;
 const BADGE = {
@@ -24,13 +24,14 @@ const BADGE = {
 export default async function OverviewPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, prizes, settings, activity, stats] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, stats, { sponsors }] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
     getSettings(),
     recentActivity(8),
     hunterStats(),
+    listSponsors(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live);
@@ -142,7 +143,7 @@ export default async function OverviewPage() {
                         <span className="qr-clip">
                           <span className="ccard__beam" />
                         </span>
-                        <SponsorBadge id={c.sponsor ?? firstSponsor(c.num)} />
+                        <SponsorBadge sponsor={sponsorIn(sponsors, c.sponsor ?? firstSponsor(c.num))} />
                       </span>
                       <span className="ccard__zone">
                         {zoneName[c.zone_id] ?? c.zone_id}

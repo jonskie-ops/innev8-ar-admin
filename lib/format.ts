@@ -102,6 +102,7 @@ const FIELD: Record<string, string> = {
   random_spots: "random spots",
   description: "description",
   photo_path: "photo",
+  badge_path: "logo",
   rule: "who wins",
   rule_value: "who wins",
   stock: "stock",
@@ -117,6 +118,7 @@ const FIELD: Record<string, string> = {
 const KIND: Record<string, string> = {
   codes: "QR code",
   prizes: "prize",
+  sponsors: "sponsor",
   zones: "zone",
   team: "teammate",
   settings: "",

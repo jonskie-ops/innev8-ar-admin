@@ -5,9 +5,9 @@ import { CodeForm } from "@/components/CodeForm";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listZones } from "@/lib/data";
+import { listCodes, listSponsors, listZones } from "@/lib/data";
 import { stamp } from "@/lib/format";
-import { firstSponsor, type Code } from "@/lib/hunt";
+import type { Code } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "QR code" };
 
@@ -23,7 +23,7 @@ export default async function CodePage({
   const { id } = await params;
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/codes");
-  const [codes, zones] = await Promise.all([listCodes(), listZones()]);
+  const [codes, zones, { sponsors, ready }] = await Promise.all([listCodes(), listZones(), listSponsors()]);
   const found = codes.find((c) => c.id === id);
   if (!isNew && !found) notFound();
   const next = Math.max(0, ...codes.map((c) => c.num)) + 1;
@@ -42,7 +42,8 @@ export default async function CodePage({
     y: 128,
     live: true,
     task: "none",
-    sponsor: firstSponsor(next),
+    // The next sponsor in turn, to start with
+    sponsor: sponsors.length ? sponsors[(next - 1) % sponsors.length].id : "none",
     updated_at: "",
   };
   const { added } = await searchParams;
@@ -65,6 +66,8 @@ export default async function CodePage({
         key={code.id}
         code={code}
         zones={zones}
+        sponsors={sponsors.map(({ id, name, badge }) => ({ id, name, badge }))}
+        canAddSponsor={ready && canEdit}
         others={codes.filter((c) => c.id !== code.id)}
         save={saveCode.bind(null, isNew ? null : code.id)}
         remove={isNew ? undefined : deleteCode.bind(null, code.id)}

@@ -82,9 +82,24 @@ export const taskOf = (id: Task) => TASKS.find((t) => t.id === id) ?? TASKS[0];
 
 /**
  * A QR code's sponsor: the game shows their logo in a circle on the code's top-right corner. The
- * logos come with the game (its scripts/sponsors.mjs makes them), copied to public/sponsors.
+ * organisers keep them on the Sponsors page (lib/data.ts, listSponsors); `badge` is the address of
+ * their round badge.
  */
-export const SPONSORS: { id: string; name: string }[] = [
+export type Sponsor = {
+  id: string;
+  name: string;
+  /** In the "sponsors" storage bucket; null: the badge that came with the game (public/sponsors) */
+  badge_path: string | null;
+  created_at: string;
+  updated_at: string;
+  badge: string;
+};
+
+/**
+ * The sponsors that came with the game, before the sponsor logos update: their badges are in
+ * public/sponsors (made by the game's scripts/sponsors.mjs). The update starts with these.
+ */
+export const BUILT_IN_SPONSORS: { id: string; name: string }[] = [
   { id: "converge", name: "Converge" },
   { id: "dost", name: "DOST" },
   { id: "gcash", name: "GCash" },
@@ -94,10 +109,13 @@ export const SPONSORS: { id: string; name: string }[] = [
   { id: "samsung", name: "Samsung" },
   { id: "symphonics", name: "Symphonics" },
 ];
-export const sponsorOf = (id: string | undefined) => SPONSORS.find((s) => s.id === id) ?? null;
-export const sponsorBadge = (id: string) => `/sponsors/${id}.webp`;
+export const builtInBadge = (id: string) => `/sponsors/${id}.webp`;
 /** Code #n's sponsor before the sponsors update (and a new code's to start with): the nth. */
-export const firstSponsor = (num: number) => SPONSORS[(Math.max(1, num) - 1) % SPONSORS.length].id;
+export const firstSponsor = (num: number) => BUILT_IN_SPONSORS[(Math.max(1, num) - 1) % BUILT_IN_SPONSORS.length].id;
+/** For showing a code's sponsor: their name and badge, or null (none, or taken off since). */
+export type SponsorView = { id: string; name: string; badge: string };
+export const sponsorIn = (sponsors: SponsorView[], id: string | undefined): SponsorView | null =>
+  sponsors.find((s) => s.id === id) ?? null;
 
 export type PrizeRule = "all" | "count" | "legendary" | "points";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [

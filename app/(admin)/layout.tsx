@@ -2,7 +2,7 @@ import type { Change } from "@/components/Changes";
 import type { Findable } from "@/components/Find";
 import { Shell } from "@/components/Shell";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listPrizes, listZones, recentActivity } from "@/lib/data";
+import { listCodes, listPrizes, listSponsors, listZones, recentActivity } from "@/lib/data";
 import { didWhat } from "@/lib/format";
 import { ruleText } from "@/lib/hunt";
 
@@ -12,6 +12,7 @@ const PAGES: [href: string, title: string, sub: string, keys: string][] = [
   ["/codes", "QR codes", "Clues, spots and pins on the map", "clues pins map zones"],
   ["/map", "Map", "The venue on Google Maps, and each code's spot", "google venue directions location leyte academic center"],
   ["/prizes", "Prizes", "What players win, and the stock", "rewards stock"],
+  ["/sponsors", "Sponsors", "Their logos on the QR codes", "logos brands partners badges"],
   ["/event", "Event", "Dates, test mode, the prize desk", "dates schedule summit test mode prize desk claim"],
   ["/team", "Team", "Who can sign in", "people organisers staff admins sign-ins"],
   ["/account", "Your account", "Your password", "password profile me"],
@@ -29,7 +30,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </Shell>
     );
 
-  const [codes, zones, prizes, activity] = await Promise.all([listCodes(), listZones(), listPrizes(), recentActivity(8)]);
+  const [codes, zones, prizes, { sponsors, ready }, activity] = await Promise.all([
+    listCodes(),
+    listZones(),
+    listPrizes(),
+    listSponsors(),
+    recentActivity(8),
+  ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live).length;
   const page = (href: string, title: string, sub: string, keys: string): Findable => ({
@@ -60,11 +67,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         keys: `${p.name} prize`.toLowerCase(),
       }),
     ),
+    ...sponsors.map((s): Findable => {
+      const on = codes.filter((c) => c.sponsor === s.id).map((c) => `#${String(c.num).padStart(2, "0")}`);
+      return {
+        kind: "sponsor",
+        href: ready ? `/sponsors/${s.id}` : "/sponsors",
+        title: s.name,
+        sub: on.length ? `Sponsor on ${on.join(", ")}` : "Sponsor, on no QR code",
+        keys: `${s.name} ${s.id} sponsor logo`.toLowerCase(),
+      };
+    }),
     ...PAGES.map(([href, title, sub, keys]) => page(href, title, sub, keys)),
     ...(me.role === "admin"
       ? [
           page("/codes/new", "Add a QR code", "A new code, its clue and its pin", "new qr code"),
           page("/prizes/new", "Add a prize", "A new prize and who wins it", "new prize"),
+          ...(ready ? [page("/sponsors/new", "Add a sponsor", "Their name and logo", "new sponsor logo")] : []),
         ]
       : []),
   ];

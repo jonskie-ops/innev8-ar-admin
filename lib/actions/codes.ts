@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
 import { checked, dbError, decimal, done, failed, Invalid, NEEDS_GPS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
-import { firstSponsor, RADIUS, RARITIES, SPONSORS, TASKS } from "../hunt";
+import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
 import { metresBetween, PIN_AREA, toLatLng, toPlan } from "../venue";
@@ -39,7 +39,7 @@ function readCode(fd: FormData) {
     y: decimal(fd, "y", "The pin", 0, 520),
     live: checked(fd, "live"),
     task: oneOf(fd, "task", "Extra task", TASKS.map((t) => t.id)),
-    sponsor: oneOf(fd, "sponsor", "Sponsor", ["none", ...SPONSORS.map((s) => s.id)]),
+    sponsor: text(fd, "sponsor", "Sponsor", { max: 32, required: true }),
     ...readSpot(fd),
   };
 }
@@ -49,6 +49,12 @@ const NEEDS_NETWORKING =
 
 const NEEDS_SPONSORS =
   "Choosing a sponsor needs the sponsors update first: run supabase/migrations/20261019010000_sponsors.sql in Supabase's SQL Editor.";
+
+/** The sponsors a code can have: the organisers' (or before the sponsor logos update, the game's). */
+async function sponsorIds() {
+  const { data, error } = await (await supabase()).from("sponsors").select("id");
+  return ["none", ...(error || !data ? BUILT_IN_SPONSORS : data).map((s: { id: string }) => s.id)];
+}
 
 /**
  * Has the database got this column yet (codes.task: the networking update; codes.sponsor: sponsors;
@@ -74,7 +80,8 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   // A database without the networking, sponsors or GPS update yet: save the rest (when none of
   // those was changed; a GPS spot that's just the map pin's place counts as unchanged)
   const { task, sponsor, lat, lng, accuracy, radius, ...rest } = v;
-  const [tasks, sponsors, gps] = await Promise.all([has("task"), has("sponsor"), has("radius")]);
+  const [tasks, sponsors, gps, ids] = await Promise.all([has("task"), has("sponsor"), has("radius"), sponsorIds()]);
+  if (!ids.includes(sponsor)) return failed("That sponsor was taken off by someone else. Choose another.");
   if (!tasks && task !== "none") return failed(NEEDS_NETWORKING);
   if (!sponsors && sponsor !== firstSponsor(v.num)) return failed(NEEDS_SPONSORS);
   if (!gps && (accuracy !== null || radius !== RADIUS.default || metresBetween({ lat, lng }, toLatLng(v.x, v.y)) > 1))

@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRightIcon, GiftIcon, QrIcon, SearchIcon } from "./icons";
+import { ArrowRightIcon, GiftIcon, QrIcon, SearchIcon, SponsorIcon } from "./icons";
 import { startNavigation } from "./Progress";
 
 /** `keys`: more to match on besides the title (lower case), e.g. a code's zone and spot. */
-export type Findable = { kind: "code" | "prize" | "page"; href: string; title: string; sub: string; keys: string };
+export type Findable = { kind: "code" | "prize" | "sponsor" | "page"; href: string; title: string; sub: string; keys: string };
 
-const ICON = { code: QrIcon, prize: GiftIcon, page: ArrowRightIcon };
+const ICON = { code: QrIcon, prize: GiftIcon, sponsor: SponsorIcon, page: ArrowRightIcon };
 
 /** Best first: the name starts with it, then a word in the name does, the name has it, then the rest has it. */
 function find(items: Findable[], term: string) {
@@ -28,7 +28,7 @@ function find(items: Findable[], term: string) {
 }
 
 /**
- * The search in the top bar: a QR code (by number, name, zone or spot), a prize, or a page, as you
+ * The search in the top bar: a QR code (by number, name, zone or spot), a prize, a sponsor, or a page, as you
  * type. Arrow keys and Enter work, and "/" anywhere jumps here.
  */
 export function Find({ items }: { items: Findable[] }) {

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { GAME_URL, RARITIES, RARITY_LABEL, sponsorBadge, sponsorOf, taskOf, type Rarity, type Task, type Zone } from "@/lib/hunt";
+import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
 import { pad, SponsorBadge } from "./bits";
 import {
   ArrowLeftIcon,
@@ -35,8 +35,8 @@ export type CodeItem = {
   clue: string;
   blurb: string;
   task: Task;
-  /** Its sponsor's id, or "none" */
-  sponsor: string;
+  /** Its sponsor, or null (none) */
+  sponsor: SponsorView | null;
   x: number;
   y: number;
   /** "2 hours ago", and the exact time */
@@ -68,7 +68,7 @@ export function CodeBrowser({
     codes.findIndex((c) => c.id === picked),
   );
   const c = codes[i];
-  const sponsor = sponsorOf(c.sponsor);
+  const sponsor = c.sponsor;
 
   // With more numbers than fit, slide the row so the picked one is in view (sideways only)
   useEffect(() => {
@@ -189,7 +189,7 @@ export function CodeBrowser({
             <span className="qr-clip">
               <span className="ccard__beam" />
             </span>
-            <SponsorBadge id={c.sponsor} />
+            <SponsorBadge sponsor={c.sponsor} />
           </span>
         </div>
 
@@ -246,7 +246,7 @@ export function CodeBrowser({
             <p className="qd__label">Sponsor</p>
             {sponsor ? (
               <p className="qd__sponsor">
-                <img src={sponsorBadge(sponsor.id)} alt="" width={28} height={28} />
+                <img src={sponsor.badge} alt="" width={28} height={28} />
                 {sponsor.name}
               </p>
             ) : (

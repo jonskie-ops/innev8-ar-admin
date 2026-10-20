@@ -4,16 +4,16 @@ import { Head, ReadOnly } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon, QrIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listZones } from "@/lib/data";
+import { listCodes, listSponsors, listZones } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
-import { firstSponsor } from "@/lib/hunt";
+import { firstSponsor, sponsorIn } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "QR codes" };
 
 export default async function CodesPage({ searchParams }: { searchParams: Promise<{ code?: string | string[] }> }) {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, { code }] = await Promise.all([listCodes(), listZones(), searchParams]);
+  const [codes, zones, { sponsors }, { code }] = await Promise.all([listCodes(), listZones(), listSponsors(), searchParams]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live).length;
   const items: CodeItem[] = codes.map((c) => ({
@@ -29,7 +29,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     clue: c.clue,
     blurb: c.blurb,
     task: c.task ?? "none",
-    sponsor: c.sponsor ?? firstSponsor(c.num),
+    sponsor: sponsorIn(sponsors, c.sponsor ?? firstSponsor(c.num)),
     x: c.x,
     y: c.y,
     ago: ago(c.updated_at),
