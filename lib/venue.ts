@@ -67,6 +67,48 @@ export function toPlan(lat: number, lng: number) {
   return { x: 180 + (xa - ORIGIN.x) * PER_M, y: 260 + (ya - ORIGIN.y) * PER_M };
 }
 
+/** A plan position moved inside PIN_AREA (a GPS spot past the game's map shows at its edge). */
+export const intoPinArea = (x: number, y: number) => ({
+  x: Math.min(PIN_AREA.x1, Math.max(PIN_AREA.x0, x)),
+  y: Math.min(PIN_AREA.y1, Math.max(PIN_AREA.y0, y)),
+});
+
+/**
+ * A QR code's place on the ground: its own GPS spot, or else where its pin is on the venue map.
+ * `own` false: worked out from the pin.
+ */
+export function spotOf(c: { lat?: number | null; lng?: number | null; x: number; y: number }) {
+  return c.lat != null && c.lng != null ? { lat: c.lat, lng: c.lng, own: true } : { ...toLatLng(c.x, c.y), own: false };
+}
+
+/** Metres between two places (flat-earth: exact enough across a venue, and for a few kilometres). */
+export function metresBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const k = Math.PI / 180;
+  const north = (b.lat - a.lat) * k * EARTH;
+  const east = (b.lng - a.lng) * k * EARTH * Math.cos(((a.lat + b.lat) / 2) * k);
+  return Math.hypot(north, east);
+}
+
+/** How far a place is from the venue (Annex A), in metres. */
+export const fromVenue = (p: { lat: number; lng: number }) => metresBetween(p, { lat: LAT0, lng: LON0 });
+
+/**
+ * A spot typed or pasted in: "11.17824, 125.00224" (as Google Maps copies it), with or without the
+ * comma, or a Google Maps link with "@11.17824,125.00224" or "?q=11.17824,125.00224" in it.
+ */
+export function parseLatLng(input: string): { lat: number; lng: number } | null {
+  // (not starting inside another number, so "125.0, 11.1" the wrong way round isn't read as 25.0, 11.1)
+  const m = input.match(/(?<![\d.])(-?\d{1,2}(?:\.\d+)?)\s*[, ]\s*(-?\d{1,3}(?:\.\d+)?)/);
+  if (!m) return null;
+  const lat = Number(m[1]);
+  const lng = Number(m[2]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat, lng };
+}
+
+/** "11.178240, 125.002240" */
+export const latLngText = (p: { lat: number; lng: number }) => `${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`;
+
 /** Google Maps, embedded: a place (or "lat,lng") with its pin, as a map or from the air. */
 export const embedUrl = (q: string, view: "map" | "air", zoom: number) =>
   `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=${view === "air" ? "k" : "m"}&z=${zoom}&hl=en&output=embed`;

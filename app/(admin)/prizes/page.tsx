@@ -2,8 +2,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Head, ReadOnly } from "@/components/bits";
-import { GiftIcon, PlusIcon } from "@/components/icons";
+import { ConfirmButton } from "@/components/form";
+import { GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
+import { deletePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listPrizes, photoUrl } from "@/lib/data";
 import { ruleText } from "@/lib/hunt";
@@ -46,6 +48,16 @@ export default async function PrizesPage() {
                     {p.stock ? `${p.stock.toLocaleString("en-PH")} in stock` : "Out of stock"}
                   </span>
                   <LiveSwitch kind="prizes" id={p.id} live={p.live} label={`${p.name} in the game`} disabled={!canEdit} />
+                  {canEdit && (
+                    <ConfirmButton
+                      action={deletePrize.bind(null, p.id)}
+                      question={`Delete ${p.name}? It's gone from the game for everyone. (Turning it off can be undone.)`}
+                      className="icon-btn icon-btn--danger"
+                      label={`Delete ${p.name}`}
+                    >
+                      <TrashIcon />
+                    </ConfirmButton>
+                  )}
                 </span>
               </li>
             );

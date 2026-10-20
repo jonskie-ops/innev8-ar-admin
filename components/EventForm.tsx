@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { FormState } from "@/lib/form";
 import { day, fromLocalInput, time } from "@/lib/format";
 import { useNow } from "./Clock";
-import { SaveButton, Status, useForm } from "./form";
+import { AutoSaveToast, useAutoSave } from "./form";
 import { ClockIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
@@ -19,12 +19,13 @@ function howLong(ms: number) {
 
 /**
  * When the hunt runs, test mode, and where players claim prizes (Philippine time), with what players
- * would see right now with these settings, as they're edited.
+ * would see right now with these settings, as they're edited. Saves by itself as it's edited.
  */
 export function EventForm({
   startsAt,
   endsAt,
   testMode,
+  randomSpots,
   claimPlace,
   save,
   canEdit,
@@ -32,14 +33,17 @@ export function EventForm({
   startsAt: string;
   endsAt: string;
   testMode: boolean;
+  /** On: codes hide at random spots around each player, not at their GPS spots (for trying it anywhere) */
+  randomSpots: boolean;
   claimPlace: string;
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   canEdit: boolean;
 }) {
-  const { state, pending, onSubmit } = useForm(save);
+  const { formRef, state, pending, waiting, onSubmit, onChange } = useAutoSave(save, canEdit);
   const [starts, setStarts] = useState(startsAt);
   const [ends, setEnds] = useState(endsAt);
   const [test, setTest] = useState(testMode);
+  const [random, setRandom] = useState(randomSpots);
   const [place, setPlace] = useState(claimPlace);
   const now = useNow();
 
@@ -49,6 +53,9 @@ export function EventForm({
   const tb = b ? new Date(b).getTime() : NaN;
   const valid = Boolean(a && b && tb > ta);
   const phase = !valid || now === null ? null : now >= tb ? "ended" : now >= ta ? "live" : "soon";
+  const where = random
+    ? " Codes appear at random spots around each player, wherever they are."
+    : " Each code appears once a player is within its distance of its GPS spot.";
   const seen =
     phase === null || !a || !b
       ? null
@@ -58,18 +65,18 @@ export function EventForm({
           ? {
               Icon: QrIcon,
               title: "The hunt is on",
-              text: `Players hunt the QR codes until ${time(b)}, ${day(b)}.${test ? " The scanner shows its test tools." : ""}`,
+              text: `Players hunt the QR codes until ${time(b)}, ${day(b)}.${where}${test ? " The scanner shows its test tools." : ""}`,
             }
           : test
             ? {
                 Icon: FlaskIcon,
                 title: "Open, for testing",
-                text: "Anyone with the link can play now, and the scanner shows its test tools. Turn test mode off before the summit.",
+                text: `Anyone with the link can play now, and the scanner shows its test tools.${where} Turn test mode off before the summit.`,
               }
             : { Icon: ClockIcon, title: "A countdown", text: `Players see the countdown to ${day(a)}, ${time(a)}, when the hunt opens.` };
 
   return (
-    <form className="evform" method="post" onSubmit={onSubmit}>
+    <form ref={formRef} className="evform" method="post" onSubmit={onSubmit} onChange={onChange}>
       <fieldset className="cols" disabled={!canEdit}>
         <div className="stack">
           <section className="panel">
@@ -167,6 +174,14 @@ export function EventForm({
             >
               Let people play before the summit
             </Toggle>
+            <Toggle
+              name="random_spots"
+              defaultChecked={randomSpots}
+              onChange={setRandom}
+              hint="On: codes appear at random spots around each player, wherever they are: for trying the scanner away from the venue. Off: each code is at its GPS spot, and shows within its distance."
+            >
+              Random spots
+            </Toggle>
           </section>
 
           <section className="panel seen">
@@ -191,18 +206,11 @@ export function EventForm({
                 )}
               </p>
             </div>
-            <span className="field__hint">With the settings on this page, as you change them. Nothing changes for players until you save.</span>
+            <span className="field__hint">With the settings on this page, as you change them. They save by themselves 3 seconds after your last change.</span>
           </section>
         </div>
       </fieldset>
-      {canEdit && (
-        <div className="savebar">
-          <Status state={state} />
-          <span className="savebar__btns">
-            <SaveButton pending={pending}>Save changes</SaveButton>
-          </span>
-        </div>
-      )}
+      {canEdit && <AutoSaveToast state={state} pending={pending} waiting={waiting} />}
     </form>
   );
 }

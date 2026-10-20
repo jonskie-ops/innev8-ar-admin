@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Qufoo is a small, already sized sprite */
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import { Avatar, pad, SponsorBadge } from "@/components/bits";
+import { pad, SponsorBadge } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
 import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon, TeamIcon } from "@/components/icons";
@@ -9,7 +9,7 @@ import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { VenueMap } from "@/components/VenueMap";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, hunterStats, listCodes, listPrizes, listTeam, listZones, photoUrl, recentActivity } from "@/lib/data";
+import { getSettings, hunterStats, listCodes, listPrizes, listZones, photoUrl, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL } from "@/lib/hunt";
 
@@ -24,13 +24,12 @@ const BADGE = {
 export default async function OverviewPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, prizes, settings, activity, team, stats] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, stats] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
     getSettings(),
     recentActivity(8),
-    listTeam(),
     hunterStats(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
@@ -72,8 +71,6 @@ export default async function OverviewPage() {
     action: a.action,
   }));
 
-  const admins = team.filter((t) => t.role === "admin").length;
-  const others = team.length - 1;
   const share = codes.length ? live.length / codes.length : 0;
 
   return (
@@ -210,7 +207,7 @@ export default async function OverviewPage() {
         </div>
       </div>
 
-      <aside className="dash__side" aria-label="Prizes, changes and the team">
+      <aside className="dash__side" aria-label="Prizes, changes and how the hunt is going">
         <section className="panel" aria-labelledby="prizes-title">
           <div className="shead">
             <h2 id="prizes-title">Prizes</h2>
@@ -250,29 +247,6 @@ export default async function OverviewPage() {
             ) : (
               <p className="empty">No changes yet. Each change made here shows up with who made it.</p>
             )}
-          </section>
-
-          <section className="panel teamcard" aria-labelledby="team-title">
-            <div className="shead">
-              <h2 id="team-title">Team</h2>
-              <Link href="/team" className="more">
-                Everyone
-                <ArrowRightIcon />
-              </Link>
-            </div>
-            <p>
-              {team[0]?.name ?? "Nobody yet"}
-              {others > 0 && ` + ${others} other${others === 1 ? "" : "s"}`}
-              <small>
-                {admins} admin{admins === 1 ? "" : "s"} · {team.length - admins} staff
-              </small>
-            </p>
-            <span className="stackav" aria-hidden="true">
-              {team.slice(0, 4).map((t) => (
-                <Avatar key={t.user_id} name={t.name || t.email} />
-              ))}
-              {team.length > 4 && <span className="avatar stackav__more">+{team.length - 4}</span>}
-            </span>
           </section>
 
           <Link href="/codes" className="pill">

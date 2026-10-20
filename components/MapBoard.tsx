@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { moveCode } from "@/lib/actions/codes";
-import { embedUrl, PIN_AREA, PLACE, spotUrl, toPlan } from "@/lib/venue";
+import { embedUrl, metresBetween, PIN_AREA, PLACE, spotUrl, toPlan } from "@/lib/venue";
 import { pad } from "./bits";
 import { useHydrated } from "./form";
-import { AlertIcon, CheckIcon, ExpandIcon, ExternalIcon, PinIcon, ShrinkIcon } from "./icons";
+import { useHere } from "./here";
+import { AlertIcon, CheckIcon, ExpandIcon, ExternalIcon, LocateIcon, PinIcon, ShrinkIcon } from "./icons";
 import { SatelliteMap, type Spot } from "./SatelliteMap";
+
+/** "8 m", "120 m", "2.4 km" */
+const howFar = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`);
 
 type View = "air" | "map" | "google";
 const VIEWS: [View, string][] = [
@@ -17,11 +21,15 @@ const VIEWS: [View, string][] = [
 
 /**
  * The venue on a real map beside the QR codes: pick one to go to it. On the satellite or street map
- * an admin drags a code's pin to move it (it saves at once, and the venue map follows); Google's map
- * is there to look at, as Google shows it.
+ * each code's ring shows how close players must be to see it, and an admin drags a code's pin to
+ * move it (it saves at once, and the venue map follows); Google's map is there to look at, as Google
+ * shows it. "Show me" puts this phone on the map with each code's distance, for walking the venue to
+ * check the spots before the summit.
  */
 export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; canEdit: boolean; initial?: string | null }) {
   const ready = useHydrated();
+  const [showMe, setShowMe] = useState(false);
+  const { here, problem } = useHere(showMe);
   const [picked, setPicked] = useState<string | null>(() => (spots.some((s) => s.id === initial) ? initial : null));
   const [view, setView] = useState<View>("air");
   const [loaded, setLoaded] = useState("");
@@ -88,7 +96,7 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
     }
     setSaving(id);
     setPicked(id);
-    const r = await moveCode(id, x, y);
+    const r = await moveCode(id, lat, lng);
     setSaving(null);
     if (r?.error) {
       setNote({ text: r.error, error: true, at: Date.now() });
@@ -123,12 +131,24 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
               </>
             )}
           </p>
-          <div className="seg" role="group" aria-label="Show as">
-            {VIEWS.map(([v, label]) => (
-              <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
-                {label}
-              </button>
-            ))}
+          <div className="gmap__tools">
+            <button
+              type="button"
+              className={showMe ? "btn btn--ghost btn--sm gmap__me is-on" : "btn btn--ghost btn--sm gmap__me"}
+              aria-pressed={showMe}
+              onClick={() => setShowMe(!showMe)}
+              title="Show where this phone is, and how far each code is"
+            >
+              <LocateIcon />
+              {showMe && here ? `±${Math.round(here.accuracy)} m` : "Show me"}
+            </button>
+            <div className="seg" role="group" aria-label="Show as">
+              {VIEWS.map(([v, label]) => (
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -160,9 +180,16 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
               picked={picked}
               saving={saving}
               canEdit={canEdit}
+              me={showMe ? here : null}
               onPick={pick}
               onDrop={drop}
             />
+          )}
+          {showMe && problem && (
+            <p className="gmap__toast is-error" role="alert">
+              <AlertIcon />
+              {problem}
+            </p>
           )}
           {note && (
             <p
@@ -190,8 +217,8 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
           {view === "google"
             ? "Google's map is for looking. To move a QR code, drag its pin on Satellite or Map."
             : canEdit
-              ? "Drag a pin to move its QR code: it saves at once, and its pin on the venue map moves too. Pins stay inside the dashed outline, the area the game's map shows. (A code's zone and spot names don't change: edit them on its page.)"
-              : "Each QR code is where its pin is on the venue map. Only admins can move pins."}
+              ? "Drag a pin to move its QR code: it saves at once, and its pin on the venue map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
+              : "Each QR code is at its pin; its ring is how close players must be to see it. Only admins can move pins."}
         </p>
       </section>
 
@@ -219,7 +246,9 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
               <ExternalIcon />
             </a>
           </li>
-          {spots.map((s) => (
+          {spots.map((s) => {
+            const away = showMe && here ? metresBetween(here, s) : null;
+            return (
             <li key={s.id} className={`${picked === s.id ? "spot is-picked" : "spot"}${s.live ? "" : " is-off"}`}>
               <button type="button" className="spot__main" aria-pressed={picked === s.id} onClick={() => pick(s.id)}>
                 <span className={`gmap__num gmap__num--${s.rarity}`}>
@@ -230,7 +259,16 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
                     {s.name}
                     {!s.live && <span className="tag tag--off">Off</span>}
                   </b>
-                  <small>{s.where}</small>
+                  <small>
+                    {s.where}
+                    {s.where && " · "}
+                    within {s.radius} m{s.own ? "" : " · from the venue map pin"}
+                  </small>
+                  {away !== null && (
+                    <small className={away <= s.radius ? "spot__away is-in" : "spot__away"}>
+                      {away <= s.radius ? `You're in range: ${howFar(away)} away` : `${howFar(away)} away`}
+                    </small>
+                  )}
                 </span>
               </button>
               <a
@@ -244,7 +282,8 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
                 <ExternalIcon />
               </a>
             </li>
-          ))}
+            );
+          })}
         </ul>
       </aside>
     </div>

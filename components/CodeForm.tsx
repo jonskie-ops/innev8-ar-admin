@@ -7,6 +7,7 @@ import {
   firstSponsor,
   GAME_URL,
   POINTS,
+  RADIUS,
   RARITIES,
   RARITY_LABEL,
   SPONSORS,
@@ -18,16 +19,30 @@ import {
   type Task,
   type Zone,
 } from "@/lib/hunt";
+import { fromVenue, intoPinArea, latLngText, parseLatLng, spotOf, spotUrl, toLatLng, toPlan } from "@/lib/venue";
 import { pad } from "./bits";
-import { ConfirmButton, Counter, SaveButton, Status, useForm } from "./form";
-import { ExternalIcon, PinIcon, TrashIcon } from "./icons";
+import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
+import { GpsFix } from "./GpsFix";
+import { ExternalIcon, LocateIcon, PinIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 import { VenueMap, type Pin } from "./VenueMap";
+
+/** Where a code's GPS spot came from, as the form shows it. */
+type Geo = { lat: number; lng: number; accuracy: number | null; from: "pin" | "gps" | "typed" | "saved" };
+
+function geoLabel(g: Geo) {
+  const acc = g.accuracy === null ? "" : `, ±${Math.round(g.accuracy)} m`;
+  if (g.from === "pin") return "From the map pin";
+  if (g.from === "gps") return `Your location${acc}`;
+  if (g.from === "typed") return "Typed in";
+  return g.accuracy === null ? "Saved spot" : `Set on site${acc}`;
+}
 
 /**
  * A QR code: what players read (name, clue, description), where it is (zone, spot, map pin), and
  * what it's worth. Changing the rarity moves the points to that rarity's usual value, unless
- * they'd been set by hand.
+ * they'd been set by hand. An existing code saves by itself as it's edited (the map pin too); a new
+ * one is added with Add QR code.
  */
 export function CodeForm({
   code,
@@ -44,7 +59,7 @@ export function CodeForm({
   remove?: () => Promise<FormState>;
   canEdit: boolean;
 }) {
-  const { state, pending, onSubmit } = useForm(save);
+  const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
   const [rarity, setRarity] = useState<Rarity>(code.rarity);
   const [points, setPoints] = useState(String(code.points));
   const [pos, setPos] = useState({ x: code.x, y: code.y });
@@ -53,6 +68,25 @@ export function CodeForm({
   const [num, setNum] = useState(String(code.num));
   const [task, setTask] = useState<Task>(code.task ?? "none");
   const [sponsor, setSponsor] = useState(code.sponsor ?? firstSponsor(code.num));
+  // Its GPS spot (where players find it) and how close they must be. The venue map pin and the spot
+  // move together: moving the pin puts the spot under it, and a spot from GPS or typed in moves the pin.
+  const [geo, setGeo] = useState<Geo>(() => {
+    const s = spotOf(code);
+    return { lat: s.lat, lng: s.lng, accuracy: code.accuracy ?? null, from: s.own ? "saved" : "pin" };
+  });
+  const [radius, setRadius] = useState(String(code.radius ?? RADIUS.default));
+  const [typed, setTyped] = useState("");
+  const putSpot = (g: Geo) => {
+    setGeo(g);
+    const p = toPlan(g.lat, g.lng);
+    setPos(intoPinArea(p.x, p.y)); // past the game's map: its pin waits at the edge
+    changed();
+  };
+  const far = fromVenue(geo);
+  // Past the edge of the game's map: the pin waits at the edge, and players see the code at its spot
+  const plan = toPlan(geo.lat, geo.lng);
+  const edge = intoPinArea(plan.x, plan.y);
+  const offMap = Math.hypot(edge.x - plan.x, edge.y - plan.y) > 3;
   // Which other codes each sponsor is on already
   const onCodes = (id: string) => others.filter((o) => (o.sponsor ?? firstSponsor(o.num)) === id).map((o) => `#${pad(o.num)}`);
 
@@ -63,7 +97,7 @@ export function CodeForm({
   const me: Pin = { id: code.id, num: Number(num) || code.num, name: code.name, rarity, x: pos.x, y: pos.y, live: true };
 
   return (
-    <form className="edit" method="post" onSubmit={onSubmit}>
+    <form ref={formRef} className="edit" method="post" onSubmit={onSubmit} onChange={onChange}>
       <fieldset className="edit__main" disabled={!canEdit}>
         <section className="panel">
           <h2 className="panel__title">What players see</h2>
@@ -229,26 +263,136 @@ export function CodeForm({
             pins={[...others, me]}
             zones={zones}
             selected={code.id}
-            move={canEdit ? (x, y) => setPos({ x, y }) : undefined}
+            move={
+              canEdit
+                ? (x, y) => {
+                    setPos({ x, y });
+                    setGeo({ ...toLatLng(x, y), accuracy: null, from: "pin" });
+                    changed(); // the pin's hidden fields change without an event of their own
+                  }
+                : undefined
+            }
             label="Place the pin: tap or drag on the map"
           />
-          <span className="field__hint">{canEdit ? "Tap or drag on the map to place it. " : ""}Other codes are shown faded.</span>
+          <span className="field__hint">
+            {canEdit ? "Tap or drag on the map to place it: its GPS spot below moves with it. " : ""}Other codes are shown faded.
+          </span>
           <input type="hidden" name="x" value={pos.x} />
           <input type="hidden" name="y" value={pos.y} />
+        </section>
+
+        <section className="panel">
+          <h2 className="panel__title">
+            <LocateIcon />
+            On the ground
+          </h2>
+          <p className="field__hint">
+            Players see this code when their phone is within the distance below of its GPS spot. Best set on site: stand on
+            the spot with your phone and use your location.
+          </p>
+          <p className="gpsspot">
+            <span className="gpsspot__text">
+              <code>{latLngText(geo)}</code>
+              <small className={geo.from === "pin" ? "gpsspot__from" : "gpsspot__from is-own"}>{geoLabel(geo)}</small>
+            </span>
+            <a
+              className="icon-btn"
+              href={spotUrl(geo.lat, geo.lng)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open the GPS spot in Google Maps (new tab)"
+              title="Open in Google Maps"
+            >
+              <ExternalIcon />
+            </a>
+          </p>
+          {far > 1500 ? (
+            <p className="field__hint gpsspot__far">
+              {(far / 1000).toFixed(1)} km from Leyte Academic Center: fine for testing somewhere else, but players at the
+              summit won&apos;t reach it.
+            </p>
+          ) : (
+            offMap && (
+              <p className="field__hint gpsspot__far">
+                Past the edge of the game&apos;s map: its pin there waits at the edge, but players find the code at this spot.
+              </p>
+            )
+          )}
+          {canEdit && <GpsFix onFix={(r) => putSpot({ ...r, from: "gps" })} />}
+          <label className="field">
+            <span className="field__label">Or paste it</span>
+            <input
+              value={typed}
+              inputMode="decimal"
+              autoComplete="off"
+              placeholder="11.178240, 125.002240"
+              aria-invalid={typed.trim() !== "" && !parseLatLng(typed)}
+              onChange={(e) => {
+                e.stopPropagation(); // saved once it reads as a place, not while typing it
+                setTyped(e.target.value);
+                const p = parseLatLng(e.target.value);
+                if (p) putSpot({ ...p, accuracy: null, from: "typed" });
+              }}
+            />
+            <span className="field__hint">
+              {typed.trim() !== "" && !parseLatLng(typed)
+                ? "Latitude, then longitude, like 11.178240, 125.002240."
+                : "From Google Maps: press and hold the spot, then copy the numbers."}
+            </span>
+          </label>
+          <div className="field">
+            <span className="field__label">Show it within</span>
+            <div className="radius" role="group" aria-label="Show it within">
+              {RADIUS.presets.map((p) => (
+                <button
+                  key={p.m}
+                  type="button"
+                  className="radius__opt"
+                  aria-pressed={Number(radius) === p.m}
+                  onClick={() => {
+                    setRadius(String(p.m));
+                    changed();
+                  }}
+                >
+                  <b>{p.m} m</b>
+                  <small>{p.label}</small>
+                </button>
+              ))}
+              <label className="radius__own">
+                <input
+                  name="radius"
+                  inputMode="numeric"
+                  value={radius}
+                  onChange={(e) => setRadius(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+                  aria-label="Metres"
+                  required
+                />
+                m
+              </label>
+            </div>
+            <span className="field__hint">
+              Phone GPS is good to a few metres outdoors and rougher indoors: give a code inside a bigger distance (
+              {RADIUS.min}–{RADIUS.max} m).
+            </span>
+          </div>
+          <input type="hidden" name="lat" value={geo.lat} />
+          <input type="hidden" name="lng" value={geo.lng} />
+          <input type="hidden" name="accuracy" value={geo.accuracy ?? ""} />
         </section>
       </fieldset>
 
       {canEdit && (
         <div className="savebar">
-          <Status state={state} />
+          {remove ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
-            {remove && (
+            {remove ? (
               <ConfirmButton action={remove} question={`Delete #${code.num} ${code.name}? It's gone from the game for everyone. (Turning it off can be undone.)`}>
                 <TrashIcon />
                 Delete
               </ConfirmButton>
+            ) : (
+              <SaveButton pending={pending}>Add QR code</SaveButton>
             )}
-            <SaveButton pending={pending}>{remove ? "Save changes" : "Add QR code"}</SaveButton>
           </span>
         </div>
       )}

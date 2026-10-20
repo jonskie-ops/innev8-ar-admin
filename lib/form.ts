@@ -18,6 +18,9 @@ export const failed = (error: string): FormState => ({ error, at: Date.now() });
 
 export const NOT_ADMIN = "Only admins can change this. Ask an admin on your team.";
 
+export const NEEDS_GPS =
+  "GPS spots need the GPS update first: run supabase/migrations/20261020000000_gps.sql in Supabase's SQL Editor.";
+
 /** Thrown by the readers below; actions turn it into the form's message. */
 export class Invalid extends Error {}
 

@@ -5,7 +5,8 @@ import { MapBoard } from "@/components/MapBoard";
 import type { Spot } from "@/components/SatelliteMap";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listZones } from "@/lib/data";
-import { PLACE, toLatLng } from "@/lib/venue";
+import { RADIUS } from "@/lib/hunt";
+import { PLACE, spotOf } from "@/lib/venue";
 
 export const metadata: Metadata = { title: "Map" };
 
@@ -22,7 +23,8 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
     rarity: c.rarity,
     where: [zoneName[c.zone_id] ?? c.zone_id, c.spot].filter(Boolean).join(" · "),
     live: c.live,
-    ...toLatLng(c.x, c.y),
+    ...spotOf(c),
+    radius: c.radius ?? RADIUS.default,
   }));
 
   return (
@@ -30,7 +32,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       <Head
         eyebrow="The venue"
         title="Map"
-        lead={`${PLACE.name}, ${PLACE.address}. Where each QR code is on the ground${canEdit ? ": drag a pin to move it" : ""}.`}
+        lead={`${PLACE.name}, ${PLACE.address}. Where each QR code is on the ground, and how close players must be to see it${canEdit ? ": drag a pin to move it" : ""}.`}
       >
         <a href={PLACE.link} target="_blank" rel="noopener" className="btn btn--ghost btn--sm">
           <ExternalIcon />

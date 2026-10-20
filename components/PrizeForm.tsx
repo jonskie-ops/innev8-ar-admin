@@ -4,11 +4,14 @@
 import { useEffect, useState } from "react";
 import type { FormState } from "@/lib/form";
 import { PRIZE_RULES, type Prize, type PrizeRule } from "@/lib/hunt";
-import { ConfirmButton, Counter, SaveButton, Status, useForm } from "./form";
+import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { ImageIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
-/** A prize: what it is (name, photo, description), who wins it, and how many there are. */
+/**
+ * A prize: what it is (name, photo, description), who wins it, and how many there are. An existing
+ * prize saves by itself as it's edited; a new one is added with Add prize.
+ */
 export function PrizeForm({
   prize,
   photo,
@@ -24,7 +27,7 @@ export function PrizeForm({
   remove?: () => Promise<FormState>;
   canEdit: boolean;
 }) {
-  const { state, pending, onSubmit } = useForm(save);
+  const { formRef, state, pending, waiting, onSubmit, onChange } = useAutoSave(save, Boolean(remove) && canEdit);
   const [rule, setRule] = useState<PrizeRule>(prize.rule);
   const [desc, setDesc] = useState(prize.description.length);
   const [picked, setPicked] = useState<string | null>(null);
@@ -40,7 +43,7 @@ export function PrizeForm({
   const shown = picked ?? (dropPhoto ? null : photo);
 
   return (
-    <form className="edit" method="post" onSubmit={onSubmit}>
+    <form ref={formRef} className="edit" method="post" onSubmit={onSubmit} onChange={onChange}>
       <fieldset className="edit__main" disabled={!canEdit}>
         <section className="panel">
           <h2 className="panel__title">The prize</h2>
@@ -143,15 +146,16 @@ export function PrizeForm({
 
       {canEdit && (
         <div className="savebar">
-          <Status state={state} />
+          {remove ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
-            {remove && (
+            {remove ? (
               <ConfirmButton action={remove} question={`Delete ${prize.name}?`}>
                 <TrashIcon />
                 Delete
               </ConfirmButton>
+            ) : (
+              <SaveButton pending={pending}>Add prize</SaveButton>
             )}
-            <SaveButton pending={pending}>{remove ? "Save changes" : "Add prize"}</SaveButton>
           </span>
         </div>
       )}

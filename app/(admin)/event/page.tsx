@@ -27,6 +27,7 @@ export default async function EventPage() {
           startsAt={toLocalInput(s.starts_at)}
           endsAt={toLocalInput(s.ends_at)}
           testMode={s.test_mode}
+          randomSpots={s.random_spots ?? false}
           claimPlace={s.claim_place}
           save={saveEvent}
           canEdit={canEdit}

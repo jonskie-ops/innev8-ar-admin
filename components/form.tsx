@@ -3,13 +3,17 @@
 import {
   startTransition,
   useActionState,
+  useCallback,
+  useEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   useTransition,
   type FormEvent,
   type ReactNode,
 } from "react";
-import type { FormState } from "@/lib/form";
+import { createPortal } from "react-dom";
+import { failed, type FormState } from "@/lib/form";
 import { AlertIcon, CheckIcon, CopyIcon } from "./icons";
 import { Spinner } from "./Progress";
 
@@ -27,6 +31,114 @@ export function useForm(action: Action) {
     startTransition(() => dispatch(fd));
   };
   return { state, pending, onSubmit };
+}
+
+/** How long after the last change an auto-saving form saves. */
+const AUTO_SAVE_MS = 3000;
+
+/**
+ * A form that saves by itself, with no Save button: 3 seconds after the last change (typing, a
+ * toggle, a choice, a photo), and straight away when the organiser leaves the page. Saves run one
+ * after another, so an older one can never land after a newer one. Changes the form makes in code
+ * (e.g. a dragged map pin into hidden fields) call `changed`. Closing the tab with a change not
+ * saved yet asks first.
+ *
+ * `auto` false (adding something new): a plain form that saves when it's sent, as useForm does.
+ */
+export function useAutoSave(action: Action, auto: boolean) {
+  const manual = useForm(action);
+  const [state, setState] = useState<FormState>(null);
+  const [saving, setSaving] = useState(0);
+  const [waiting, setWaiting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const dirty = useRef(false); // changed since the last save was sent
+  const sending = useRef(0); // saves sent and not answered yet
+  const queue = useRef<Promise<void>>(Promise.resolve());
+  const latest = useRef({ action, state });
+  useEffect(() => {
+    latest.current = { action, state };
+  });
+
+  // `mounted` false: the page is going away, so nothing is shown for this save
+  const send = useCallback((form: HTMLFormElement, mounted = true) => {
+    window.clearTimeout(timer.current);
+    if (!dirty.current) return;
+    dirty.current = false;
+    const fd = new FormData(form);
+    sending.current++;
+    if (mounted) {
+      setWaiting(false);
+      setSaving((n) => n + 1);
+    }
+    queue.current = queue.current.then(async () => {
+      let r: FormState;
+      try {
+        r = await latest.current.action(latest.current.state, fd);
+      } catch {
+        dirty.current = true; // not saved: leaving asks first, and the next change sends it again
+        r = failed("Couldn't save. Check your connection: your next change tries again.");
+      }
+      sending.current--;
+      if (mounted) {
+        setState(r);
+        setSaving((n) => n - 1);
+      }
+    });
+  }, []);
+
+  const changed = useCallback(() => {
+    if (!auto) return;
+    dirty.current = true;
+    setWaiting(true);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => formRef.current && send(formRef.current), AUTO_SAVE_MS);
+  }, [auto, send]);
+
+  useEffect(() => {
+    if (!auto) return;
+    const form = formRef.current;
+    const warn = (e: BeforeUnloadEvent) => {
+      if (dirty.current || sending.current) e.preventDefault();
+    };
+    addEventListener("beforeunload", warn);
+    return () => {
+      removeEventListener("beforeunload", warn);
+      if (form) send(form, false);
+    };
+  }, [auto, send]);
+
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
+    if (!auto) return manual.onSubmit(e);
+    e.preventDefault();
+    dirty.current = true;
+    send(e.currentTarget);
+  };
+
+  return auto
+    ? { formRef, onSubmit, onChange: changed, changed, state, pending: saving > 0, waiting }
+    : { formRef, onSubmit, onChange: undefined, changed, state: manual.state, pending: manual.pending, waiting: false };
+}
+
+/**
+ * An auto-saving form's toast, at the bottom of the screen wherever the organiser has scrolled to:
+ * "Saving automatically…" from the first change until it's saved, then "All changes saved" for 3
+ * seconds before it fades. What's wrong stays until the next change. One element throughout, so it
+ * changes in place rather than blinking out and back.
+ */
+export function AutoSaveToast({ state, pending, waiting }: { state: FormState; pending: boolean; waiting: boolean }) {
+  const ready = useHydrated();
+  if (!ready) return null;
+  const saving = pending || waiting;
+  if (!saving && !state) return null;
+  const kind = saving ? "" : state?.error ? " is-error" : " is-done";
+  return createPortal(
+    <p className={`savetoast${kind}`} role={kind === " is-error" ? "alert" : "status"}>
+      {saving ? <Spinner /> : state?.error ? <AlertIcon /> : <CheckIcon />}
+      {saving ? "Saving automatically…" : (state?.error ?? "All changes saved")}
+    </p>,
+    document.body,
+  );
 }
 
 const never = () => () => {};

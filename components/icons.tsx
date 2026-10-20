@@ -86,6 +86,14 @@ export const PinIcon = (p: P) => (
     <circle cx="12" cy="10" r="2.5" />
   </Svg>
 );
+/** "Where am I": a GPS crosshair. */
+export const LocateIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="6.5" />
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+  </Svg>
+);
 export const EyeIcon = (p: P) => (
   <Svg {...p}>
     <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />

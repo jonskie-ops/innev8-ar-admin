@@ -26,8 +26,34 @@ export type Code = {
   task: Task;
   /** Its sponsor's id (SPONSORS), or "none" */
   sponsor: string;
+  /**
+   * Its GPS spot, where players find it. Null (or missing, before the GPS update): where its venue
+   * map pin is (spotOf in lib/venue.ts).
+   */
+  lat?: number | null;
+  lng?: number | null;
+  /** How sure the phone that set the spot was, in metres; null: set on a map or typed in */
+  accuracy?: number | null;
+  /** The game shows it to players within this many metres of its spot (RADIUS.default before the update) */
+  radius?: number;
   updated_at: string;
 };
+
+/**
+ * How close players must be to a code for the game to show it, in metres. Phone GPS is good to a
+ * few metres outdoors and much rougher indoors, so a code inside gets a bigger distance.
+ */
+export const RADIUS = {
+  default: 10,
+  min: 3,
+  max: 50,
+  presets: [
+    { m: 10, label: "Outdoors" },
+    { m: 15, label: "By a building" },
+    { m: 20, label: "Indoors" },
+    { m: 30, label: "Big hall" },
+  ],
+} as const;
 
 /** The extra tasks a code can have: players do it after reading the clue, and only then can find it. */
 export type Task = "none" | "any" | "province" | "selfie";
@@ -129,6 +155,8 @@ export type Settings = {
   ends_at: string;
   test_mode: boolean;
   claim_place: string;
+  /** On: codes hide at random spots around each player instead of at their GPS spots (missing before the GPS update) */
+  random_spots?: boolean;
   updated_at: string;
 };
 

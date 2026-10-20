@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NOT_ADMIN, text, type FormState } from "../form";
+import { checked, dbError, done, failed, Invalid, NEEDS_GPS, NOT_ADMIN, text, type FormState } from "../form";
 import { fromLocalInput } from "../format";
 import { supabase } from "../supabase";
 
@@ -20,9 +20,15 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
     if (e instanceof Invalid) return failed(e.message);
     throw e;
   }
-  const { data, error } = await (await supabase())
+  const sb = await supabase();
+  // A database without the GPS update has no random spots switch: the game puts each code at its map
+  // pin's place then, as with the switch off
+  const random_spots = checked(fd, "random_spots");
+  const gps = !(await sb.from("settings").select("random_spots").limit(1)).error;
+  if (!gps && random_spots) return failed(NEEDS_GPS);
+  const { data, error } = await sb
     .from("settings")
-    .update({ starts_at: starts, ends_at: ends, test_mode: checked(fd, "test_mode"), claim_place })
+    .update({ starts_at: starts, ends_at: ends, test_mode: checked(fd, "test_mode"), claim_place, ...(gps && { random_spots }) })
     .eq("id", 1)
     .select("id");
   if (error) return failed(dbError(error));
