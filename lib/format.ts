@@ -126,6 +126,7 @@ const KIND: Record<string, string> = {
   locations: "location",
   zones: "zone",
   team: "teammate",
+  hunters: "hunter",
   settings: "",
 };
 
@@ -135,6 +136,7 @@ const list = (xs: string[]) =>
 /** "changed the clue and map pin of", "turned off", "added the QR code"… (before the label) */
 export function didWhat(a: Activity) {
   const kind = KIND[a.what] ?? a.what;
+  if (a.what === "hunters" && /^\d+ hunters$/.test(a.label)) return "removed"; // ("removed 12 hunters": deleted together)
   if (a.action === "added") return `added the ${kind}`;
   if (a.action === "removed") return `removed the ${kind}`;
   const live = a.changes.find((c) => c.startsWith("live:"));

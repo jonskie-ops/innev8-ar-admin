@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PasswordForm, SignOutForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
-import { KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
+import { HunterIcon, KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
 import { requireTeammate } from "@/lib/dal";
 import { listTeam } from "@/lib/data";
@@ -56,10 +56,16 @@ export default async function AccountPage() {
         }
       />
       {!first && (
-        <Link href="/team" className="btn btn--ghost btn--sm phone-team">
-          <TeamIcon />
-          The team: who can sign in
-        </Link>
+        <p className="phone-team">
+          <Link href="/hunters" className="btn btn--ghost btn--sm">
+            <HunterIcon />
+            Hunters: the players
+          </Link>
+          <Link href="/team" className="btn btn--ghost btn--sm">
+            <TeamIcon />
+            The team: who can sign in
+          </Link>
+        </p>
       )}
       <div className="cols">
         {/* The first time, the password comes first (on a phone, it's on top) */}

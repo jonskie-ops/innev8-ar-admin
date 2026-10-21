@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -46,6 +46,37 @@ export const recentActivity = cache(async (n = 12) =>
 export const hunterStats = cache(async (): Promise<{ hunters: number; meetings: number } | null> => {
   const { data, error } = await (await supabase()).rpc("hunter_stats");
   return error || !data ? null : (data as { hunters: number; meetings: number });
+});
+
+/** All of a query's rows (the database hands out at most 1,000 at a time). */
+async function readAll<T>(page: (from: number, to: number) => Result<T[]>): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += 1000) {
+    const got = await read<T[]>(page(from, from + 999));
+    rows.push(...got);
+    if (got.length < 1000) return rows;
+  }
+}
+
+/**
+ * The players with a hunter ID, newest first, each with how many hunters they've met (null before the
+ * networking update).
+ */
+export const listHunters = cache(async (): Promise<Hunter[] | null> => {
+  const sb = await supabase();
+  try {
+    const [hunters, meetings] = await Promise.all([
+      readAll<Omit<Hunter, "meetings">>((from, to) =>
+        sb.from("hunters").select("id, tag, name, province, created_at").order("created_at", { ascending: false }).order("id").range(from, to),
+      ),
+      readAll<{ a: string; b: string }>((from, to) => sb.from("meetings").select("a, b").order("a").order("b").range(from, to)),
+    ]);
+    const met = new Map<string, number>();
+    for (const m of meetings) for (const id of [m.a, m.b]) met.set(id, (met.get(id) ?? 0) + 1);
+    return hunters.map((h) => ({ ...h, meetings: met.get(h.id) ?? 0 }));
+  } catch {
+    return null;
+  }
 });
 
 /** A prize photo's address (the bucket is public, like the game's own images). */

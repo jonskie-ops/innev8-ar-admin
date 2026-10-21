@@ -163,6 +163,15 @@ export const SponsorIcon = (p: P) => (
     <path d="m8.6 13.4-1.6 7.6 5-2.6 5 2.6-1.6-7.6" />
   </Svg>
 );
+/** A player with their hunter QR */
+export const HunterIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="9.5" cy="7.5" r="3.5" />
+    <path d="M3 20c.6-3.7 3-5.6 6.5-5.6 1 0 1.9.2 2.7.5" />
+    <rect x="14.5" y="13.5" width="6.5" height="6.5" rx="1" />
+    <path d="M17 16h1.5v1.5H17z" />
+  </Svg>
+);
 export const ImageIcon = (p: P) => (
   <Svg {...p}>
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" />

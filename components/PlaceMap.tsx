@@ -92,13 +92,13 @@ export function PlaceMap({
       marks.current = null;
       return;
     }
-    const corners = areaOf(planOf({ id: "place", lat, lng, width }));
+    const corners = areaOf(planOf({ id: "place", lat, lng, width, outlines: null }));
     if (!marks.current) {
       const icon = L.divIcon({ className: "mpin-box", html: '<span class="mpin mpin--place"></span>', iconSize: [30, 30], iconAnchor: [15, 15] });
       const pin = L.marker([lat, lng], { icon, draggable: Boolean(latest.current), autoPan: true, title: "The middle of its map" });
       pin.on("drag", () => {
         const p = pin.getLatLng();
-        const c = areaOf(planOf({ id: "place", lat: p.lat, lng: p.lng, width: wide.current }));
+        const c = areaOf(planOf({ id: "place", lat: p.lat, lng: p.lng, width: wide.current, outlines: null }));
         marks.current?.area.setLatLngs(c);
       });
       pin.on("dragend", () => {

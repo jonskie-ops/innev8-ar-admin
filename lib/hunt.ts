@@ -234,6 +234,16 @@ export type Member = {
   created_at: string;
 };
 
+/** A player's hunter ID (made when they sign up in the game), and how many hunters they've met. */
+export type Hunter = {
+  id: string;
+  tag: string;
+  name: string;
+  province: string;
+  created_at: string;
+  meetings: number;
+};
+
 export type Activity = {
   id: number;
   at: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ChangeEvent, type KeyboardEvent } from "react";
 import { deleteZone, saveZone } from "@/lib/actions/locations";
 import type { FormState } from "@/lib/form";
 import { Status } from "./form";
@@ -12,7 +12,9 @@ export type Area = { id: string; name: string; codes: number };
 /**
  * A location's areas (zones): what each QR code's page offers under Zone, and what players read
  * before they've found a code ("Somewhere in the Main hall"). Rename one, add one, or remove one no
- * code is in (a location keeps at least one).
+ * code is in (a location keeps at least one). Each saves at once, on its own: it sits in the
+ * location's form (its side column), so it has no form of its own, Enter presses its button, and its
+ * typing isn't a change to the location.
  */
 export function AreasPanel({ locationId, areas, canEdit }: { locationId: string; areas: Area[]; canEdit: boolean }) {
   const [editing, setEditing] = useState<string | null>(null);
@@ -20,6 +22,17 @@ export function AreasPanel({ locationId, areas, canEdit }: { locationId: string;
   const [fresh, setFresh] = useState("");
   const [state, setState] = useState<FormState>(null);
   const [pending, start] = useTransition();
+  const typed = (set: (v: string) => void) => (e: ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    set(e.target.value);
+  };
+  const onEnter = (go: () => void) => (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault(); // (not the location's form)
+    go();
+  };
+  const rename = (id: string) => run(() => saveZone(locationId, id, text), () => setEditing(null));
+  const add = () => fresh.trim() && run(() => saveZone(locationId, null, fresh), () => setFresh(""));
   const run = (fn: () => Promise<FormState>, after?: () => void) =>
     start(async () => {
       const r = await fn();
@@ -40,18 +53,12 @@ export function AreasPanel({ locationId, areas, canEdit }: { locationId: string;
         {areas.map((a) => (
           <li key={a.id} className="areas__row">
             {editing === a.id ? (
-              <form
-                className="areas__edit"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  run(() => saveZone(locationId, a.id, text), () => setEditing(null));
-                }}
-              >
-                <input value={text} onChange={(e) => setText(e.target.value)} maxLength={40} aria-label="Area name" autoFocus />
-                <button type="submit" className="icon-btn" aria-label="Save the name" disabled={pending}>
+              <div className="areas__edit">
+                <input value={text} onChange={typed(setText)} onKeyDown={onEnter(() => rename(a.id))} maxLength={40} aria-label="Area name" autoFocus />
+                <button type="button" className="icon-btn" aria-label="Save the name" disabled={pending} onClick={() => rename(a.id)}>
                   {pending ? <Spinner /> : <CheckIcon />}
                 </button>
-              </form>
+              </div>
             ) : (
               <>
                 <span className="areas__name">
@@ -91,19 +98,13 @@ export function AreasPanel({ locationId, areas, canEdit }: { locationId: string;
         ))}
       </ul>
       {canEdit && (
-        <form
-          className="areas__edit areas__add"
-          onSubmit={(e) => {
-            e.preventDefault();
-            run(() => saveZone(locationId, null, fresh), () => setFresh(""));
-          }}
-        >
-          <input value={fresh} onChange={(e) => setFresh(e.target.value)} maxLength={40} placeholder="Main hall" aria-label="New area's name" />
-          <button type="submit" className="btn btn--ghost btn--sm" disabled={pending || !fresh.trim()}>
+        <div className="areas__edit areas__add">
+          <input value={fresh} onChange={typed(setFresh)} onKeyDown={onEnter(add)} maxLength={40} placeholder="Main hall" aria-label="New area's name" />
+          <button type="button" className="btn btn--ghost btn--sm" disabled={pending || !fresh.trim()} onClick={add}>
             <PlusIcon />
             Add area
           </button>
-        </form>
+        </div>
       )}
       <Status state={state} />
     </section>

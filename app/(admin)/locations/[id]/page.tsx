@@ -61,26 +61,26 @@ export default async function LocationPage({
         </p>
       )}
       {!canEdit && <ReadOnly />}
-      <div className="stack">
-        <LocationForm
-          key={location.id}
-          location={location}
-          codes={here}
-          save={saveLocation.bind(null, found ? found.id : null)}
-          remove={found && found.id !== "lac" ? deleteLocation.bind(null, found.id) : undefined}
-          redraw={found && found.id !== "lac" ? redrawMap.bind(null, found.id) : undefined}
-          canEdit={canEdit}
-        />
-        {found && (
-          <AreasPanel
-            locationId={found.id}
-            areas={zones
-              .filter((z) => (z.location_id ?? "lac") === found.id)
-              .map((z) => ({ id: z.id, name: z.name, codes: codes.filter((c) => c.zone_id === z.id).length }))}
-            canEdit={canEdit}
-          />
-        )}
-      </div>
+      <LocationForm
+        key={location.id}
+        location={location}
+        codes={here}
+        save={saveLocation.bind(null, found ? found.id : null)}
+        remove={found && found.id !== "lac" ? deleteLocation.bind(null, found.id) : undefined}
+        redraw={found ? redrawMap.bind(null, found.id) : undefined}
+        canEdit={canEdit}
+        side={
+          found && (
+            <AreasPanel
+              locationId={found.id}
+              areas={zones
+                .filter((z) => (z.location_id ?? "lac") === found.id)
+                .map((z) => ({ id: z.id, name: z.name, codes: codes.filter((c) => c.zone_id === z.id).length }))}
+              canEdit={canEdit}
+            />
+          )
+        }
+      />
     </>
   );
 }

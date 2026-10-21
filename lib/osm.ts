@@ -65,8 +65,8 @@ type Way = {
   members?: { type: string; role: string; geometry?: Point[] }[];
 };
 
-export async function fetchOutlines(where: Where): Promise<Outlines> {
-  const plan = planOf(where);
+export async function fetchOutlines(where: Omit<Where, "outlines">): Promise<Outlines> {
+  const plan = planOf({ ...where, outlines: "osm" }); // (the north-up map, Leyte Academic Center's too)
   // What the game's map can show, with its fade: ±width east-west, ±1.3 width north-south
   const dLat = (1.3 * where.width) / 111320;
   const dLng = where.width / (111320 * Math.cos((where.lat * Math.PI) / 180));

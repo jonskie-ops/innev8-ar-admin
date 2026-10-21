@@ -23,8 +23,9 @@ export type PlacedCode = { id: string; num: number; name: string; rarity: Rarity
  * A location: its name and address, where it is (searched for, the phone's GPS, pasted, or tapped on
  * the map) and how wide its map is; whether it's on in the game; and its map as the game draws it,
  * from OpenStreetMap's buildings and roads (drawn again when it's moved or resized). Leyte Academic
- * Center's map is drawn by hand, so it stays where it is. An existing location saves by itself as
- * it's edited; a new one is added with Add location.
+ * Center starts on the plan drawn by hand for the summit, until its map is drawn from OpenStreetMap
+ * like the others'. An existing location saves by itself as it's edited; a new one is added with Add
+ * location.
  */
 export function LocationForm({
   location,
@@ -33,6 +34,7 @@ export function LocationForm({
   remove,
   redraw,
   canEdit,
+  side,
 }: {
   location: Location;
   codes: PlacedCode[];
@@ -40,9 +42,12 @@ export function LocationForm({
   remove?: () => Promise<FormState>;
   redraw?: () => Promise<FormState>;
   canEdit: boolean;
+  /** More for the side column, under its QR codes (the location's areas) */
+  side?: React.ReactNode;
 }) {
   const isNew = !remove && location.id === "new";
-  const hand = location.id === "lac";
+  // Leyte Academic Center still on its hand-drawn plan
+  const hand = location.id === "lac" && location.outlines == null;
   const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, !isNew && canEdit);
   const [name, setName] = useState(location.name);
   const [address, setAddress] = useState(location.address);
@@ -59,7 +64,7 @@ export function LocationForm({
   const w = Math.min(MAP_WIDTH.max, Math.max(MAP_WIDTH.min, Number(width) || MAP_WIDTH.min));
   // While its map is being drawn (in the background, after a move): look again every few seconds
   const router = useRouter();
-  const drawingNow = !hand && !isNew && mapState(location.outlines) === "drawing";
+  const drawingNow = !isNew && mapState(location.outlines) === "drawing";
   useEffect(() => {
     if (!drawingNow) return;
     const t = window.setInterval(() => router.refresh(), 4000);
@@ -108,13 +113,13 @@ export function LocationForm({
             <PlacesIcon />
             Where it is
           </h2>
-          {hand ? (
+          {hand && (
             <p className="field__hint">
-              {latLngText(location)}. Its map is drawn by hand for the summit (Annex A–B and the courtyard), so it stays where it
-              is. Add a location for anywhere else.
+              Its map is drawn by hand for the summit for now. Moving it, changing its width or Get the map again draws it
+              from OpenStreetMap like the other locations&apos;.
             </p>
-          ) : (
-            <>
+          )}
+          <>
               <div className="field">
                 <span className="field__label">Find it</span>
                 <div className="placefind">
@@ -234,8 +239,7 @@ export function LocationForm({
               </div>
               <input type="hidden" name="lat" value={at?.lat ?? ""} />
               <input type="hidden" name="lng" value={at?.lng ?? ""} />
-            </>
-          )}
+          </>
         </section>
       </fieldset>
 
@@ -256,9 +260,9 @@ export function LocationForm({
             <VenueMap place={location} pins={codes} zones={[]} label={`Map of ${location.name}`} />
             <p className="field__hint">
               {hand
-                ? "Drawn by hand: Annex A–B, the courtyard and parking."
+                ? "Drawn by hand for the summit: Annex A–B, the courtyard and parking. Get the map again draws it from OpenStreetMap like the other locations': its QR codes keep their spots on the ground and move onto the new map."
                 : location.outlines && "buildings" in location.outlines
-                  ? `${location.outlines.count} buildings, with the roads and grounds, from OpenStreetMap. Drawn again when you move it or change its width.`
+                  ? `${location.outlines.count} building${location.outlines.count === 1 ? "" : "s"}, with the roads and grounds, from OpenStreetMap. Drawn again when you move it or change its width.`
                   : drawingNow
                     ? "Drawing it from OpenStreetMap's buildings and roads: this can take a minute. Players see a plain grid until then."
                     : "Not drawn: OpenStreetMap didn't answer. Players see a plain grid until it is: get it again below."}
@@ -308,6 +312,7 @@ export function LocationForm({
             )}
           </section>
         )}
+        {side}
         {isNew && (
           <p className="banner">
             <LocateIcon />

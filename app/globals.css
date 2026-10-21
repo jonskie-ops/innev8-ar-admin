@@ -518,13 +518,13 @@ input:disabled {
   flex-direction: column;
   gap: clamp(2px, 1dvh, 8px);
 }
-/* 66px tall when there's room; less on a short window, so all ten (the pages, your account and sign
-   out) fit under the logo without running into each other */
+/* 66px tall when there's room; less on a short window, so all eleven (the pages, your account and
+   sign out) fit under the logo without running into each other */
 .rail__link {
   position: relative;
   display: grid;
   place-items: center;
-  height: clamp(34px, calc((100dvh - 200px) / 10), 66px);
+  height: clamp(32px, calc((100dvh - 200px) / 11), 66px);
   flex: none;
   color: rgba(225, 238, 255, 0.6);
   text-decoration: none;
@@ -6172,18 +6172,87 @@ html[data-full-map] .navbar {
 .areas__add .btn {
   flex: none;
 }
-.stack > .areas {
-  max-width: 640px;
+/* (in the location's side column, a fieldset: its rows fill it) */
+.edit__side .areas__list {
+  margin-bottom: 10px;
 }
 
 /* Phones: the team isn't in the tab bar, so the Account page links to it */
 .phone-team {
   display: none;
+  flex-wrap: wrap;
+  gap: 8px;
   margin: -8px 0 18px;
 }
 @media (max-width: 959px) {
   .phone-team {
-    display: inline-flex;
+    display: flex;
+  }
+}
+
+/* Hunters: the players with a hunter ID. Find one; an admin ticks some (or one's bin) to delete */
+.hunters__find {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+.hunters__find .ico {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 17px;
+  height: 17px;
+  color: var(--faint);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.hunters__find input {
+  padding: 9px 12px 9px 38px;
+  font-size: 14px;
+}
+.hunters__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 52px;
+  padding: 8px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.hunters .person.is-tickable {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+}
+.hunter__tick {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--cyan);
+}
+.hunters .person__who b {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.hunters__none {
+  padding: 28px 20px;
+  text-align: center;
+}
+.hunters__more {
+  display: flex;
+  justify-content: center;
+  padding: 14px 20px 18px;
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 959px) {
+  .hunters__find {
+    max-width: none;
+  }
+  .hunters .person.is-tickable {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+  }
+  .hunters .person__acts {
+    grid-column: auto;
+    margin-top: 0;
   }
 }
 

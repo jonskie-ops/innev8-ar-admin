@@ -62,7 +62,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       <MapBoard
         key={place.id}
         spots={spots}
-        place={{ id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng, width: place.width }}
+        place={{ id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng, width: place.width, outlines: plan.hand ? null : "osm" }}
         canEdit={canEdit}
         initial={typeof code === "string" ? code : null}
       />

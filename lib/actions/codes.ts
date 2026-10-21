@@ -64,7 +64,7 @@ async function sponsorIds() {
 async function locations() {
   const sb = await supabase();
   const [{ data: ls, error }, { data: zones }] = await Promise.all([
-    sb.from("locations").select("id, lat, lng, width"),
+    sb.from("locations").select("id, lat, lng, width, outlines"),
     sb.from("zones").select("*"),
   ]);
   if (error || !ls) return null;

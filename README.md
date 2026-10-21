@@ -12,6 +12,7 @@ will read from.
 | **Locations** | Where the hunt can be played (below): Leyte Academic Center, and any added since. Each has its map for the game, its areas (the codes' zones), its QR codes and an on/off switch |
 | **Prizes** | Name, photo, description, who wins it (all the codes, a number of codes, the legendary code, or a number of points) and how many are in stock |
 | **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
+| **Hunters** | The players with a hunter ID (below): find one by name, province or tag, and see who they've met. Admins delete one, or tick several and delete them together. On a phone it's on the Account page |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
 | **Team** | Who can sign in, as **admin** (changes everything) or **staff** (looks, can't change) |
 | **Account** | Your password |
@@ -69,7 +70,9 @@ The hunt can be played somewhere other than Leyte Academic Center. On the **Loca
 - **On/off:** off hides the location and its codes from the game. Players see the codes of every
   location that's on; with more than one, the game's map has a chip for each and opens on the nearest.
 - **Delete** only once it has no codes (move them on their pages, or delete them). Leyte Academic
-  Center stays: its map is drawn by hand for the summit, so it can't be moved either.
+  Center stays. Its map starts on the plan drawn by hand for the summit; moving it, changing its
+  width or **Get the map again** draws it from OpenStreetMap like the others (its codes keep their
+  spots on the ground and move onto the new map).
 
 Each QR code's page has a **Location** choice (another location puts the code in the middle of its
 map, in its first area), and its map, zones and GPS checks follow it. The Map page, the QR codes
@@ -103,6 +106,21 @@ Adding and changing sponsors needs the update `supabase/migrations/2026102100000
 (run it in the SQL Editor). It starts with the 8 sponsors the game came with, on their own badges.
 Until it's run, the Sponsors page shows those 8 and says what to run, and codes can still be given
 any of them.
+
+## Hunters
+
+Each player gets a hunter ID when they sign up in the game: a 5-letter tag and their hunter QR, for
+the "meet a hunter" tasks. The Hunters page lists them, newest first, with each one's province, when
+they joined and how many hunters they've met.
+
+- **Delete** a test player or a duplicate with its bin, or tick several (**Tick all** ticks the ones
+  showing) and **Delete ticked**. It asks first. Their hunter QR stops working and their meetings go
+  (for the hunters they met too); the codes they found and the tasks they've done stay on their
+  phone, which gets a new hunter ID the next time the game opens.
+- **Recent changes** has one line for each delete: "removed the hunter Ana", or "removed 12 hunters".
+
+Deleting needs the update `supabase/migrations/20261023000000_hunters.sql` (run it in the SQL
+Editor). Until it's run, the list shows but deleting says what to run.
 
 ## Security
 

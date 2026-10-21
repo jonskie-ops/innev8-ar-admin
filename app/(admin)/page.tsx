@@ -4,7 +4,7 @@ import Link from "next/link";
 import { pad, SponsorBadge } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
-import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon, TeamIcon } from "@/components/icons";
+import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, HunterIcon, PlusIcon, QrIcon } from "@/components/icons";
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { PlaceMaps } from "@/components/PlaceMaps";
@@ -279,9 +279,9 @@ export default async function OverviewPage() {
 
           {/* Networking: players who have a hunter QR, and how many times two of them have met */}
           {stats && (
-            <div className="pill pill--plain">
+            <Link href="/hunters" className="pill">
               <span className="pill__ico pill__ico--turq">
-                <TeamIcon />
+                <HunterIcon />
               </span>
               <span className="pill__text">
                 <b>
@@ -291,7 +291,7 @@ export default async function OverviewPage() {
                   {stats.meetings.toLocaleString("en-PH")} meeting{stats.meetings === 1 ? "" : "s"} so far
                 </small>
               </span>
-            </div>
+            </Link>
           )}
         </div>
       </aside>

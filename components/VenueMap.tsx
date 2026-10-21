@@ -147,7 +147,7 @@ export function VenueMap({
       )}
 
       {zones
-        .filter((z) => z.label_x !== null && z.label_y !== null)
+        .filter((z) => plan.hand && z.label_x !== null && z.label_y !== null)
         .map((z) => (
           <span key={z.id} className="vmap__zone" style={at(VIEW, z.label_x!, z.label_y!)} aria-hidden="true">
             {z.name}

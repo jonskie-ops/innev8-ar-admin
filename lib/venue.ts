@@ -78,15 +78,20 @@ export const intoPinArea = (x: number, y: number, area: Area = PIN_AREA) => ({
 
 type Area = { x0: number; x1: number; y0: number; y1: number };
 
-/** A location, as far as its map goes: where its middle is and how wide its map is (metres). */
-export type Where = { id: string; lat: number; lng: number; width: number };
+/**
+ * A location, as far as its map goes: where its middle is, how wide its map is (metres), and its
+ * drawing (null for Leyte Academic Center: still on its hand-drawn plan).
+ */
+export type Where = { id: string; lat: number; lng: number; width: number; outlines: unknown };
 
 /**
  * A location's map: the same 360×520 plan units as Leyte Academic Center's, so a code's pin (x, y)
  * means the same thing in both apps wherever it is.
- * - Leyte Academic Center: the plan drawn by hand (turned so the buildings sit square).
- * - Any other: north up, its middle at (180, 260), `width` metres across 300 units. Its buildings
- *   and roads come from OpenStreetMap, drawn in these units (lib/osm.ts).
+ * - Leyte Academic Center, until its map is drawn from OpenStreetMap (`outlines` null): the plan
+ *   drawn by hand for the summit (turned so the buildings sit square).
+ * - Any other (and Leyte Academic Center once drawn): north up, its middle at (180, 260), `width`
+ *   metres across 300 units. Its buildings and roads come from OpenStreetMap, drawn in these units
+ *   (lib/osm.ts).
  * `view`: what the admin's venue map shows; `pinArea`: where a pin can go (inside what both the
  * admin's and the game's maps show).
  */
@@ -112,7 +117,7 @@ const LAC_PLAN: Plan = {
 };
 
 export function planOf(l: Where | null | undefined): Plan {
-  if (!l || l.id === DEFAULT_LOCATION) return LAC_PLAN;
+  if (!l || (l.id === DEFAULT_LOCATION && l.outlines == null)) return LAC_PLAN;
   const k = 300 / l.width;
   const cos = Math.cos((l.lat * Math.PI) / 180);
   const deg = 180 / Math.PI;
