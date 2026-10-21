@@ -59,6 +59,11 @@ export const PlusIcon = (p: P) => (
     <path d="M12 5v14M5 12h14" />
   </Svg>
 );
+export const MinusIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M5 12h14" />
+  </Svg>
+);
 export const PencilIcon = (p: P) => (
   <Svg {...p}>
     <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4zM13.5 6.5l4 4" />

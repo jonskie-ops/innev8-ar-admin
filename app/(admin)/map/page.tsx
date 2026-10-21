@@ -5,7 +5,7 @@ import { MapBoard } from "@/components/MapBoard";
 import { PlaceTabs } from "@/components/PlaceTabs";
 import type { Spot } from "@/components/SatelliteMap";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listZones, locationOf } from "@/lib/data";
+import { firstPlace, listCodes, listLocations, listZones, locationOf } from "@/lib/data";
 import { RADIUS } from "@/lib/hunt";
 import { mapsLinks, planOf, spotOf } from "@/lib/venue";
 
@@ -13,15 +13,15 @@ export const metadata: Metadata = { title: "Map" };
 
 /**
  * A location on a real map, where each of its QR codes is on the ground, and (for admins) moving
- * them. With more than one location, tabs switch between them (?at=, else the code asked for's, else the first).
+ * them. With more than one location, tabs switch between them (?at=, else the code asked for's, else the first
+ * that's on and has codes).
  */
 export default async function MapPage({ searchParams }: { searchParams: Promise<{ code?: string | string[]; at?: string | string[] }> }) {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
   const [codes, zones, { locations }, { code, at }] = await Promise.all([listCodes(), listZones(), listLocations(), searchParams]);
   const asked = codes.find((c) => c.id === code);
-  const place =
-    locations.find((l) => l.id === at) ?? locations.find((l) => l.id === (asked && locationOf(asked))) ?? locations[0];
+  const place = firstPlace(locations, codes, typeof at === "string" ? at : asked && locationOf(asked));
   const plan = planOf(place);
   const links = mapsLinks(place);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
@@ -33,7 +33,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       name: c.name,
       rarity: c.rarity,
       where: [zoneName[c.zone_id] ?? c.zone_id, c.spot].filter(Boolean).join(" · "),
-      live: c.live,
+      live: c.live && place.live, // (a location that's off hides its codes)
       ...spotOf(c, plan),
       radius: c.radius ?? RADIUS.default,
     }));

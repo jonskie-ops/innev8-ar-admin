@@ -514,17 +514,17 @@ input:disabled {
 }
 .rail__nav {
   display: flex;
-  flex: 1;
+  flex: none;
   flex-direction: column;
-  gap: 8px;
-  min-height: 0;
+  gap: clamp(2px, 1dvh, 8px);
 }
-/* 66px tall when there's room; less on a short window, so the account and sign out still fit */
+/* 66px tall when there's room; less on a short window, so all ten (the pages, your account and sign
+   out) fit under the logo without running into each other */
 .rail__link {
   position: relative;
   display: grid;
   place-items: center;
-  height: clamp(46px, 8dvh, 66px);
+  height: clamp(34px, calc((100dvh - 200px) / 10), 66px);
   flex: none;
   color: rgba(225, 238, 255, 0.6);
   text-decoration: none;
@@ -594,9 +594,16 @@ input:disabled {
 /* At the foot of the rail: your account, and sign out under it */
 .rail__end {
   display: grid;
-  gap: 8px;
+  gap: clamp(2px, 1dvh, 8px);
   margin-top: auto;
   padding-top: 12px;
+}
+/* A very short window: the rail scrolls rather than overlap */
+@media (max-height: 560px) and (min-width: 960px) {
+  .rail {
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
 }
 .rail__out {
   width: 100%;
@@ -6178,4 +6185,49 @@ html[data-full-map] .navbar {
   .phone-team {
     display: inline-flex;
   }
+}
+
+/* The pin's map on a code's page: + and − at the top right. Zoomed in, the outlines keep their
+   width on screen (--z: how far in) */
+.vmap__zoom {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: grid;
+  gap: 6px;
+  cursor: auto;
+}
+.vmap__zoom .icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(3, 8, 23, 0.82);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.vmap__zoom .icon-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.vmap__zoom .icon-btn .ico {
+  width: 16px;
+  height: 16px;
+}
+.vmap--edit .vmap__credit {
+  right: auto;
+  left: 8px;
+}
+.vmap__floor .vmap__wall {
+  stroke-width: calc(1.5px / var(--z, 1));
+}
+.vmap__floor .vmap__wall--osm {
+  stroke-width: calc(0.9px / var(--z, 1));
+}
+.vmap__floor .vmap__room,
+.vmap__floor .vmap__lot {
+  stroke-width: calc(0.8px / var(--z, 1));
+}
+.vmap__floor .vmap__booth {
+  stroke-width: calc(0.6px / var(--z, 1));
 }

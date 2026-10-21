@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import { drawnMap, mapState, type Location, type Outlines, type Rarity, type Zone } from "@/lib/hunt";
 import { planOf, VENUE, type Plan } from "@/lib/venue";
+import { MinusIcon, PlusIcon } from "./icons";
 
 /**
  * A location flat from above, as the game's map draws it (same 360×520 plan units, same outlines),
@@ -12,7 +13,8 @@ import { planOf, VENUE, type Plan } from "@/lib/venue";
  * - Plain: pins link to their code's details.
  * - With `pick`: tapping a pin picks it (the `selected` one stands out), without leaving the page.
  * - With `move`: the `selected` pin is the one being placed; tap or drag on the map to put it there
- *   (arrow keys work too), the others are shown for reference.
+ *   (arrow keys work too), the others are shown for reference. + and − at the top right zoom in on
+ *   the pin (up to ZOOMS' last), for placing it closely.
  */
 
 const PARTITIONS = [
@@ -35,6 +37,8 @@ type View = Plan["view"];
 const at = (VIEW: View, x: number, y: number) =>
   ({ "--x": `${((x - VIEW.x) / VIEW.w) * 100}%`, "--y": `${((y - VIEW.y) / VIEW.h) * 100}%` }) as CSSProperties;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+/** How far the + and − buttons zoom, step by step */
+const ZOOMS = [1, 1.6, 2.5, 4];
 
 export function VenueMap({
   pins,
@@ -59,7 +63,24 @@ export function VenueMap({
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const plan = planOf(place);
-  const VIEW = plan.view;
+  const FULL = plan.view;
+  // Zoomed in: a smaller part of the map, around where the pin was when + was pressed
+  const [zoom, setZoom] = useState({ step: 0, cx: FULL.x + FULL.w / 2, cy: FULL.y + FULL.h / 2 });
+  const z = ZOOMS[zoom.step];
+  const VIEW = {
+    w: FULL.w / z,
+    h: FULL.h / z,
+    x: clamp(zoom.cx - FULL.w / z / 2, FULL.x, FULL.x + FULL.w - FULL.w / z),
+    y: clamp(zoom.cy - FULL.h / z / 2, FULL.y, FULL.y + FULL.h - FULL.h / z),
+  };
+  const zoomTo = (step: number) => {
+    const pin = pins.find((p) => p.id === selected);
+    setZoom({
+      step,
+      cx: step === 0 ? FULL.x + FULL.w / 2 : (pin?.x ?? VIEW.x + VIEW.w / 2),
+      cy: step === 0 ? FULL.y + FULL.h / 2 : (pin?.y ?? VIEW.y + VIEW.h / 2),
+    });
+  };
   const osm = plan.hand ? null : drawnMap(place?.outlines);
   const state = plan.hand ? "drawn" : mapState(place?.outlines);
   const [dragging, setDragging] = useState(false);
@@ -70,8 +91,8 @@ export function VenueMap({
     const x = VIEW.x + ((e.clientX - r.left) / r.width) * VIEW.w;
     const y = VIEW.y + ((e.clientY - r.top) / r.height) * VIEW.h;
     move(
-      Math.round(clamp(x, VIEW.x + 4, VIEW.x + VIEW.w - 4) * 2) / 2,
-      Math.round(clamp(y, VIEW.y + 4, VIEW.y + VIEW.h - 4) * 2) / 2,
+      Math.round(clamp(x, FULL.x + 4, FULL.x + FULL.w - 4) * 2) / 2,
+      Math.round(clamp(y, FULL.y + 4, FULL.y + FULL.h - 4) * 2) / 2,
     );
   };
   const nudge = (e: KeyboardEvent, pin: Pin) => {
@@ -79,7 +100,7 @@ export function VenueMap({
     const d = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
     if (!d || !move) return;
     e.preventDefault();
-    move(clamp(pin.x + d[0], VIEW.x + 4, VIEW.x + VIEW.w - 4), clamp(pin.y + d[1], VIEW.y + 4, VIEW.y + VIEW.h - 4));
+    move(clamp(pin.x + d[0], FULL.x + 4, FULL.x + FULL.w - 4), clamp(pin.y + d[1], FULL.y + 4, FULL.y + FULL.h - 4));
   };
 
   return (
@@ -102,7 +123,12 @@ export function VenueMap({
       onPointerUp={move ? () => setDragging(false) : undefined}
       onPointerCancel={move ? () => setDragging(false) : undefined}
     >
-      <svg className="vmap__floor" viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} aria-hidden="true">
+      <svg
+        className="vmap__floor"
+        viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`}
+        style={{ "--z": z } as CSSProperties}
+        aria-hidden="true"
+      >
         {plan.hand ? <HandDrawn /> : osm ? <FromOsm osm={osm} /> : null}
       </svg>
       {!osm && state !== "drawn" && (
@@ -183,6 +209,16 @@ export function VenueMap({
           </Link>
         );
       })}
+      {move && (
+        <span className="vmap__zoom" onPointerDown={(e) => e.stopPropagation()}>
+          <button type="button" className="icon-btn" aria-label="Zoom in" disabled={zoom.step >= ZOOMS.length - 1} onClick={() => zoomTo(zoom.step + 1)}>
+            <PlusIcon />
+          </button>
+          <button type="button" className="icon-btn" aria-label="Zoom out" disabled={zoom.step === 0} onClick={() => zoomTo(zoom.step - 1)}>
+            <MinusIcon />
+          </button>
+        </span>
+      )}
       <span className="vmap__credit">© OpenStreetMap contributors</span>
     </div>
   );

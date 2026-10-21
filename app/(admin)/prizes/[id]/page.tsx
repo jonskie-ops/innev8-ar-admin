@@ -5,7 +5,7 @@ import { CheckIcon } from "@/components/icons";
 import { PrizeForm } from "@/components/PrizeForm";
 import { deletePrize, savePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
-import { getPrize, listCodes, photoUrl } from "@/lib/data";
+import { getPrize, inGame, listCodes, listLocations, photoUrl } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Prize } from "@/lib/hunt";
 
@@ -26,7 +26,7 @@ export default async function PrizePage({
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/prizes");
   if (!isNew && !UUID.test(id)) notFound();
-  const [found, codes] = await Promise.all([isNew ? null : getPrize(id), listCodes()]);
+  const [found, codes, { locations }] = await Promise.all([isNew ? null : getPrize(id), listCodes(), listLocations()]);
   if (!isNew && !found) notFound();
   const prize: Prize = found ?? {
     id: "new",
@@ -60,7 +60,7 @@ export default async function PrizePage({
         key={prize.id}
         prize={prize}
         photo={photoUrl(prize.photo_path)}
-        total={codes.filter((c) => c.live).length}
+        total={codes.filter(inGame(locations)).length}
         save={savePrize.bind(null, isNew ? null : prize.id)}
         remove={isNew ? undefined : deletePrize.bind(null, prize.id)}
         canEdit={canEdit}

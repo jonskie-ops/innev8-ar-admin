@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Location, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
 import { pad, SponsorBadge } from "./bits";
+import { PlaceTabs } from "./PlaceTabs";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -37,8 +38,9 @@ export type CodeItem = {
   task: Task;
   /** Its sponsor, or null (none) */
   sponsor: SponsorView | null;
-  /** Its location's id */
+  /** Its location's id, and whether that location is on (off: hidden from the game) */
   location: string;
+  placeLive: boolean;
   x: number;
   y: number;
   /** "2 hours ago", and the exact time */
@@ -60,21 +62,29 @@ export function CodeBrowser({
 }: {
   codes: CodeItem[];
   zones: Zone[];
-  /** The map shows the picked code's location, with its codes */
-  locations: Pick<Location, "id" | "name" | "lat" | "lng" | "width" | "outlines">[];
+  /** One location at a time (tabs above when there's more than one with codes): its map and its codes */
+  locations: Pick<Location, "id" | "name" | "lat" | "lng" | "width" | "outlines" | "live">[];
   initial: string | null;
   canEdit: boolean;
 }) {
-  const [picked, setPicked] = useState(() => (codes.some((c) => c.id === initial) ? initial : (codes[0]?.id ?? null)));
+  // The location: the asked-for code's, else the first that's on and has codes, else the first with codes
+  const withCodes = locations.filter((l) => codes.some((x) => x.location === l.id));
+  const [at, setAt] = useState(() => {
+    const asked = codes.find((x) => x.id === initial)?.location;
+    return (asked ?? withCodes.find((l) => l.live)?.id ?? withCodes[0]?.id ?? locations[0]?.id) as string;
+  });
+  const place = locations.find((l) => l.id === at) ?? locations[0];
+  const here = codes.filter((x) => x.location === place.id);
+  const [picked, setPicked] = useState(() => (here.some((x) => x.id === initial) ? initial : (here[0]?.id ?? null)));
   const detail = useRef<HTMLElement>(null);
   const chips = useRef<HTMLUListElement>(null);
   const i = Math.max(
     0,
-    codes.findIndex((c) => c.id === picked),
+    here.findIndex((x) => x.id === picked),
   );
-  const c = codes[i];
+  const c = here[i];
   const sponsor = c?.sponsor;
-  const place = locations.find((l) => l.id === c?.location) ?? locations[0];
+  const shown = (x: CodeItem) => x.live && x.placeLive;
 
   // With more numbers than fit, slide the row so the picked one is in view (sideways only)
   useEffect(() => {
@@ -94,7 +104,12 @@ export function CodeBrowser({
     if (box && window.innerWidth < 1100 && box.top > window.innerHeight - 140)
       detail.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const step = (d: 1 | -1) => codes.length && pick(codes[(i + d + codes.length) % codes.length].id);
+  const step = (d: 1 | -1) => here.length && pick(here[(i + d + here.length) % here.length].id);
+  const goTo = (id: string) => {
+    setAt(id);
+    const first = codes.find((x) => x.location === id);
+    if (first) pick(first.id);
+  };
 
   // ← → for the previous and next code, when not typing somewhere
   const latest = useRef(step);
@@ -115,6 +130,12 @@ export function CodeBrowser({
   if (!c) return null;
 
   return (
+    <>
+    <PlaceTabs
+      places={withCodes.map((l) => ({ id: l.id, name: l.name, live: l.live, codes: codes.filter((x) => x.location === l.id).length }))}
+      current={place.id}
+      onPick={goTo}
+    />
     <div className="qb">
       <section className="panel qb__map" aria-label="Map and numbers">
         {/* The legend sits on the map, in its corner */}
@@ -122,13 +143,13 @@ export function CodeBrowser({
           <VenueMap
             key={place.id}
             place={place}
-            pins={codes.filter((x) => x.location === place.id)}
+            pins={here.map((x) => ({ ...x, live: shown(x) }))}
             zones={zones.filter((z) => (z.location_id ?? "lac") === place.id)}
             selected={c.id}
             pick={pick}
             label={`Map of ${place.name}: tap a number`}
           />
-          {locations.length > 1 && <span className="qb__place">{place.name}</span>}
+          {locations.length > 1 && <span className="qb__place">{place.live ? place.name : `${place.name} · off`}</span>}
           <ul className="legend qb__legend" role="list" aria-label="Pin colours">
             {RARITIES.map((r) => (
               <li key={r} className={`legend__item legend__item--${r}`}>
@@ -145,13 +166,13 @@ export function CodeBrowser({
             <ChevronLeftIcon />
           </button>
           <ul ref={chips} className="qchips" role="list">
-            {codes.map((x) => (
+            {here.map((x) => (
               <li key={x.id}>
                 <button
                   type="button"
-                  className={`qchip qchip--${x.rarity}${x.live ? "" : " is-off"}`}
+                  className={`qchip qchip--${x.rarity}${shown(x) ? "" : " is-off"}`}
                   aria-pressed={x.id === c.id}
-                  aria-label={`#${x.num} ${x.name}${x.live ? "" : " (off)"}`}
+                  aria-label={`#${x.num} ${x.name}${shown(x) ? "" : " (hidden)"}`}
                   title={`#${x.num} ${x.name}`}
                   onClick={() => pick(x.id)}
                 >
@@ -168,7 +189,7 @@ export function CodeBrowser({
 
       <section
         ref={detail}
-        className={`panel qd qd--${c.rarity}${c.live ? "" : " is-off"}`}
+        className={`panel qd qd--${c.rarity}${shown(c) ? "" : " is-off"}`}
         aria-live="polite"
         aria-label={`#${c.num} ${c.name}`}
       >
@@ -185,7 +206,7 @@ export function CodeBrowser({
               <ArrowLeftIcon />
             </button>
             <span className="qd__count">
-              {i + 1} / {codes.length}
+              {i + 1} / {here.length}
             </span>
             <button
               type="button"
@@ -215,7 +236,7 @@ export function CodeBrowser({
               <PinIcon />
               {c.zone}
               {c.spot && ` · ${c.spot}`}
-              {locations.length > 1 && ` · ${place.name}`}
+              {locations.length > 1 && c.zone !== place.name && ` · ${place.name}`}
             </p>
           </div>
           <span className="qd__worth">
@@ -228,7 +249,13 @@ export function CodeBrowser({
         <div className="qd__live">
           <span>
             <b>In the game</b>
-            <small>{c.live ? "Players can find it now." : "Hidden: players can't find it."}</small>
+            <small>
+              {!c.placeLive
+                ? `Hidden: ${place.name} is off (Locations page).`
+                : c.live
+                  ? "Players can find it now."
+                  : "Hidden: players can't find it."}
+            </small>
           </span>
           <LiveSwitch
             key={c.id}
@@ -306,6 +333,7 @@ export function CodeBrowser({
         </div>
       </section>
     </div>
+    </>
   );
 }
 

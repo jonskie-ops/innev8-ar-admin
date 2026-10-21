@@ -18,7 +18,9 @@ export function PlaceMaps({
   pins: (Pin & { location: string })[];
   zones: Zone[];
 }) {
-  const [at, setAt] = useState(() => (places.find((p) => pins.some((x) => x.location === p.id)) ?? places[0]).id);
+  // The first location that's on and has codes, else the first with codes
+  const has = (id: string) => pins.some((x) => x.location === id);
+  const [at, setAt] = useState(() => (places.find((p) => p.live && has(p.id)) ?? places.find((p) => has(p.id)) ?? places[0]).id);
   const place = places.find((p) => p.id === at) ?? places[0];
   return (
     <>

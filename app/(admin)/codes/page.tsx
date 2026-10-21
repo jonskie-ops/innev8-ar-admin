@@ -4,7 +4,7 @@ import { Head, ReadOnly } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon, QrIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listSponsors, listZones, locationOf } from "@/lib/data";
+import { inGame, listCodes, listLocations, listSponsors, listZones, locationOf, placeOn } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
 import { firstSponsor, sponsorIn } from "@/lib/hunt";
 
@@ -21,7 +21,8 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     searchParams,
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
-  const live = codes.filter((c) => c.live).length;
+  const live = codes.filter(inGame(locations)).length;
+  const on = placeOn(locations);
   const items: CodeItem[] = codes.map((c) => ({
     id: c.id,
     num: c.num,
@@ -37,6 +38,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     task: c.task ?? "none",
     sponsor: sponsorIn(sponsors, c.sponsor ?? firstSponsor(c.num)),
     location: locationOf(c),
+    placeLive: on(c),
     x: c.x,
     y: c.y,
     ago: ago(c.updated_at),
@@ -48,7 +50,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
       <Head
         eyebrow="The hunt"
         title="QR codes"
-        lead={`${live} of ${codes.length} live. Tap a number to see that code.`}
+        lead={`${live} of ${codes.length} in the game. Tap a number to see that code.`}
       >
         {canEdit && (
           <Link href="/codes/new" className="btn btn--primary btn--sm">
@@ -63,7 +65,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
         <CodeBrowser
           codes={items}
           zones={zones}
-          locations={locations.map(({ id, name, lat, lng, width, outlines }) => ({ id, name, lat, lng, width, outlines }))}
+          locations={locations.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
           initial={typeof code === "string" ? code : null} canEdit={canEdit} />
       ) : (
         <section className="panel empty-state">

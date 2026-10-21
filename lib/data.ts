@@ -82,6 +82,25 @@ export const listLocations = cache(async (): Promise<{ locations: Location[]; re
 /** A code's (or zone's) location id: Leyte Academic Center's before the locations update. */
 export const locationOf = (c: { location_id?: string }) => c.location_id ?? "lac";
 
+/** Is its location on? (Off: its codes are hidden from the game, whatever their own switch says.) */
+export const placeOn = (locations: Pick<Location, "id" | "live">[]) => (c: { location_id?: string }) =>
+  locations.find((l) => l.id === locationOf(c))?.live ?? true;
+
+/** Can players find it: it's on, and so is its location. */
+export const inGame = (locations: Pick<Location, "id" | "live">[]) => {
+  const on = placeOn(locations);
+  return (c: { live: boolean; location_id?: string }) => c.live && on(c);
+};
+
+/**
+ * The location to show first: the one asked for, else the first that's on and has codes, else the
+ * first with codes, else the first.
+ */
+export function firstPlace<L extends Pick<Location, "id" | "live">>(locations: L[], codes: { location_id?: string }[], asked?: string | null) {
+  const has = (l: L) => codes.some((c) => locationOf(c) === l.id);
+  return locations.find((l) => l.id === asked) ?? locations.find((l) => l.live && has(l)) ?? locations.find(has) ?? locations[0];
+}
+
 /** A sponsor badge's address: theirs in the "sponsors" bucket, or the one that came with the game. */
 export const badgeUrl = (s: { id: string; badge_path: string | null }) =>
   s.badge_path ? `${supabaseUrl()}/storage/v1/object/public/sponsors/${s.badge_path}` : builtInBadge(s.id);

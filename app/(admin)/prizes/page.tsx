@@ -7,7 +7,7 @@ import { GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { deletePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listPrizes, photoUrl } from "@/lib/data";
+import { inGame, listCodes, listLocations, listPrizes, photoUrl } from "@/lib/data";
 import { ruleText } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "Prizes" };
@@ -15,8 +15,8 @@ export const metadata: Metadata = { title: "Prizes" };
 export default async function PrizesPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [prizes, codes] = await Promise.all([listPrizes(), listCodes()]);
-  const total = codes.filter((c) => c.live).length;
+  const [prizes, codes, { locations }] = await Promise.all([listPrizes(), listCodes(), listLocations()]);
+  const total = codes.filter(inGame(locations)).length;
 
   return (
     <>

@@ -2,7 +2,7 @@ import type { Change } from "@/components/Changes";
 import type { Findable } from "@/components/Find";
 import { Shell } from "@/components/Shell";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, recentActivity } from "@/lib/data";
+import { inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, placeOn, recentActivity } from "@/lib/data";
 import { didWhat } from "@/lib/format";
 import { ruleText } from "@/lib/hunt";
 
@@ -40,7 +40,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     recentActivity(8),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
-  const live = codes.filter((c) => c.live).length;
+  const live = codes.filter(inGame(locations)).length;
+  const on = placeOn(locations);
   const page = (href: string, title: string, sub: string, keys: string): Findable => ({
     kind: "page",
     href,
@@ -56,7 +57,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         kind: "code",
         href: `/codes?code=${c.id}`,
         title: `#${num} ${c.name}`,
-        sub: c.live ? where : `${where} · off`,
+        sub: !c.live ? `${where} · off` : on(c) ? where : `${where} · hidden (location off)`,
         keys: `#${c.num} #${num} ${c.name} ${c.code} ${where} ${c.rarity}`.toLowerCase(),
       };
     }),

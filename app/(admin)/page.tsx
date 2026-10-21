@@ -9,7 +9,7 @@ import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { PlaceMaps } from "@/components/PlaceMaps";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, hunterStats, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, recentActivity } from "@/lib/data";
+import { getSettings, hunterStats, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
@@ -35,7 +35,10 @@ export default async function OverviewPage() {
     listLocations(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
-  const live = codes.filter((c) => c.live);
+  // In the game: on, at a location that's on
+  const playable = inGame(locations);
+  const on = placeOn(locations);
+  const live = codes.filter(playable);
   const points = live.reduce((n, c) => n + c.points, 0);
 
   const hour = Number(
@@ -134,10 +137,10 @@ export default async function OverviewPage() {
             <CardRail label="QR codes">
               {codes.map((c, i) => (
                 <li key={c.id}>
-                  <Link href={`/codes?code=${c.id}`} className={`ccard ccard--${c.rarity}${c.live ? "" : " is-off"}`}>
+                  <Link href={`/codes?code=${c.id}`} className={`ccard ccard--${c.rarity}${playable(c) ? "" : " is-off"}`}>
                     <span className="ccard__cover">
                       <span className="ccard__num">#{pad(c.num)}</span>
-                      <span className="ccard__state">{c.live ? "Live" : "Off"}</span>
+                      <span className="ccard__state">{!c.live ? "Off" : on(c) ? "Live" : "Hidden"}</span>
                       <span className="ccard__floor" aria-hidden="true" />
                       <span className="ccard__qr" style={{ "--i": i } as CSSProperties} aria-hidden="true">
                         <QrGlyph seed={c.id} />
@@ -182,7 +185,7 @@ export default async function OverviewPage() {
             <div className="panel dash__map">
               <PlaceMaps
                 places={locations.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
-                pins={codes.map((c) => ({ id: c.id, num: c.num, name: c.name, rarity: c.rarity, x: c.x, y: c.y, live: c.live, location: locationOf(c) }))}
+                pins={codes.map((c) => ({ id: c.id, num: c.num, name: c.name, rarity: c.rarity, x: c.x, y: c.y, live: playable(c), location: locationOf(c) }))}
                 zones={zones}
               />
             </div>
