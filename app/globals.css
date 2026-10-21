@@ -6231,3 +6231,17 @@ html[data-full-map] .navbar {
 .vmap__floor .vmap__booth {
   stroke-width: calc(0.6px / var(--z, 1));
 }
+
+/* "Use my location here" past its 15 s with no reading yet: the bar sweeps while it keeps looking */
+.gpsfix__bar.is-waiting i {
+  width: 35%;
+  animation: gpsfix-sweep 1.3s ease-in-out infinite;
+}
+@keyframes gpsfix-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(290%);
+  }
+}

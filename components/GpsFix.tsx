@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { locationProblem } from "./here";
+import { locationProblem, watchHere } from "./here";
 import { AlertIcon, LocateIcon } from "./icons";
 
 /** How long to listen to the GPS: long enough for the readings to settle and average out. */
 const LISTEN_MS = 15000;
 /** Done early is allowed once there's this many readings. */
 const ENOUGH = 3;
+/** With no reading at all by then, it gives up and says why. */
+const GIVE_UP_MS = 60000;
 
 type Reading = { lat: number; lng: number; accuracy: number };
 
@@ -39,13 +41,14 @@ function settle(rs: Reading[]): Reading {
  * see, errors near buildings included. Stop cancels; Done uses what it has so far.
  */
 export function GpsFix({ onFix, disabled = false }: { onFix: (r: Reading) => void; disabled?: boolean }) {
-  const [state, setState] = useState<{ on: boolean; rs: Reading[]; left: number; problem: string | null }>({
+  const [state, setState] = useState<{ on: boolean; rs: Reading[]; left: number; waited: number; problem: string | null }>({
     on: false,
     rs: [],
     left: LISTEN_MS,
+    waited: 0,
     problem: null,
   });
-  const watch = useRef<number | null>(null);
+  const watch = useRef<(() => void) | null>(null);
   const tick = useRef<number | undefined>(undefined);
   const readings = useRef<Reading[]>([]);
   const latest = useRef(onFix);
@@ -54,7 +57,7 @@ export function GpsFix({ onFix, disabled = false }: { onFix: (r: Reading) => voi
   });
 
   const stop = () => {
-    if (watch.current !== null) navigator.geolocation.clearWatch(watch.current);
+    watch.current?.();
     watch.current = null;
     window.clearInterval(tick.current);
   };
@@ -71,11 +74,10 @@ export function GpsFix({ onFix, disabled = false }: { onFix: (r: Reading) => voi
     if (!window.isSecureContext) return setState((s) => ({ ...s, problem: locationProblem("insecure") }));
     if (!navigator.geolocation) return setState((s) => ({ ...s, problem: locationProblem("none") }));
     readings.current = [];
-    setState({ on: true, rs: [], left: LISTEN_MS, problem: null });
+    setState({ on: true, rs: [], left: LISTEN_MS, waited: 0, problem: null });
     const began = Date.now();
-    watch.current = navigator.geolocation.watchPosition(
-      (p) => {
-        const r = { lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy };
+    watch.current = watchHere(
+      (r) => {
         readings.current = [...readings.current, r];
         setState((s) => ({ ...s, rs: readings.current, problem: null }));
       },
@@ -87,19 +89,28 @@ export function GpsFix({ onFix, disabled = false }: { onFix: (r: Reading) => voi
           setState((s) => ({ ...s, on: false, problem: locationProblem(e) }));
         } else if (!readings.current.length) setState((s) => ({ ...s, problem: locationProblem(e) }));
       },
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 },
+      { fresh: true },
     );
     tick.current = window.setInterval(() => {
-      const left = LISTEN_MS - (Date.now() - began);
-      if (left <= 0) {
-        if (readings.current.length) finish();
-        else setState((s) => ({ ...s, left: 0 })); // still waiting for a first fix (the timeout says if none comes)
-      } else setState((s) => ({ ...s, left }));
+      const spent = Date.now() - began;
+      const left = LISTEN_MS - spent;
+      if (left > 0) return setState((s) => ({ ...s, left }));
+      if (readings.current.length) return finish();
+      // Nothing yet: keep looking a while longer (saying so), then give up and say why
+      if (spent < GIVE_UP_MS) return setState((s) => ({ ...s, left: 0, waited: spent }));
+      stop();
+      setState((s) => ({
+        ...s,
+        on: false,
+        problem:
+          "No location came from the phone in a minute. Check that location is on for the phone and allowed for this browser, step near a window or outside, and try again.",
+      }));
     }, 250);
   };
 
-  const { on, rs, left, problem } = state;
+  const { on, rs, left, waited, problem } = state;
   const now = rs.length ? settle(rs) : null;
+  const stillLooking = !now && left <= 0;
   return (
     <div className="gpsfix">
       {on ? (
@@ -108,13 +119,14 @@ export function GpsFix({ onFix, disabled = false }: { onFix: (r: Reading) => voi
             <LocateIcon />
           </span>
           <span className="gpsfix__text">
-            <b>{now ? `Listening… ±${Math.round(now.accuracy)} m` : "Finding you…"}</b>
+            <b>{now ? `Listening… ±${Math.round(now.accuracy)} m` : stillLooking ? "Still looking for your location…" : "Finding you…"}</b>
             <small>
-              Hold the phone still on the spot · {rs.length} reading{rs.length === 1 ? "" : "s"}
-              {left > 0 ? ` · ${Math.ceil(left / 1000)} s` : ""}
+              {stillLooking
+                ? `${Math.round(waited / 1000)} s · indoors the GPS can take a minute: move near a window or step outside`
+                : `Hold the phone still on the spot · ${rs.length} reading${rs.length === 1 ? "" : "s"}${left > 0 ? ` · ${Math.ceil(left / 1000)} s` : ""}`}
             </small>
-            <span className="gpsfix__bar" aria-hidden="true">
-              <i style={{ width: `${Math.round(100 * (1 - left / LISTEN_MS))}%` }} />
+            <span className={stillLooking ? "gpsfix__bar is-waiting" : "gpsfix__bar"} aria-hidden="true">
+              <i style={{ width: stillLooking ? undefined : `${Math.round(100 * (1 - left / LISTEN_MS))}%` }} />
             </span>
           </span>
           <span className="gpsfix__btns">

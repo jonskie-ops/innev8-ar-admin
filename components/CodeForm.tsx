@@ -355,6 +355,12 @@ export function CodeForm({
               <ExternalIcon />
             </a>
           </p>
+          {geo.from === "gps" && geo.accuracy !== null && geo.accuracy > 30 && (
+            <p className="field__hint gpsspot__far">
+              Rough: ±{Math.round(geo.accuracy)} m, the phone&apos;s Wi-Fi location rather than GPS. Players could be that far
+              off: try again near a window or outside, where the GPS reaches the phone.
+            </p>
+          )}
           {far > 1500 ? (
             <p className="field__hint gpsspot__far">
               {(far / 1000).toFixed(1)} km from {location.name}: fine for testing somewhere else, but players there
