@@ -14,12 +14,13 @@ import {
   TASKS,
   taskOf,
   type Code,
+  type Location,
   type Rarity,
   type SponsorView,
   type Task,
   type Zone,
 } from "@/lib/hunt";
-import { fromVenue, intoPinArea, latLngText, parseLatLng, spotOf, spotUrl, toLatLng, toPlan } from "@/lib/venue";
+import { DEFAULT_LOCATION, intoPinArea, latLngText, metresBetween, parseLatLng, planOf, spotOf, spotUrl } from "@/lib/venue";
 import { pad } from "./bits";
 import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
@@ -47,6 +48,7 @@ function geoLabel(g: Geo) {
 export function CodeForm({
   code,
   zones,
+  locations,
   sponsors,
   canAddSponsor,
   others,
@@ -55,12 +57,15 @@ export function CodeForm({
   canEdit,
 }: {
   code: Code;
+  /** Every location's areas (each code is in one of its location's) */
   zones: Zone[];
+  /** Where it can be (the Locations page's) */
+  locations: Pick<Location, "id" | "name" | "lat" | "lng" | "width" | "outlines">[];
   /** Who can sponsor it (the Sponsors page's) */
   sponsors: SponsorView[];
   /** A link to add a sponsor (an admin, with the sponsor logos update) */
   canAddSponsor: boolean;
-  others: (Pin & { sponsor?: string })[];
+  others: (Pin & { sponsor?: string; location_id?: string })[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
   canEdit: boolean;
@@ -74,25 +79,41 @@ export function CodeForm({
   const [num, setNum] = useState(String(code.num));
   const [task, setTask] = useState<Task>(code.task ?? "none");
   const [sponsor, setSponsor] = useState(code.sponsor ?? firstSponsor(code.num));
-  // Its GPS spot (where players find it) and how close they must be. The venue map pin and the spot
-  // move together: moving the pin puts the spot under it, and a spot from GPS or typed in moves the pin.
+  // Where it is: a location, one of its areas, and on its map
+  const [locId, setLocId] = useState(code.location_id ?? DEFAULT_LOCATION);
+  const location = locations.find((l) => l.id === locId) ?? locations[0];
+  const plan = planOf(location);
+  const areas = zones.filter((z) => (z.location_id ?? DEFAULT_LOCATION) === location.id);
+  const [zone, setZone] = useState(code.zone_id);
+  // Its GPS spot (where players find it) and how close they must be. The map pin and the spot move
+  // together: moving the pin puts the spot under it, and a spot from GPS or typed in moves the pin.
   const [geo, setGeo] = useState<Geo>(() => {
-    const s = spotOf(code);
+    const s = spotOf(code, plan);
     return { lat: s.lat, lng: s.lng, accuracy: code.accuracy ?? null, from: s.own ? "saved" : "pin" };
   });
   const [radius, setRadius] = useState(String(code.radius ?? RADIUS.default));
   const [typed, setTyped] = useState("");
-  const putSpot = (g: Geo) => {
+  const putSpot = (g: Geo, on = plan) => {
     setGeo(g);
-    const p = toPlan(g.lat, g.lng);
-    setPos(intoPinArea(p.x, p.y)); // past the game's map: its pin waits at the edge
+    const p = on.toPlan(g.lat, g.lng);
+    setPos(intoPinArea(p.x, p.y, on.pinArea)); // past the game's map: its pin waits at the edge
     changed();
   };
-  const far = fromVenue(geo);
+  // Another location: the code starts in the middle of its map, in its first area
+  const moveTo = (id: string) => {
+    const l = locations.find((x) => x.id === id);
+    if (!l) return;
+    const p = planOf(l);
+    setLocId(id);
+    setZone(zones.find((z) => (z.location_id ?? DEFAULT_LOCATION) === id)?.id ?? "");
+    const a = p.pinArea;
+    putSpot({ ...p.toLatLng((a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2), accuracy: null, from: "pin" }, p);
+  };
+  const far = metresBetween(geo, location);
   // Past the edge of the game's map: the pin waits at the edge, and players see the code at its spot
-  const plan = toPlan(geo.lat, geo.lng);
-  const edge = intoPinArea(plan.x, plan.y);
-  const offMap = Math.hypot(edge.x - plan.x, edge.y - plan.y) > 3;
+  const onPlan = plan.toPlan(geo.lat, geo.lng);
+  const edge = intoPinArea(onPlan.x, onPlan.y, plan.pinArea);
+  const offMap = Math.hypot(edge.x - onPlan.x, edge.y - onPlan.y) > 3;
   // Which other codes each sponsor is on already
   const onCodes = (id: string) => others.filter((o) => (o.sponsor ?? firstSponsor(o.num)) === id).map((o) => `#${pad(o.num)}`);
 
@@ -254,11 +275,25 @@ export function CodeForm({
             <PinIcon />
             Where it is
           </h2>
+          {locations.length > 1 && (
+            <label className="field">
+              <span className="field__label">Location</span>
+              <select value={location.id} onChange={(e) => moveTo(e.target.value)}>
+                {locations.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+              <span className="field__hint">Another location puts the code in the middle of its map: then place it.</span>
+            </label>
+          )}
+          <input type="hidden" name="location_id" value={location.id} />
           <div className="row2">
             <label className="field">
               <span className="field__label">Zone</span>
-              <select name="zone_id" defaultValue={code.zone_id} required>
-                {zones.map((z) => (
+              <select name="zone_id" value={areas.some((z) => z.id === zone) ? zone : (areas[0]?.id ?? "")} onChange={(e) => setZone(e.target.value)} required>
+                {areas.map((z) => (
                   <option key={z.id} value={z.id}>
                     {z.name}
                   </option>
@@ -272,14 +307,16 @@ export function CodeForm({
           </div>
           <span className="field__label">Map pin</span>
           <VenueMap
-            pins={[...others, me]}
-            zones={zones}
+            key={location.id}
+            place={location}
+            pins={[...others.filter((o) => (o.location_id ?? DEFAULT_LOCATION) === location.id), me]}
+            zones={areas}
             selected={code.id}
             move={
               canEdit
                 ? (x, y) => {
                     setPos({ x, y });
-                    setGeo({ ...toLatLng(x, y), accuracy: null, from: "pin" });
+                    setGeo({ ...plan.toLatLng(x, y), accuracy: null, from: "pin" });
                     changed(); // the pin's hidden fields change without an event of their own
                   }
                 : undefined
@@ -320,8 +357,8 @@ export function CodeForm({
           </p>
           {far > 1500 ? (
             <p className="field__hint gpsspot__far">
-              {(far / 1000).toFixed(1)} km from Leyte Academic Center: fine for testing somewhere else, but players at the
-              summit won&apos;t reach it.
+              {(far / 1000).toFixed(1)} km from {location.name}: fine for testing somewhere else, but players there
+              won&apos;t reach it.
             </p>
           ) : (
             offMap && (

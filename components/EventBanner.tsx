@@ -1,14 +1,24 @@
 "use client";
 
 import { dateSpan } from "@/lib/format";
-import { PLACE } from "@/lib/venue";
 import { untilParts, useNow } from "./Clock";
 
 /**
  * The summit at the top of the Event page: its dates and place, and a live countdown to the hunt
  * opening (or, while it's on, to it closing). As saved, not as being edited below.
  */
-export function EventBanner({ startsAt, endsAt, testMode }: { startsAt: string; endsAt: string; testMode: boolean }) {
+export function EventBanner({
+  startsAt,
+  endsAt,
+  testMode,
+  place,
+}: {
+  startsAt: string;
+  endsAt: string;
+  testMode: boolean;
+  /** Where it's on (the locations that are on) */
+  place: string;
+}) {
   const now = useNow();
   const a = new Date(startsAt).getTime();
   const b = new Date(endsAt).getTime();
@@ -35,7 +45,7 @@ export function EventBanner({ startsAt, endsAt, testMode }: { startsAt: string; 
         <p className="evb__top">
           <span className={badge[0]}>{badge[1]}</span>
           <span>
-            {dateSpan(startsAt, endsAt)} · {PLACE.name}
+            {dateSpan(startsAt, endsAt)} · {place}
           </span>
         </p>
         <h2>Regional ICT Summit 2026</h2>

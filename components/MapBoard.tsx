@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { moveCode } from "@/lib/actions/codes";
-import { embedUrl, metresBetween, PIN_AREA, PLACE, spotUrl, toPlan } from "@/lib/venue";
+import { areaOf, embedUrl, mapsLinks, metresBetween, planOf, PLACE, spotUrl, type Where } from "@/lib/venue";
 import { pad } from "./bits";
 import { useHydrated } from "./form";
 import { useHere } from "./here";
@@ -11,6 +11,9 @@ import { SatelliteMap, type Spot } from "./SatelliteMap";
 
 /** "8 m", "120 m", "2.4 km" */
 const howFar = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`);
+
+/** A note over the map: what happened, stamped so the same note twice still shows. */
+const noteOf = (text: string, error: boolean) => ({ text, error, at: Date.now() });
 
 type View = "air" | "map" | "google";
 const VIEWS: [View, string][] = [
@@ -26,8 +29,23 @@ const VIEWS: [View, string][] = [
  * shows it. "Show me" puts this phone on the map with each code's distance, for walking the venue to
  * check the spots before the summit.
  */
-export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; canEdit: boolean; initial?: string | null }) {
+export function MapBoard({
+  spots,
+  place,
+  canEdit,
+  initial = null,
+}: {
+  spots: Spot[];
+  /** The location shown, and its codes in `spots` */
+  place: Where & { name: string; address: string };
+  canEdit: boolean;
+  initial?: string | null;
+}) {
   const ready = useHydrated();
+  const plan = planOf(place);
+  const links = mapsLinks(place);
+  // Google's map: Leyte Academic Center by its name, any other by where it is
+  const query = plan.hand ? PLACE.query : `${place.lat},${place.lng}`;
   const [showMe, setShowMe] = useState(false);
   const { here, problem } = useHere(showMe);
   const [picked, setPicked] = useState<string | null>(() => (spots.some((s) => s.id === initial) ? initial : null));
@@ -76,7 +94,7 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
     setFilled(true);
   };
   const spot = spots.find((s) => s.id === picked) ?? null;
-  const src = spot ? embedUrl(`${spot.lat},${spot.lng}`, "air", 19) : embedUrl(PLACE.query, "air", 18);
+  const src = spot ? embedUrl(`${spot.lat},${spot.lng}`, "air", 19) : embedUrl(query, "air", plan.hand ? 18 : 17);
 
   // On a phone the list is under the map: bring the map back into view to show the pick
   const pick = (id: string | null) => {
@@ -89,9 +107,10 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
   const drop = async (id: string, lat: number, lng: number) => {
     const s = spots.find((x) => x.id === id);
     if (!s) return false;
-    const { x, y } = toPlan(lat, lng);
-    if (x < PIN_AREA.x0 || x > PIN_AREA.x1 || y < PIN_AREA.y0 || y > PIN_AREA.y1) {
-      setNote({ text: `Put #${pad(s.num)} inside the dashed outline: that's the area the game's map shows.`, error: true, at: Date.now() });
+    const { x, y } = plan.toPlan(lat, lng);
+    const a = plan.pinArea;
+    if (x < a.x0 || x > a.x1 || y < a.y0 || y > a.y1) {
+      setNote(noteOf(`Put #${pad(s.num)} inside the dashed outline: that's the area the game's map shows.`, true));
       return false;
     }
     setSaving(id);
@@ -99,16 +118,16 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
     const r = await moveCode(id, lat, lng);
     setSaving(null);
     if (r?.error) {
-      setNote({ text: r.error, error: true, at: Date.now() });
+      setNote(noteOf(r.error, true));
       return false;
     }
-    setNote({ text: `Moved #${pad(s.num)} ${s.name}.`, error: false, at: Date.now() });
+    setNote(noteOf(`Moved #${pad(s.num)} ${s.name}.`, false));
     return true;
   };
 
   return (
     <div className="gmap">
-      <section ref={mapBox} className={filled ? "panel gmap__map is-full" : "panel gmap__map"} aria-label="Map of the venue">
+      <section ref={mapBox} className={filled ? "panel gmap__map is-full" : "panel gmap__map"} aria-label={`Map of ${place.name}`}>
         <div className="gmap__bar">
           <p className="gmap__what" aria-live="polite">
             {spot ? (
@@ -125,8 +144,8 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
                   <PinIcon />
                 </span>
                 <span>
-                  <b>{PLACE.name}</b>
-                  <small>{PLACE.address}</small>
+                  <b>{place.name}</b>
+                  <small>{place.address}</small>
                 </span>
               </>
             )}
@@ -161,7 +180,7 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
                 <iframe
                   key={src}
                   src={src}
-                  title={spot ? `Google map: #${spot.num} ${spot.name}` : `Google map: ${PLACE.name}`}
+                  title={spot ? `Google map: #${spot.num} ${spot.name}` : `Google map: ${place.name}`}
                   allowFullScreen
                   onLoad={() => setLoaded(src)}
                 />
@@ -175,7 +194,9 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
             </>
           ) : (
             <SatelliteMap
+              key={place.id}
               spots={spots}
+              area={areaOf(plan)}
               view={view}
               picked={picked}
               saving={saving}
@@ -217,7 +238,7 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
           {view === "google"
             ? "Google's map is for looking. To move a QR code, drag its pin on Satellite or Map."
             : canEdit
-              ? "Drag a pin to move its QR code: it saves at once, and its pin on the venue map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
+              ? "Drag a pin to move its QR code: it saves at once, and its pin on the game's map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
               : "Each QR code is at its pin; its ring is how close players must be to see it. Only admins can move pins."}
         </p>
       </section>
@@ -231,16 +252,16 @@ export function MapBoard({ spots, canEdit, initial = null }: { spots: Spot[]; ca
                 <PinIcon />
               </span>
               <span className="spot__text">
-                <b>The venue</b>
-                <small>{PLACE.name}</small>
+                <b>The whole location</b>
+                <small>{place.name}</small>
               </span>
             </button>
             <a
-              href={PLACE.link}
+              href={links.link}
               target="_blank"
               rel="noopener"
               className="icon-btn"
-              aria-label="Open the venue in Google Maps (new tab)"
+              aria-label={`Open ${place.name} in Google Maps (new tab)`}
               title="Open in Google Maps"
             >
               <ExternalIcon />

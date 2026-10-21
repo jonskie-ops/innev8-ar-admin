@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import type { Rarity, Zone } from "@/lib/hunt";
-import { VENUE } from "@/lib/venue";
+import { drawnMap, mapState, type Location, type Outlines, type Rarity, type Zone } from "@/lib/hunt";
+import { planOf, VENUE, type Plan } from "@/lib/venue";
 
 /**
- * Leyte Academic Center's Annex A–B and courtyard, flat from above: the game's venue map (same
- * 360×520 plan units, same outlines), with each QR code as a numbered pin.
+ * A location flat from above, as the game's map draws it (same 360×520 plan units, same outlines),
+ * with each QR code as a numbered pin: Leyte Academic Center's Annex A–B and courtyard (drawn by
+ * hand), or another location's buildings, roads and grounds from OpenStreetMap (`place`).
  * - Plain: pins link to their code's details.
  * - With `pick`: tapping a pin picks it (the `selected` one stands out), without leaving the page.
  * - With `move`: the `selected` pin is the one being placed; tap or drag on the map to put it there
  *   (arrow keys work too), the others are shown for reference.
  */
-const VIEW = { x: 26, y: 36, w: 308, h: 226 };
 
 const PARTITIONS = [
   "M54 120H267M54 136H267", // Annex A: corridor
@@ -31,7 +31,8 @@ const BOOTHS = [
 
 export type Pin = { id: string; num: number; name: string; rarity: Rarity; x: number; y: number; live: boolean };
 
-const at = (x: number, y: number) =>
+type View = Plan["view"];
+const at = (VIEW: View, x: number, y: number) =>
   ({ "--x": `${((x - VIEW.x) / VIEW.w) * 100}%`, "--y": `${((y - VIEW.y) / VIEW.h) * 100}%` }) as CSSProperties;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
@@ -42,6 +43,8 @@ export function VenueMap({
   move,
   pick,
   label = "Map of the venue",
+  place = null,
+  still = false,
 }: {
   pins: Pin[];
   zones: Zone[];
@@ -49,11 +52,19 @@ export function VenueMap({
   move?: (x: number, y: number) => void;
   pick?: (id: string) => void;
   label?: string;
+  /** The location (none: Leyte Academic Center) */
+  place?: Pick<Location, "id" | "lat" | "lng" | "width" | "outlines"> | null;
+  /** Pins that are only pictures (inside a link already, as on the Locations page's cards) */
+  still?: boolean;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const plan = planOf(place);
+  const VIEW = plan.view;
+  const osm = plan.hand ? null : drawnMap(place?.outlines);
+  const state = plan.hand ? "drawn" : mapState(place?.outlines);
   const [dragging, setDragging] = useState(false);
 
-  const place = (e: PointerEvent) => {
+  const putPin = (e: PointerEvent) => {
     const r = boxRef.current?.getBoundingClientRect();
     if (!r || !move) return;
     const x = VIEW.x + ((e.clientX - r.left) / r.width) * VIEW.w;
@@ -83,30 +94,36 @@ export function VenueMap({
               if (e.button !== 0) return;
               e.currentTarget.setPointerCapture(e.pointerId);
               setDragging(true);
-              place(e);
+              putPin(e);
             }
           : undefined
       }
-      onPointerMove={move && dragging ? place : undefined}
+      onPointerMove={move && dragging ? putPin : undefined}
       onPointerUp={move ? () => setDragging(false) : undefined}
       onPointerCancel={move ? () => setDragging(false) : undefined}
     >
       <svg className="vmap__floor" viewBox={`${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`} aria-hidden="true">
-        <path className="vmap__road" d={VENUE.roads} />
-        <path className="vmap__lot" d={VENUE.parking} />
-        <path className="vmap__walk" d="M54 228H316" />
-        <path className="vmap__slab" d={VENUE.annex} />
-        {BOOTHS.map(([x, y, w]) => (
-          <rect key={`${x},${y}`} className="vmap__booth" x={x} y={y} width={w} height="12" rx="2" />
-        ))}
-        <path className="vmap__room" d={PARTITIONS} />
-        <path className="vmap__wall" d={VENUE.annex} />
+        {plan.hand ? <HandDrawn /> : osm ? <FromOsm osm={osm} /> : null}
       </svg>
+      {!osm && state !== "drawn" && (
+        <span className="vmap__empty">
+          {state === "drawing" ? (
+            <>
+              <span className="spin" aria-hidden="true" />
+              Drawing its map from OpenStreetMap…
+            </>
+          ) : state === "failed" ? (
+            "OpenStreetMap didn't answer: get the map again on the location's page"
+          ) : (
+            "Its map is drawn once it's saved"
+          )}
+        </span>
+      )}
 
       {zones
         .filter((z) => z.label_x !== null && z.label_y !== null)
         .map((z) => (
-          <span key={z.id} className="vmap__zone" style={at(z.label_x!, z.label_y!)} aria-hidden="true">
+          <span key={z.id} className="vmap__zone" style={at(VIEW, z.label_x!, z.label_y!)} aria-hidden="true">
             {z.name}
           </span>
         ))}
@@ -119,7 +136,7 @@ export function VenueMap({
             <span
               key={p.id}
               className={cls}
-              style={at(p.x, p.y)}
+              style={at(VIEW, p.x, p.y)}
               tabIndex={0}
               role="img"
               aria-label={`Pin for #${p.num}: drag it, tap the map, or use the arrow keys`}
@@ -128,7 +145,13 @@ export function VenueMap({
               {head}
             </span>
           ) : (
-            <span key={p.id} className={`${cls} is-other`} style={at(p.x, p.y)} aria-hidden="true">
+            <span key={p.id} className={`${cls} is-other`} style={at(VIEW, p.x, p.y)} aria-hidden="true">
+              {head}
+            </span>
+          );
+        if (still)
+          return (
+            <span key={p.id} className={cls} style={at(VIEW, p.x, p.y)} aria-hidden="true">
               {head}
             </span>
           );
@@ -138,7 +161,7 @@ export function VenueMap({
               key={p.id}
               type="button"
               className={cls}
-              style={at(p.x, p.y)}
+              style={at(VIEW, p.x, p.y)}
               aria-pressed={p.id === selected}
               aria-label={`#${p.num} ${p.name}${p.live ? "" : " (off)"}`}
               title={`#${p.num} ${p.name}`}
@@ -152,7 +175,7 @@ export function VenueMap({
             key={p.id}
             href={`/codes?code=${p.id}`}
             className={cls}
-            style={at(p.x, p.y)}
+            style={at(VIEW, p.x, p.y)}
             aria-label={`#${p.num} ${p.name}${p.live ? "" : " (off)"}`}
             title={`#${p.num} ${p.name}`}
           >
@@ -162,5 +185,34 @@ export function VenueMap({
       })}
       <span className="vmap__credit">© OpenStreetMap contributors</span>
     </div>
+  );
+}
+
+/** Leyte Academic Center: Annex A–B, the walkway, parking and the east driveway, drawn by hand. */
+function HandDrawn() {
+  return (
+    <>
+      <path className="vmap__road" d={VENUE.roads} />
+      <path className="vmap__lot" d={VENUE.parking} />
+      <path className="vmap__walk" d="M54 228H316" />
+      <path className="vmap__slab" d={VENUE.annex} />
+      {BOOTHS.map(([x, y, w]) => (
+        <rect key={`${x},${y}`} className="vmap__booth" x={x} y={y} width={w} height="12" rx="2" />
+      ))}
+      <path className="vmap__room" d={PARTITIONS} />
+      <path className="vmap__wall" d={VENUE.annex} />
+    </>
+  );
+}
+
+/** Another location: OpenStreetMap's grounds, roads and buildings around it. */
+function FromOsm({ osm }: { osm: Outlines }) {
+  return (
+    <>
+      <path className="vmap__lot" d={osm.grounds} />
+      <path className="vmap__road vmap__road--osm" d={osm.roads} />
+      <path className="vmap__slab" d={osm.buildings} />
+      <path className="vmap__wall vmap__wall--osm" d={osm.buildings} />
+    </>
   );
 }

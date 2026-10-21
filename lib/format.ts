@@ -103,6 +103,10 @@ const FIELD: Record<string, string> = {
   description: "description",
   photo_path: "photo",
   badge_path: "logo",
+  location_id: "location",
+  address: "address",
+  width: "map size",
+  outlines: "map",
   rule: "who wins",
   rule_value: "who wins",
   stock: "stock",
@@ -119,6 +123,7 @@ const KIND: Record<string, string> = {
   codes: "QR code",
   prizes: "prize",
   sponsors: "sponsor",
+  locations: "location",
   zones: "zone",
   team: "teammate",
   settings: "",
@@ -133,7 +138,9 @@ export function didWhat(a: Activity) {
   if (a.action === "added") return `added the ${kind}`;
   if (a.action === "removed") return `removed the ${kind}`;
   const live = a.changes.find((c) => c.startsWith("live:"));
-  const fields = [...new Set(a.changes.filter((c) => !c.startsWith("live:")).map((c) => FIELD[c] ?? c))];
+  // (a location's latitude and longitude: where it is, not a code's GPS spot)
+  const word = (c: string) => (a.what === "locations" && (c === "lat" || c === "lng") ? "place" : (FIELD[c] ?? c));
+  const fields = [...new Set(a.changes.filter((c) => !c.startsWith("live:")).map(word))];
   const parts = [];
   if (live) parts.push(live === "live:on" ? "turned on" : "turned off");
   if (fields.length) parts.push(`changed the ${list(fields)} of`);

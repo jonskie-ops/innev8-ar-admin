@@ -21,6 +21,9 @@ export const NOT_ADMIN = "Only admins can change this. Ask an admin on your team
 export const NEEDS_GPS =
   "GPS spots need the GPS update first: run supabase/migrations/20261020000000_gps.sql in Supabase's SQL Editor.";
 
+export const NEEDS_LOCATIONS =
+  "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
+
 export const NEEDS_SPONSOR_LOGOS =
   "Adding and changing sponsors needs the sponsor logos update first: run supabase/migrations/20261021000000_sponsor_logos.sql in Supabase's SQL Editor.";
 

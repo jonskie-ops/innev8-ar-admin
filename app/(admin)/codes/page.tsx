@@ -4,7 +4,7 @@ import { Head, ReadOnly } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon, QrIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listSponsors, listZones } from "@/lib/data";
+import { listCodes, listLocations, listSponsors, listZones, locationOf } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
 import { firstSponsor, sponsorIn } from "@/lib/hunt";
 
@@ -13,7 +13,13 @@ export const metadata: Metadata = { title: "QR codes" };
 export default async function CodesPage({ searchParams }: { searchParams: Promise<{ code?: string | string[] }> }) {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, { sponsors }, { code }] = await Promise.all([listCodes(), listZones(), listSponsors(), searchParams]);
+  const [codes, zones, { sponsors }, { locations }, { code }] = await Promise.all([
+    listCodes(),
+    listZones(),
+    listSponsors(),
+    listLocations(),
+    searchParams,
+  ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live).length;
   const items: CodeItem[] = codes.map((c) => ({
@@ -30,6 +36,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     blurb: c.blurb,
     task: c.task ?? "none",
     sponsor: sponsorIn(sponsors, c.sponsor ?? firstSponsor(c.num)),
+    location: locationOf(c),
     x: c.x,
     y: c.y,
     ago: ago(c.updated_at),
@@ -53,7 +60,11 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
       {!canEdit && <ReadOnly />}
 
       {items.length ? (
-        <CodeBrowser codes={items} zones={zones} initial={typeof code === "string" ? code : null} canEdit={canEdit} />
+        <CodeBrowser
+          codes={items}
+          zones={zones}
+          locations={locations.map(({ id, name, lat, lng, width, outlines }) => ({ id, name, lat, lng, width, outlines }))}
+          initial={typeof code === "string" ? code : null} canEdit={canEdit} />
       ) : (
         <section className="panel empty-state">
           <span className="empty-state__icon">

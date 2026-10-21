@@ -9,6 +9,7 @@ will read from.
 | **Overview** | The summit (days to go, test mode), every QR code as a card, where they are and how many of each rarity, the prizes (what each one takes), the latest changes with who made them, and the team |
 | **QR codes** | The venue map and every code's number: tap one (or use ← →) and its details show beside it, with its switch, its code value and a link to try it in the game. Edit opens its page: name, clue, description, rarity and points, zone and spot, its pin (drag it), and **On the ground**: its GPS spot and how close players must be to see it (below). Codes can be added and deleted. Changes save by themselves |
 | **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at; directions |
+| **Locations** | Where the hunt can be played (below): Leyte Academic Center, and any added since. Each has its map for the game, its areas (the codes' zones), its QR codes and an on/off switch |
 | **Prizes** | Name, photo, description, who wins it (all the codes, a number of codes, the legendary code, or a number of points) and how many are in stock |
 | **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
@@ -17,7 +18,7 @@ will read from.
 
 Every page has the same frame: the pages as icons down the side, with your account and sign out at
 its foot (on phones, a tab bar along the bottom and sign out in the top bar), and a top bar with
-search (QR codes, prizes, sponsors and pages; press `/`), the latest changes, a link to the summit page (innev8.org/ict-summit-2026), and who's
+search (QR codes, prizes, sponsors, locations and pages; press `/`), the latest changes, a link to the summit page (innev8.org/ict-summit-2026), and who's
 signed in.
 
 Next 16 (App Router, `proxy.ts`), React 19, Supabase (Auth, Postgres, Storage) through
@@ -50,6 +51,34 @@ The GPS spots need the update `supabase/migrations/20261020000000_gps.sql` (run 
 Until then both apps keep working with each code at its pin, 10 m, and the admin asks for the update
 only when a GPS setting is changed. Location only works on the live `https://` address (and
 `localhost`), not over a local network address.
+
+## Locations
+
+The hunt can be played somewhere other than Leyte Academic Center. On the **Locations** page:
+
+- **Add location:** its name and address, and where it is: **find it** by name (OpenStreetMap's
+  search), **use my location here** on site, **paste** its coordinates from Google Maps, or tap the
+  satellite map. Then how wide its map is (150 m for a building up to 1.2 km for a town centre;
+  60 m–2 km): the dashed outline is what the game's map shows, and the codes go inside it.
+- **Its map for the game** is drawn from OpenStreetMap's buildings, roads and grounds around it, in
+  the same holographic style as the summit's (in the background: it can take a minute when
+  OpenStreetMap is busy, and the page shows it once it's ready). Moving it or changing its width
+  draws it again; **Get the map again** picks up buildings added to OpenStreetMap since.
+- **Areas:** each location's zones (an area named after it to start with): rename, add, or remove one
+  no code is in.
+- **On/off:** off hides the location and its codes from the game. Players see the codes of every
+  location that's on; with more than one, the game's map has a chip for each and opens on the nearest.
+- **Delete** only once it has no codes (move them on their pages, or delete them). Leyte Academic
+  Center stays: its map is drawn by hand for the summit, so it can't be moved either.
+
+Each QR code's page has a **Location** choice (another location puts the code in the middle of its
+map, in its first area), and its map, zones and GPS checks follow it. The Map page, the QR codes
+page and the overview switch between locations. The phone tab bar shows "Places"; the team is on the
+Account page there.
+
+This needs the update `supabase/migrations/20261022000000_locations.sql` (run it in the SQL Editor):
+it starts with Leyte Academic Center, with every code and zone at it. Until it's run, the admin and
+the game work as before, and the Locations page says what to run.
 
 ## Sponsors
 
@@ -137,6 +166,8 @@ On top of that:
 | --- | --- |
 | `supabase/migrations/` | The database: tables, rules, change log, sign-in throttle, prize photo and sponsor badge buckets |
 | `supabase/seed.sql` | The game's current codes, zones and dates |
+| `components/LocationForm.tsx`, `PlaceMap.tsx`, `AreasPanel.tsx`, `PlaceTabs.tsx`, `PlaceMaps.tsx` | A location's page (finding it, its real map, its areas), and switching between locations |
+| `lib/osm.ts` | OpenStreetMap: finding a place (Nominatim) and a location's map for the game (Overpass) |
 | `components/badge.ts`, `components/SponsorForm.tsx` | A sponsor's round badge, made in the browser from their logo; their page |
 | `public/sponsors/`, `BUILT_IN_SPONSORS` in `lib/hunt.ts` | The 8 sponsors the game came with: their badges (made by the game's `scripts/sponsors.mjs`), until one gets a new logo |
 | `proxy.ts` | Signed out → sign in; keeps the session fresh |
@@ -146,7 +177,7 @@ On top of that:
 | `components/Shell.tsx` | The frame: side rail, top bar (`Find.tsx` search, `Changes.tsx` latest changes), phone tab bar |
 | `components/VenueMap.tsx` | The venue map with draggable pins (the game's 360×520 plan) |
 | `components/GpsFix.tsx`, `components/here.ts` | "Use my location here" (averaging the GPS) and the Map page's "Show me" |
-| `lib/venue.ts` | The venue plan ↔ latitude/longitude (the game's `lib/geo.ts` has the same numbers), distances |
+| `lib/venue.ts` | Each location's plan ↔ latitude/longitude (`planOf`; the game's `lib/geo.ts` has the same numbers), distances |
 | `scripts/first-admin.mjs` | The first admin of a new project |
 
 ## The game

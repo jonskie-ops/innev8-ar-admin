@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
+import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Location, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
 import { pad, SponsorBadge } from "./bits";
 import {
   ArrowLeftIcon,
@@ -37,6 +37,8 @@ export type CodeItem = {
   task: Task;
   /** Its sponsor, or null (none) */
   sponsor: SponsorView | null;
+  /** Its location's id */
+  location: string;
   x: number;
   y: number;
   /** "2 hours ago", and the exact time */
@@ -52,11 +54,14 @@ export type CodeItem = {
 export function CodeBrowser({
   codes,
   zones,
+  locations,
   initial,
   canEdit,
 }: {
   codes: CodeItem[];
   zones: Zone[];
+  /** The map shows the picked code's location, with its codes */
+  locations: Pick<Location, "id" | "name" | "lat" | "lng" | "width" | "outlines">[];
   initial: string | null;
   canEdit: boolean;
 }) {
@@ -68,7 +73,8 @@ export function CodeBrowser({
     codes.findIndex((c) => c.id === picked),
   );
   const c = codes[i];
-  const sponsor = c.sponsor;
+  const sponsor = c?.sponsor;
+  const place = locations.find((l) => l.id === c?.location) ?? locations[0];
 
   // With more numbers than fit, slide the row so the picked one is in view (sideways only)
   useEffect(() => {
@@ -113,7 +119,16 @@ export function CodeBrowser({
       <section className="panel qb__map" aria-label="Map and numbers">
         {/* The legend sits on the map, in its corner */}
         <div className="qb__mapbox">
-          <VenueMap pins={codes} zones={zones} selected={c.id} pick={pick} label="Map of the venue: tap a number" />
+          <VenueMap
+            key={place.id}
+            place={place}
+            pins={codes.filter((x) => x.location === place.id)}
+            zones={zones.filter((z) => (z.location_id ?? "lac") === place.id)}
+            selected={c.id}
+            pick={pick}
+            label={`Map of ${place.name}: tap a number`}
+          />
+          {locations.length > 1 && <span className="qb__place">{place.name}</span>}
           <ul className="legend qb__legend" role="list" aria-label="Pin colours">
             {RARITIES.map((r) => (
               <li key={r} className={`legend__item legend__item--${r}`}>
@@ -200,6 +215,7 @@ export function CodeBrowser({
               <PinIcon />
               {c.zone}
               {c.spot && ` · ${c.spot}`}
+              {locations.length > 1 && ` · ${place.name}`}
             </p>
           </div>
           <span className="qd__worth">

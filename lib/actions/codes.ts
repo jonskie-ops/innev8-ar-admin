@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
-import { checked, dbError, decimal, done, failed, Invalid, NEEDS_GPS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { checked, dbError, decimal, done, failed, Invalid, NEEDS_GPS, NEEDS_LOCATIONS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
-import { metresBetween, PIN_AREA, toLatLng, toPlan } from "../venue";
+import { DEFAULT_LOCATION, metresBetween, planOf, toLatLng, type Where } from "../venue";
 
 /** The code's GPS spot (sent with every save: the form keeps it and the map pin together). */
 function readSpot(fd: FormData) {
@@ -40,6 +40,7 @@ function readCode(fd: FormData) {
     live: checked(fd, "live"),
     task: oneOf(fd, "task", "Extra task", TASKS.map((t) => t.id)),
     sponsor: text(fd, "sponsor", "Sponsor", { max: 32, required: true }),
+    location_id: text(fd, "location_id", "Location", { max: 24 }) || DEFAULT_LOCATION,
     ...readSpot(fd),
   };
 }
@@ -54,6 +55,20 @@ const NEEDS_SPONSORS =
 async function sponsorIds() {
   const { data, error } = await (await supabase()).from("sponsors").select("id");
   return ["none", ...(error || !data ? BUILT_IN_SPONSORS : data).map((s: { id: string }) => s.id)];
+}
+
+/**
+ * The locations (where each code can be), with their zones; null before the locations update (only
+ * Leyte Academic Center, every zone at it).
+ */
+async function locations() {
+  const sb = await supabase();
+  const [{ data: ls, error }, { data: zones }] = await Promise.all([
+    sb.from("locations").select("id, lat, lng, width"),
+    sb.from("zones").select("*"),
+  ]);
+  if (error || !ls) return null;
+  return { all: ls as Where[], zones: (zones ?? []) as { id: string; location_id: string }[] };
 }
 
 /**
@@ -79,14 +94,25 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   const taken = `Number ${v.num} is already used by another QR code.`;
   // A database without the networking, sponsors or GPS update yet: save the rest (when none of
   // those was changed; a GPS spot that's just the map pin's place counts as unchanged)
-  const { task, sponsor, lat, lng, accuracy, radius, ...rest } = v;
-  const [tasks, sponsors, gps, ids] = await Promise.all([has("task"), has("sponsor"), has("radius"), sponsorIds()]);
+  const { task, sponsor, lat, lng, accuracy, radius, location_id, ...rest } = v;
+  const [tasks, sponsors, gps, ids, places] = await Promise.all([has("task"), has("sponsor"), has("radius"), sponsorIds(), locations()]);
   if (!ids.includes(sponsor)) return failed("That sponsor was taken off by someone else. Choose another.");
+  // Its location, and an area of it (before the locations update: Leyte Academic Center, any zone)
+  if (!places && location_id !== DEFAULT_LOCATION) return failed(NEEDS_LOCATIONS);
+  if (places && !places.all.some((l) => l.id === location_id)) return failed("That location was removed by someone else. Choose another.");
+  if (places && places.zones.find((z) => z.id === v.zone_id)?.location_id !== location_id)
+    return failed("Choose an area of this location for the code (the Zone list).");
   if (!tasks && task !== "none") return failed(NEEDS_NETWORKING);
   if (!sponsors && sponsor !== firstSponsor(v.num)) return failed(NEEDS_SPONSORS);
   if (!gps && (accuracy !== null || radius !== RADIUS.default || metresBetween({ lat, lng }, toLatLng(v.x, v.y)) > 1))
     return failed(NEEDS_GPS);
-  const row = { ...rest, ...(tasks && { task }), ...(sponsors && { sponsor }), ...(gps && { lat, lng, accuracy, radius }) };
+  const row = {
+    ...rest,
+    ...(tasks && { task }),
+    ...(sponsors && { sponsor }),
+    ...(gps && { lat, lng, accuracy, radius }),
+    ...(places && { location_id }),
+  };
   if (!id) {
     const newId = "c" + pick(6, "abcdefghjkmnpqrstuvwxyz23456789");
     const code = `I8AR-${String(v.num).padStart(2, "0")}-${pick(4)}`;
@@ -110,10 +136,10 @@ export async function deleteCode(id: string): Promise<FormState> {
   redirect("/codes");
 }
 
-/** On or off in the game, for a QR code or a prize. */
-export async function setLive(kind: "codes" | "prizes", id: string, live: boolean): Promise<FormState> {
+/** On or off in the game, for a QR code, a prize or a location (all its codes). */
+export async function setLive(kind: "codes" | "prizes" | "locations", id: string, live: boolean): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
-  if (kind !== "codes" && kind !== "prizes") return failed("Unknown item.");
+  if (kind !== "codes" && kind !== "prizes" && kind !== "locations") return failed("Unknown item.");
   const { data, error } = await (await supabase())
     .from(kind)
     .update({ live: live === true })
@@ -132,12 +158,19 @@ export async function setLive(kind: "codes" | "prizes", id: string, live: boolea
 export async function moveCode(id: string, lat: number, lng: number): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return failed("That isn't a place on the map.");
-  const { x, y } = toPlan(lat, lng);
-  const inside = x >= PIN_AREA.x0 && x <= PIN_AREA.x1 && y >= PIN_AREA.y0 && y <= PIN_AREA.y1;
+  // On its location's map
+  const sb = await supabase();
+  const { data: code } = await sb.from("codes").select("*").eq("id", String(id)).maybeSingle();
+  if (!code) return failed("This QR code was removed by someone else.");
+  const places = await locations();
+  const plan = planOf(places?.all.find((l) => l.id === (code.location_id ?? DEFAULT_LOCATION)));
+  const { x, y } = plan.toPlan(lat, lng);
+  const a = plan.pinArea;
+  const inside = x >= a.x0 && x <= a.x1 && y >= a.y0 && y <= a.y1;
   if (!inside) return failed("That's outside the area the game's map shows.");
   const half = (v: number) => Math.round(v * 2) / 2;
   const spot = (await has("radius")) && { lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7, accuracy: null };
-  const { data, error } = await (await supabase())
+  const { data, error } = await sb
     .from("codes")
     .update({ x: half(x), y: half(y), ...spot })
     .eq("id", String(id))

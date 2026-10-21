@@ -4,7 +4,6 @@ import "leaflet/dist/leaflet.css";
 import type * as Leaflet from "leaflet";
 import { useEffect, useRef, useState } from "react";
 import type { Rarity } from "@/lib/hunt";
-import { PIN_AREA, toLatLng } from "@/lib/venue";
 import type { Here } from "./here";
 
 export type Spot = {
@@ -26,7 +25,7 @@ export type Spot = {
 const RING_COLOUR: Record<Rarity, string> = { common: "#12bfea", rare: "#20c9bc", legendary: "#d6b56d" };
 
 /** Free map tiles: Esri's satellite photos (with place names on top), or OpenStreetMap. */
-const TILES = {
+export const TILES = {
   air: [
     {
       url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -48,29 +47,18 @@ const TILES = {
   ],
 };
 
-/** The area the game's map shows, as latitude/longitude corners. */
-const AREA = (
-  [
-    [PIN_AREA.x0, PIN_AREA.y0],
-    [PIN_AREA.x1, PIN_AREA.y0],
-    [PIN_AREA.x1, PIN_AREA.y1],
-    [PIN_AREA.x0, PIN_AREA.y1],
-  ] as const
-).map(([x, y]) => {
-  const p = toLatLng(x, y);
-  return [p.lat, p.lng] as [number, number];
-});
-
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /**
- * The venue on a real map, with each QR code as a numbered pin inside a ring (how close players must
- * be to see it) and a dashed outline around the area the game's map shows. An admin drags a pin to
+ * A location on a real map, with each QR code as a numbered pin inside a ring (how close players must
+ * be to see it) and a dashed outline around the area the game's map shows (`area`, its corners; a
+ * new one needs a new map: key it by location). An admin drags a pin to
  * move its code: `onDrop` saves it, and answers false to put the pin back where it was. `me`: this
  * phone's location, as a dot with a ring for how sure it is.
  */
 export function SatelliteMap({
   spots,
+  area,
   view,
   picked,
   saving,
@@ -80,6 +68,7 @@ export function SatelliteMap({
   onDrop,
 }: {
   spots: Spot[];
+  area: [number, number][];
   view: "air" | "map";
   picked: string | null;
   saving: string | null;
@@ -96,9 +85,9 @@ export function SatelliteMap({
   const meMarks = useRef<{ dot: Leaflet.CircleMarker; ring: Leaflet.Circle } | null>(null);
   const [L, setL] = useState<typeof Leaflet | null>(null);
   // The latest of these, for Leaflet's own event handlers
-  const latest = useRef({ spots, onPick, onDrop });
+  const latest = useRef({ spots, onPick, onDrop, area });
   useEffect(() => {
-    latest.current = { spots, onPick, onDrop };
+    latest.current = { spots, onPick, onDrop, area };
   });
 
   // The map, once (Leaflet needs the browser, so it loads here)
@@ -111,10 +100,11 @@ export function SatelliteMap({
     void import("leaflet").then((mod) => {
       const Lf = mod.default;
       if (gone || !box.current) return;
-      made = Lf.map(box.current, { maxZoom: 20, minZoom: 15, zoomSnap: 0.5 });
+      const area = latest.current.area;
+      made = Lf.map(box.current, { maxZoom: 20, minZoom: 12, zoomSnap: 0.5 });
       made.attributionControl.setPrefix(false);
-      Lf.polygon(AREA, { color: "#12bfea", weight: 2, dashArray: "6 6", fill: false, interactive: false }).addTo(made);
-      made.fitBounds(Lf.latLngBounds(AREA), { padding: [28, 28] });
+      Lf.polygon(area, { color: "#12bfea", weight: 2, dashArray: "6 6", fill: false, interactive: false }).addTo(made);
+      made.fitBounds(Lf.latLngBounds(area), { padding: [28, 28] });
       map.current = made;
       // Bigger or smaller (full screen, a turned phone): fill the new size, keeping the same middle
       const m = made;
@@ -269,7 +259,7 @@ export function SatelliteMap({
     if (!L || !m) return;
     const s = latest.current.spots.find((x) => x.id === picked);
     if (s) m.flyTo([s.lat, s.lng], Math.max(m.getZoom(), 19), { duration: 0.6 });
-    else m.flyToBounds(L.latLngBounds(AREA), { padding: [28, 28], duration: 0.6 });
+    else m.flyToBounds(L.latLngBounds(latest.current.area), { padding: [28, 28], duration: 0.6 });
   }, [L, picked]);
 
   return (

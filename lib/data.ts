@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -51,6 +51,36 @@ export const hunterStats = cache(async (): Promise<{ hunters: number; meetings: 
 /** A prize photo's address (the bucket is public, like the game's own images). */
 export const photoUrl = (path: string | null) =>
   path ? `${supabaseUrl()}/storage/v1/object/public/prizes/${path}` : null;
+
+/** Leyte Academic Center, as the locations update starts it (for a database without it yet). */
+const LAC: Location = {
+  id: "lac",
+  name: "Leyte Academic Center",
+  address: "Barangay Pawing, Palo, Leyte",
+  lat: 11.17687,
+  lng: 125.003127,
+  width: 100,
+  outlines: null,
+  live: true,
+  sort: 0,
+  updated_at: "",
+};
+
+/**
+ * The locations, Leyte Academic Center first. `ready` false: the database hasn't got the locations
+ * update yet, so there's only Leyte Academic Center and it can't be changed.
+ */
+export const listLocations = cache(async (): Promise<{ locations: Location[]; ready: boolean }> => {
+  const { data, error } = await (await supabase()).from("locations").select("*").order("sort").order("created_at");
+  if (error) {
+    if (error.code !== "PGRST205" && error.code !== "42P01") throw new Error(error.message);
+    return { locations: [LAC], ready: false };
+  }
+  return { locations: data as Location[], ready: true };
+});
+
+/** A code's (or zone's) location id: Leyte Academic Center's before the locations update. */
+export const locationOf = (c: { location_id?: string }) => c.location_id ?? "lac";
 
 /** A sponsor badge's address: theirs in the "sponsors" bucket, or the one that came with the game. */
 export const badgeUrl = (s: { id: string; badge_path: string | null }) =>

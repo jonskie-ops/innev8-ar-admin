@@ -143,6 +143,14 @@ export const ExternalIcon = (p: P) => (
     <path d="M14 4.5h5.5V10M19.5 4.5 11 13M17 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 4 18.5v-10A1.5 1.5 0 0 1 5.5 7H10" />
   </Svg>
 );
+/** A pin on the ground: a location */
+export const PlacesIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 17.5s-5-4.6-5-8.6a5 5 0 0 1 10 0c0 4-5 8.6-5 8.6z" />
+    <circle cx="12" cy="8.9" r="1.8" />
+    <path d="M7.6 16.6c-2.5.5-4.1 1.4-4.1 2.4 0 1.6 3.8 2.8 8.5 2.8s8.5-1.2 8.5-2.8c0-1-1.6-1.9-4.1-2.4" />
+  </Svg>
+);
 /** A rosette: a sponsor */
 export const SponsorIcon = (p: P) => (
   <Svg {...p}>

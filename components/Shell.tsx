@@ -17,6 +17,7 @@ import {
   HomeIcon,
   LogoutIcon,
   MapIcon,
+  PlacesIcon,
   QrIcon,
   ShieldIcon,
   SponsorIcon,
@@ -28,11 +29,14 @@ const NAV = [
   { href: "/", label: "Overview", short: "Home", Icon: HomeIcon },
   { href: "/codes", label: "QR codes", short: "Codes", Icon: QrIcon },
   { href: "/map", label: "Map", short: "Map", Icon: MapIcon },
+  { href: "/locations", label: "Locations", short: "Places", Icon: PlacesIcon },
   { href: "/prizes", label: "Prizes", short: "Prizes", Icon: GiftIcon },
   { href: "/sponsors", label: "Sponsors", short: "Sponsors", Icon: SponsorIcon },
   { href: "/event", label: "Event", short: "Event", Icon: CalendarIcon },
   { href: "/team", label: "Team", short: "Team", Icon: TeamIcon },
 ] as const;
+/** On phones, the tab bar has room for all but the team (on the Account page there) */
+const TABS = NAV.filter(({ href }) => href !== "/team");
 
 /**
  * The admin's frame: a rail of icons down the side, with your account and sign out at its foot (on
@@ -131,7 +135,7 @@ export function Shell({
 
       {!me.locked && (
         <nav className="tabbar" aria-label="Admin">
-          {NAV.map(({ href, short, Icon }) => (
+          {TABS.map(({ href, short, Icon }) => (
             <Link key={href} href={href} className="tab" aria-current={current(href)}>
               <Icon />
               <LinkPending />

@@ -7,9 +7,9 @@ import { ChangeList } from "@/components/Changes";
 import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, PlusIcon, QrIcon, TeamIcon } from "@/components/icons";
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
-import { VenueMap } from "@/components/VenueMap";
+import { PlaceMaps } from "@/components/PlaceMaps";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, hunterStats, listCodes, listPrizes, listSponsors, listZones, photoUrl, recentActivity } from "@/lib/data";
+import { getSettings, hunterStats, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
@@ -24,7 +24,7 @@ const BADGE = {
 export default async function OverviewPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, prizes, settings, activity, stats, { sponsors }] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, stats, { sponsors }, { locations }] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
@@ -32,6 +32,7 @@ export default async function OverviewPage() {
     recentActivity(8),
     hunterStats(),
     listSponsors(),
+    listLocations(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter((c) => c.live);
@@ -179,7 +180,11 @@ export default async function OverviewPage() {
               </Link>
             </div>
             <div className="panel dash__map">
-              <VenueMap pins={codes} zones={zones} />
+              <PlaceMaps
+                places={locations.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
+                pins={codes.map((c) => ({ id: c.id, num: c.num, name: c.name, rarity: c.rarity, x: c.x, y: c.y, live: c.live, location: locationOf(c) }))}
+                zones={zones}
+              />
             </div>
           </section>
 

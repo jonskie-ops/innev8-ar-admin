@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRightIcon, GiftIcon, QrIcon, SearchIcon, SponsorIcon } from "./icons";
+import { ArrowRightIcon, GiftIcon, PlacesIcon, QrIcon, SearchIcon, SponsorIcon } from "./icons";
 import { startNavigation } from "./Progress";
 
 /** `keys`: more to match on besides the title (lower case), e.g. a code's zone and spot. */
-export type Findable = { kind: "code" | "prize" | "sponsor" | "page"; href: string; title: string; sub: string; keys: string };
+export type Findable = { kind: "code" | "prize" | "sponsor" | "place" | "page"; href: string; title: string; sub: string; keys: string };
 
-const ICON = { code: QrIcon, prize: GiftIcon, sponsor: SponsorIcon, page: ArrowRightIcon };
+const ICON = { code: QrIcon, prize: GiftIcon, sponsor: SponsorIcon, place: PlacesIcon, page: ArrowRightIcon };
 
 /** Best first: the name starts with it, then a word in the name does, the name has it, then the rest has it. */
 function find(items: Findable[], term: string) {

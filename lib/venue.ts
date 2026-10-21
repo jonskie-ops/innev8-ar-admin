@@ -21,6 +21,9 @@ export const VENUE = {
  */
 export const PIN_AREA = { x0: 30, x1: 330, y0: 40, y1: 258 } as const;
 
+/** Leyte Academic Center's location id: the first, with its map drawn by hand (the others' come from OpenStreetMap). */
+export const DEFAULT_LOCATION = "lac";
+
 /** The venue on Google Maps (admin only; the game doesn't link out). */
 export const PLACE = {
   name: "Leyte Academic Center",
@@ -68,17 +71,97 @@ export function toPlan(lat: number, lng: number) {
 }
 
 /** A plan position moved inside PIN_AREA (a GPS spot past the game's map shows at its edge). */
-export const intoPinArea = (x: number, y: number) => ({
-  x: Math.min(PIN_AREA.x1, Math.max(PIN_AREA.x0, x)),
-  y: Math.min(PIN_AREA.y1, Math.max(PIN_AREA.y0, y)),
+export const intoPinArea = (x: number, y: number, area: Area = PIN_AREA) => ({
+  x: Math.min(area.x1, Math.max(area.x0, x)),
+  y: Math.min(area.y1, Math.max(area.y0, y)),
 });
 
+type Area = { x0: number; x1: number; y0: number; y1: number };
+
+/** A location, as far as its map goes: where its middle is and how wide its map is (metres). */
+export type Where = { id: string; lat: number; lng: number; width: number };
+
 /**
- * A QR code's place on the ground: its own GPS spot, or else where its pin is on the venue map.
- * `own` false: worked out from the pin.
+ * A location's map: the same 360×520 plan units as Leyte Academic Center's, so a code's pin (x, y)
+ * means the same thing in both apps wherever it is.
+ * - Leyte Academic Center: the plan drawn by hand (turned so the buildings sit square).
+ * - Any other: north up, its middle at (180, 260), `width` metres across 300 units. Its buildings
+ *   and roads come from OpenStreetMap, drawn in these units (lib/osm.ts).
+ * `view`: what the admin's venue map shows; `pinArea`: where a pin can go (inside what both the
+ * admin's and the game's maps show).
  */
-export function spotOf(c: { lat?: number | null; lng?: number | null; x: number; y: number }) {
-  return c.lat != null && c.lng != null ? { lat: c.lat, lng: c.lng, own: true } : { ...toLatLng(c.x, c.y), own: false };
+export type Plan = {
+  id: string;
+  hand: boolean;
+  toPlan: (lat: number, lng: number) => { x: number; y: number };
+  toLatLng: (x: number, y: number) => { lat: number; lng: number };
+  /** Plan units to the metre */
+  perM: number;
+  view: { x: number; y: number; w: number; h: number };
+  pinArea: Area;
+};
+
+const LAC_PLAN: Plan = {
+  id: DEFAULT_LOCATION,
+  hand: true,
+  toPlan,
+  toLatLng,
+  perM: PER_M,
+  view: { x: 26, y: 36, w: 308, h: 226 },
+  pinArea: PIN_AREA,
+};
+
+export function planOf(l: Where | null | undefined): Plan {
+  if (!l || l.id === DEFAULT_LOCATION) return LAC_PLAN;
+  const k = 300 / l.width;
+  const cos = Math.cos((l.lat * Math.PI) / 180);
+  const deg = 180 / Math.PI;
+  return {
+    id: l.id,
+    hand: false,
+    toPlan: (lat, lng) => ({
+      x: 180 + ((lng - l.lng) / deg) * EARTH * cos * k,
+      y: 260 - ((lat - l.lat) / deg) * EARTH * k,
+    }),
+    toLatLng: (x, y) => ({
+      lat: +(l.lat + ((260 - y) / k / EARTH) * deg).toFixed(7),
+      lng: +(l.lng + ((x - 180) / k / (EARTH * cos)) * deg).toFixed(7),
+    }),
+    perM: k,
+    view: { x: 26, y: 147, w: 308, h: 226 },
+    pinArea: { x0: 30, x1: 330, y0: 151, y1: 369 },
+  };
+}
+
+/** Where a location's pins can go (`plan.pinArea`), as latitude/longitude corners for a real map. */
+export const areaOf = (plan: Plan) =>
+  (
+    [
+      [plan.pinArea.x0, plan.pinArea.y0],
+      [plan.pinArea.x1, plan.pinArea.y0],
+      [plan.pinArea.x1, plan.pinArea.y1],
+      [plan.pinArea.x0, plan.pinArea.y1],
+    ] as const
+  ).map(([x, y]) => {
+    const p = plan.toLatLng(x, y);
+    return [p.lat, p.lng] as [number, number];
+  });
+
+/**
+ * A QR code's place on the ground: its own GPS spot, or else where its pin is on its location's
+ * map. `own` false: worked out from the pin.
+ */
+export function spotOf(c: { lat?: number | null; lng?: number | null; x: number; y: number }, plan: Plan = LAC_PLAN) {
+  return c.lat != null && c.lng != null ? { lat: c.lat, lng: c.lng, own: true } : { ...plan.toLatLng(c.x, c.y), own: false };
+}
+
+/** Google Maps: a place's page (by name and address when there is one), and directions there. */
+export function mapsLinks(l: { id: string; name: string; address: string; lat: number; lng: number }) {
+  if (l.id === DEFAULT_LOCATION) return { link: PLACE.link, directions: PLACE.directions };
+  return {
+    link: `https://www.google.com/maps/search/?api=1&query=${l.lat}%2C${l.lng}`,
+    directions: `https://www.google.com/maps/dir/?api=1&destination=${l.lat}%2C${l.lng}`,
+  };
 }
 
 /** Metres between two places (flat-earth: exact enough across a venue, and for a few kilometres). */

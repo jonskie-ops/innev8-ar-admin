@@ -14,7 +14,7 @@ export function LiveSwitch({
   label,
   disabled = false,
 }: {
-  kind: "codes" | "prizes";
+  kind: "codes" | "prizes" | "locations";
   id: string;
   live: boolean;
   label: string;

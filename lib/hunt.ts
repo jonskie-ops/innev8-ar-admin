@@ -6,7 +6,52 @@ export const RARITY_LABEL: Record<Rarity, string> = { common: "Common", rare: "R
 /** Points a code is worth by default, by rarity (the game's values). */
 export const POINTS: Record<Rarity, number> = { common: 100, rare: 250, legendary: 500 };
 
-export type Zone = { id: string; name: string; label_x: number | null; label_y: number | null; sort: number };
+/** An area of a location codes are in ("Annex A"); `location_id` missing: before the locations update (Leyte Academic Center). */
+export type Zone = { id: string; name: string; label_x: number | null; label_y: number | null; sort: number; location_id?: string };
+
+/**
+ * Where the hunt can be played (the Locations page): Leyte Academic Center ("lac", its map drawn by
+ * hand) and any added since, each with its map for the game drawn from OpenStreetMap.
+ */
+export type Location = {
+  id: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  /** How wide its map is, in metres */
+  width: number;
+  outlines: MapDrawing;
+  live: boolean;
+  sort: number;
+  updated_at: string;
+};
+/** A location's map for the game: OpenStreetMap's outlines in its plan units (lib/osm.ts). */
+export type Outlines = { buildings: string; roads: string; grounds: string; count: number; at: string };
+/** Its map, or that it's being drawn (in the background, after a move) or that drawing it failed. */
+export type MapDrawing = Outlines | { drawing: string } | { failed: string } | null;
+/** The map as drawn, if it is */
+export const drawnMap = (o: MapDrawing | undefined): Outlines | null => (o && "buildings" in o ? o : null);
+/** How long drawing may take before it counts as failed (OpenStreetMap can be slow, never this slow) */
+const DRAW_MS = 4 * 60 * 1000;
+export function mapState(o: MapDrawing | undefined, now = Date.now()): "drawn" | "drawing" | "failed" | "none" {
+  if (!o) return "none";
+  if ("buildings" in o) return "drawn";
+  if ("drawing" in o) return now - Date.parse(o.drawing) < DRAW_MS ? "drawing" : "failed";
+  return "failed";
+}
+
+/** How wide a location's map is: a building, a campus, a town centre… (metres) */
+export const MAP_WIDTH = {
+  min: 60,
+  max: 2000,
+  presets: [
+    { m: 150, label: "A building" },
+    { m: 300, label: "A campus" },
+    { m: 600, label: "A neighbourhood" },
+    { m: 1200, label: "A town centre" },
+  ],
+} as const;
 
 export type Code = {
   id: string;
@@ -26,6 +71,8 @@ export type Code = {
   task: Task;
   /** Its sponsor's id (SPONSORS), or "none" */
   sponsor: string;
+  /** Where it is (Locations); missing before the locations update: Leyte Academic Center */
+  location_id?: string;
   /**
    * Its GPS spot, where players find it. Null (or missing, before the GPS update): where its venue
    * map pin is (spotOf in lib/venue.ts).

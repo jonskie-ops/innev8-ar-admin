@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PasswordForm, SignOutForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
-import { KeyIcon, LockIcon, ShieldIcon } from "@/components/icons";
+import { KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
 import { requireTeammate } from "@/lib/dal";
 import { listTeam } from "@/lib/data";
@@ -54,6 +55,12 @@ export default async function AccountPage() {
             : "Your details, what you can do here, and your password."
         }
       />
+      {!first && (
+        <Link href="/team" className="btn btn--ghost btn--sm phone-team">
+          <TeamIcon />
+          The team: who can sign in
+        </Link>
+      )}
       <div className="cols">
         {/* The first time, the password comes first (on a phone, it's on top) */}
         {first ? password : <div className="stack">{profile}{roles(me.role)}</div>}

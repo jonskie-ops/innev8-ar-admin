@@ -4,7 +4,7 @@ import { EventBanner } from "@/components/EventBanner";
 import { EventForm } from "@/components/EventForm";
 import { saveEvent } from "@/lib/actions/event";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings } from "@/lib/data";
+import { getSettings, listLocations } from "@/lib/data";
 import { stamp, toLocalInput } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Event" };
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Event" };
 export default async function EventPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const s = await getSettings();
+  const [s, { locations }] = await Promise.all([getSettings(), listLocations()]);
   return (
     <>
       <Head
@@ -22,7 +22,12 @@ export default async function EventPage() {
       />
       {!canEdit && <ReadOnly />}
       <div className="stack">
-        <EventBanner startsAt={s.starts_at} endsAt={s.ends_at} testMode={s.test_mode} />
+        <EventBanner
+          startsAt={s.starts_at}
+          endsAt={s.ends_at}
+          testMode={s.test_mode}
+          place={locations.filter((l) => l.live).map((l) => l.name).join(" · ") || "No location on"}
+        />
         <EventForm
           startsAt={toLocalInput(s.starts_at)}
           endsAt={toLocalInput(s.ends_at)}
