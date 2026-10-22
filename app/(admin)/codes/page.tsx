@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon, QrIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
@@ -59,7 +59,6 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
           </Link>
         )}
       </Head>
-      {!canEdit && <ReadOnly />}
 
       {items.length ? (
         <CodeBrowser

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { CheckIcon } from "@/components/icons";
 import { PrizeForm } from "@/components/PrizeForm";
 import { deletePrize, savePrize } from "@/lib/actions/prizes";
@@ -55,7 +55,6 @@ export default async function PrizePage({
           Added{prize.live ? " and live in the game" : ""}.
         </p>
       )}
-      {!canEdit && <ReadOnly />}
       <PrizeForm
         key={prize.id}
         prize={prize}

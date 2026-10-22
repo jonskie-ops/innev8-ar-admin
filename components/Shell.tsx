@@ -66,12 +66,13 @@ export function Shell({
   return (
     <div className="shell">
       <NavProgress />
-      <div className="frame">
-        <aside className="rail">
-          <Link href="/" className="rail__logo" aria-label="QR Hunt Admin: overview">
-            <I8Mark />
-          </Link>
-          {!me.locked && (
+      {/* (a temporary password still to change: no menu or top bar, only choosing a password) */}
+      <div className={me.locked ? "frame is-locked" : "frame"}>
+        {!me.locked && (
+          <aside className="rail">
+            <Link href="/" className="rail__logo" aria-label="QR Hunt Admin: overview">
+              <I8Mark />
+            </Link>
             <nav className="rail__nav" aria-label="Admin">
               {NAV.map(({ href, label, Icon }) => (
                 <Link key={href} href={href} className="rail__link" aria-current={current(href)}>
@@ -81,28 +82,26 @@ export function Shell({
                 </Link>
               ))}
             </nav>
-          )}
-          <div className="rail__end">
-            {!me.locked && (
+            <div className="rail__end">
               <Link href="/account" className="rail__link" aria-current={current("/account")}>
                 <GearIcon />
                 <LinkPending />
                 <span className="rail__tip">Your account</span>
               </Link>
-            )}
-            <form action={signOut}>
-              <SignOutButton rail />
-            </form>
-          </div>
-        </aside>
+              <form action={signOut}>
+                <SignOutButton rail />
+              </form>
+            </div>
+          </aside>
+        )}
 
         <div className="stage">
-          <header className="topbar">
-            <Link href="/" className="topbar__logo" aria-label="QR Hunt Admin: overview">
-              <I8Mark />
-            </Link>
-            {!me.locked && <Find items={find} />}
-            {!me.locked && (
+          {!me.locked && (
+            <header className="topbar">
+              <Link href="/" className="topbar__logo" aria-label="QR Hunt Admin: overview">
+                <I8Mark />
+              </Link>
+              <Find items={find} />
               <div className="topbar__acts">
                 <Changes changes={changes} />
                 <a
@@ -116,23 +115,23 @@ export function Shell({
                   <GlobeIcon />
                 </a>
               </div>
-            )}
-            <div className="me">
-              <Link href="/account" className="me__link" aria-current={current("/account")} title="Your account">
-                <Avatar name={me.name} />
-                <span className="me__text">
-                  <b>{me.name}</b>
-                  <small>
-                    <ShieldIcon />
-                    {me.role === "admin" ? "Admin" : "Staff"}
-                  </small>
-                </span>
-              </Link>
-              <form action={signOut} className="topbar__out">
-                <SignOutButton />
-              </form>
-            </div>
-          </header>
+              <div className="me">
+                <Link href="/account" className="me__link" aria-current={current("/account")} title="Your account">
+                  <Avatar name={me.name} />
+                  <span className="me__text">
+                    <b>{me.name}</b>
+                    <small>
+                      <ShieldIcon />
+                      {me.role === "admin" ? "Admin" : "Staff"}
+                    </small>
+                  </span>
+                </Link>
+                <form action={signOut} className="topbar__out">
+                  <SignOutButton />
+                </form>
+              </div>
+            </header>
+          )}
           <main className="main">{children}</main>
         </div>
       </div>

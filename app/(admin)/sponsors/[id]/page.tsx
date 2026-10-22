@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { CheckIcon } from "@/components/icons";
 import { SponsorForm } from "@/components/SponsorForm";
 import { deleteSponsor, saveSponsor } from "@/lib/actions/sponsors";
@@ -43,7 +43,6 @@ export default async function SponsorPage({
           Added. Choose the QR codes they&apos;re on, on each code&apos;s page.
         </p>
       )}
-      {!canEdit && <ReadOnly />}
       <SponsorForm
         key={found?.id ?? "new"}
         sponsor={found ? { id: found.id, name: found.name, badge: found.badge } : { id: "new", name: "", badge: null }}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head, pad, ReadOnly } from "@/components/bits";
+import { Head, pad } from "@/components/bits";
 import { CodeForm } from "@/components/CodeForm";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
@@ -72,7 +72,6 @@ export default async function CodePage({
           Added{code.live ? " and live in the game" : ""}.
         </p>
       )}
-      {!canEdit && <ReadOnly />}
       <CodeForm
         key={code.id}
         code={code}

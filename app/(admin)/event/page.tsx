@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { EventBanner } from "@/components/EventBanner";
 import { EventForm } from "@/components/EventForm";
 import { saveEvent } from "@/lib/actions/event";
@@ -20,7 +20,6 @@ export default async function EventPage() {
         title="Event"
         lead={`When the hunt runs, test mode, and the prize desk. Last changed ${stamp(s.updated_at)}.`}
       />
-      {!canEdit && <ReadOnly />}
       <div className="stack">
         <EventBanner
           startsAt={s.starts_at}

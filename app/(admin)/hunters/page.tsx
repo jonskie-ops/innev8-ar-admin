@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { HuntersPanel } from "@/components/HuntersPanel";
 import { requireTeammate } from "@/lib/dal";
 import { listHunters } from "@/lib/data";
@@ -17,7 +17,6 @@ export default async function HuntersPage() {
         title="Hunters"
         lead={`Each player gets a hunter ID when they sign up in the game: their hunter QR, for meeting other hunters.${canEdit ? " Delete a test player or a duplicate: the codes they found stay on their phone." : ""}`}
       />
-      {!canEdit && <ReadOnly />}
       {hunters ? (
         <HuntersPanel hunters={hunters} canEdit={canEdit} />
       ) : (

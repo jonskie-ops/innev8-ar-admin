@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SponsorView } from "@/lib/hunt";
-import { ArrowLeftIcon, LockIcon } from "./icons";
+import { ArrowLeftIcon } from "./icons";
 
 /** A page's title block, with its main button on the right. */
 export function Head({
@@ -36,15 +36,6 @@ export function Head({
 }
 
 /** For staff: looking is fine, changing is for admins. */
-export function ReadOnly() {
-  return (
-    <p className="banner">
-      <LockIcon />
-      You&apos;re on the team as staff: you can look at everything, but only admins can change it.
-    </p>
-  );
-}
-
 export const pad = (n: number) => String(n).padStart(2, "0");
 
 /** Someone's initial in a coloured badge: one of four colours, always the same for a name. */

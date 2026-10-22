@@ -44,47 +44,49 @@ export default async function AccountPage() {
     </section>
   );
 
+  // The first time: only choosing the password, in the middle of the page
+  if (first)
+    return (
+      <div className="first-pw">
+        <Head
+          eyebrow="Welcome"
+          title="Choose your password"
+          lead={`Welcome to the team, ${me.name.split(" ")[0]}. You signed in with a temporary password: choose your own to continue. Only you will know it.`}
+        />
+        {password}
+      </div>
+    );
+
   return (
     <>
       <Head
         eyebrow="Settings"
-        title={first ? "Choose your password" : "Your account"}
-        lead={
-          first
-            ? `Welcome to the team, ${me.name.split(" ")[0]}. You signed in with a temporary password: choose your own to continue. Only you will know it.`
-            : "Your details, what you can do here, and your password."
-        }
+        title="Your account"
+        lead="Your details, what you can do here, and your password."
       />
-      {!first && (
-        <p className="phone-team">
-          <Link href="/desk" className="btn btn--ghost btn--sm">
-            <DeskIcon />
-            Prize desk
-          </Link>
-          <Link href="/hunters" className="btn btn--ghost btn--sm">
-            <HunterIcon />
-            Hunters: the players
-          </Link>
-          <Link href="/team" className="btn btn--ghost btn--sm">
-            <TeamIcon />
-            The team: who can sign in
-          </Link>
-        </p>
-      )}
+      <p className="phone-team">
+        <Link href="/desk" className="btn btn--ghost btn--sm">
+          <DeskIcon />
+          Prize desk
+        </Link>
+        <Link href="/hunters" className="btn btn--ghost btn--sm">
+          <HunterIcon />
+          Hunters: the players
+        </Link>
+        <Link href="/team" className="btn btn--ghost btn--sm">
+          <TeamIcon />
+          The team: who can sign in
+        </Link>
+      </p>
       <div className="cols">
-        {/* The first time, the password comes first (on a phone, it's on top) */}
-        {first ? password : <div className="stack">{profile}{roles(me.role)}</div>}
-        {first ? (
-          <div className="stack">
-            {profile}
-            {roles(me.role)}
-          </div>
-        ) : (
-          <div className="stack">
-            {password}
-            {device}
-          </div>
-        )}
+        <div className="stack">
+          {profile}
+          {roles(me.role)}
+        </div>
+        <div className="stack">
+          {password}
+          {device}
+        </div>
       </div>
     </>
   );

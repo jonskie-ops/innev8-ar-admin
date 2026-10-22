@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { AlertIcon, PlusIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { VenueMap } from "@/components/VenueMap";
@@ -29,7 +29,6 @@ export default async function LocationsPage() {
           </Link>
         )}
       </Head>
-      {!canEdit && <ReadOnly />}
       {!ready && (
         <p className="banner">
           <AlertIcon />

@@ -5,6 +5,7 @@ import {
   useActionState,
   useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -188,7 +189,17 @@ export function SaveButton({ pending, children = "Save", busy = "Saving…" }: {
   );
 }
 
-/** A button that asks first ("Delete #05? Cancel / Delete"), then runs `action`. */
+/** "Delete #05? It's gone from the game." → its title ("Delete #05?") and the rest. */
+function splitQuestion(q: string) {
+  const at = q.indexOf("? ");
+  return at < 0 ? { title: q, more: "" } : { title: q.slice(0, at + 1), more: q.slice(at + 2) };
+}
+
+/**
+ * A button that asks first, in a pop-up ("Delete #05?", what that does, Cancel / Delete), then runs
+ * `action`. The pop-up keeps the keyboard in it; Esc, Cancel or a click beside it closes it (not
+ * while the action runs), and what goes wrong is said in it.
+ */
 export function ConfirmButton({
   action,
   question,
@@ -204,45 +215,83 @@ export function ConfirmButton({
   children: ReactNode;
   label?: string;
 }) {
-  const [asking, setAsking] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const id = useId();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  if (!asking)
-    return (
-      <button type="button" className={className} onClick={() => setAsking(true)} aria-label={label}>
+  const { title, more } = splitQuestion(question);
+  const close = () => {
+    if (!pending) dialog.current?.close();
+  };
+  return (
+    <>
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          setError(null);
+          dialog.current?.showModal();
+        }}
+        aria-label={label}
+        aria-haspopup="dialog"
+      >
         {children}
       </button>
-    );
-  return (
-    <span className="confirm" role="group" aria-label={question}>
-      <span className="confirm__q">{question}</span>
-      <span className="confirm__btns">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => setAsking(false)} autoFocus>
-          Cancel
-        </button>
-        <button
-          type="button"
-          className={pending ? "btn btn--danger btn--sm is-busy" : "btn btn--danger btn--sm"}
-          disabled={pending}
-          aria-busy={pending || undefined}
-          onClick={() =>
-            start(async () => {
-              const r = await action();
-              setError(r?.error ?? null);
-              if (!r?.error) setAsking(false);
-            })
-          }
-        >
-          {pending && <Spinner />}
-          {confirm}
-        </button>
-      </span>
-      {error && (
-        <span className="confirm__err" role="alert">
-          {error}
-        </span>
-      )}
-    </span>
+      <dialog
+        ref={dialog}
+        className="confirm"
+        aria-labelledby={`${id}-t`}
+        aria-describedby={more ? `${id}-q` : undefined}
+        // (it sits inside lists and forms: its clicks and keys stay its own; a click on the dimmed
+        // page beside it closes it)
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.target === e.currentTarget) close();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        onCancel={(e) => {
+          if (pending) e.preventDefault();
+        }}
+      >
+        <div className="confirm__box">
+          <h2 className="confirm__title" id={`${id}-t`}>
+            {title}
+          </h2>
+          {more && (
+            <p className="confirm__q" id={`${id}-q`}>
+              {more}
+            </p>
+          )}
+          {error && (
+            <p className="confirm__err" role="alert">
+              <AlertIcon />
+              {error}
+            </p>
+          )}
+          <div className="confirm__btns">
+            <button type="button" className="btn btn--ghost" onClick={close} disabled={pending} autoFocus>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className={pending ? "btn btn--danger is-busy" : "btn btn--danger"}
+              disabled={pending}
+              aria-busy={pending || undefined}
+              onClick={() =>
+                start(async () => {
+                  const r = await action();
+                  setError(r?.error ?? null);
+                  if (!r?.error) dialog.current?.close();
+                })
+              }
+            >
+              {pending && <Spinner />}
+              {confirm}
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </>
   );
 }
 

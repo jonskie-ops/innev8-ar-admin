@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- prize photos come from Supabase storage, already sized */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head, ReadOnly } from "@/components/bits";
+import { Head } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
 import { DeskIcon, GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
@@ -32,7 +32,6 @@ export default async function PrizesPage() {
           </Link>
         )}
       </Head>
-      {!canEdit && <ReadOnly />}
 
       {prizes.length ? (
         <ul className="prizes" role="list">

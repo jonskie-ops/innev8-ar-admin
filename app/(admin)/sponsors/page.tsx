@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- the sponsors' badges: small, already sized */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head, pad, ReadOnly } from "@/components/bits";
+import { Head, pad } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
 import { AlertIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { deleteSponsor } from "@/lib/actions/sponsors";
@@ -31,7 +31,6 @@ export default async function SponsorsPage() {
           </Link>
         )}
       </Head>
-      {!canEdit && <ReadOnly />}
       {!ready && (
         <p className="banner">
           <AlertIcon />

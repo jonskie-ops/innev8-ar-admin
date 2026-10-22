@@ -1375,29 +1375,83 @@ input:disabled {
 }
 
 /* "Delete this? Cancel / Delete" */
+/* "Delete #05?": a pop-up in the middle of the page, the page dimmed behind it */
 .confirm {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px 12px;
-  animation: fade-in 0.2s var(--ease-out);
+  width: min(440px, calc(100vw - 32px));
+  max-width: none;
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  overflow: visible;
+}
+.confirm::backdrop {
+  background: rgba(2, 6, 17, 0.72);
+  backdrop-filter: blur(3px);
+}
+.confirm[open] {
+  animation: confirm-in 0.22s var(--ease-out);
+}
+.confirm[open]::backdrop {
+  animation: fade-in 0.22s var(--ease-out);
+}
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+.confirm__box {
+  display: grid;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: #0b1838;
+  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.9);
+  text-align: left;
+}
+.confirm__title {
+  margin: 0;
+  font: 700 18px/1.35 var(--font-h);
+  overflow-wrap: anywhere;
 }
 .confirm__q {
-  max-width: 340px;
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.confirm__err {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  color: #ffb4b4;
   font-size: 13.5px;
-  line-height: 1.45;
-  color: var(--text);
+}
+.confirm__err .ico {
+  flex: none;
+  width: 18px;
+  height: 18px;
 }
 .confirm__btns {
   display: flex;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
 }
-.confirm__err {
-  flex-basis: 100%;
-  color: #ffb4b4;
-  font-size: 13px;
-  text-align: right;
+@media (max-width: 520px) {
+  .confirm__btns .btn {
+    flex: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confirm[open],
+  .confirm[open]::backdrop {
+    animation: none;
+  }
 }
 
 /* Save (and Delete) at the end of a form: a plain row on the right, where the form ends, with
@@ -3516,9 +3570,6 @@ button.vpin:focus-visible .vpin__head {
 .prize__foot .icon-btn .ico {
   width: 15px;
   height: 15px;
-}
-.prize__foot .confirm {
-  flex-basis: 100%;
 }
 .stock {
   font: 600 12px/1 var(--font-m);
@@ -5761,16 +5812,6 @@ html[data-full-map] .navbar {
   width: 15px;
   height: 15px;
 }
-/* "Take … off?" in a narrow card: the question, then Cancel and Delete, side by side or stacked */
-.spcard__foot .confirm {
-  width: 100%;
-  justify-content: center;
-  text-align: center;
-}
-.spcard__foot .confirm__btns {
-  flex-wrap: wrap;
-  justify-content: center;
-}
 
 /* A sponsor's page: their badge, and on a QR code as the game shows it */
 .badgebox {
@@ -6530,4 +6571,28 @@ html[data-full-map] .navbar {
   .desk__give {
     flex: 1;
   }
+}
+
+/* A temporary password still to change: no menu or top bar, just choosing a password in the middle
+   of the page */
+.frame.is-locked {
+  grid-template-columns: minmax(0, 1fr);
+}
+.frame.is-locked .main {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  /* (the same above and below: there's no tab bar to keep clear of on a phone) */
+  padding-block: 32px;
+}
+.first-pw {
+  width: min(520px, 100%);
+  margin: 0 auto;
+}
+.first-pw .head {
+  justify-content: center;
+  text-align: center;
+}
+.first-pw .head__lead {
+  margin-inline: auto;
 }
