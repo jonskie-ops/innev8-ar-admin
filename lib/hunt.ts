@@ -261,10 +261,16 @@ export type DeskClaim = {
   won: boolean;
 };
 
-/** Prizes given at the desk lately, and how many of each. */
-export type DeskGiven = {
-  recent: { code: string; at: string; given_by: string | null; hunter: string; province: string; prize: string }[];
-  counts: Record<string, number>;
+/** A prize given at the desk: when, to whom, which, its claim code, and who gave it. */
+export type Given = {
+  code: string;
+  at: string;
+  by: string | null;
+  hunter: string;
+  province: string;
+  tag: string;
+  prizeId: string;
+  prize: string;
 };
 
 export type Activity = {

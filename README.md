@@ -8,7 +8,7 @@ will read from.
 | --- | --- |
 | **Overview** | The summit (days to go, test mode), every QR code as a card, where they are and how many of each rarity, the prizes (what each one takes), the latest changes with who made them, and the team |
 | **QR codes** | The venue map and every code's number: tap one (or use ← →) and its details show beside it, with its switch, its code value and a link to try it in the game. Edit opens its page: name, clue, description, rarity and points, zone and spot, its pin (drag it), and **On the ground**: its GPS spot and how close players must be to see it (below). Codes can be added and deleted. Changes save by themselves |
-| **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at; directions |
+| **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at |
 | **Locations** | Where the hunt can be played (below): Leyte Academic Center, and any added since. Each has its map for the game, its areas (the codes' zones), its QR codes and an on/off switch |
 | **Prizes** | Name, photo, description, who wins it (all the codes, a number of codes, the legendary code, or a number of points) and how many are in stock |
 | **Prize desk** | Where prizes are given out (below): type or scan the code on a player's prize card, check it, and give the prize, once. Admins and staff. On a phone it's on the Account page |
@@ -119,17 +119,21 @@ finds, by the same rules as the game.
 A player who wins a prize gets a **claim code** on their prize card: a QR, and the same 8 characters
 under it (`K7M2-P9QX`). At the **Prize desk** page:
 
-1. **Type the code** (any case, with or without the dash) and press Enter, or **scan the QR** with a
-   USB barcode scanner: it types the code and presses Enter for you.
+1. **Type code**: type it (any case, with or without the dash) and press Enter, or scan the QR with
+   a USB barcode scanner, which types it and presses Enter for you. Or **Scan with camera**: hold
+   the player's prize QR up to the computer's camera (or a phone's back camera); it's read by
+   itself. Each device remembers which of the two it used.
 2. The desk shows the prize, the player (name, province, hunter tag) and their confirmed finds, and
    whether it can be given: **Ready to give**, or why not: already claimed (when, and by whom), not
    won, none left, or a test code.
 3. **Give prize** marks it claimed and lowers the prize's stock by one, together. The same code a
    second time is refused, and the player's card then says **Claimed**.
 
-Admins can **Take back** a prize given by mistake: it can be given again, and the stock goes back up.
-Beside the desk: how many of each prize are left and given, and the prizes given lately. Recent
-changes says who gave what to whom.
+Under it: how many of each prize are left and given, and a table of **every prize given** at the
+desk (when, the player, the prize, its code, who gave it), with a search. It refreshes every 30
+seconds, for gives at another desk. Admins can **Take back** a prize given by mistake (on the card,
+or its row): it can be given again, and the stock goes back up. Recent changes says who gave what to
+whom.
 
 **Test mode:** finds, prize codes and gives made while it's on are kept apart. Gives don't change the
 stock, and once test mode is off none of it counts: testers' codes are refused at the desk.

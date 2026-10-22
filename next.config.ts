@@ -20,9 +20,9 @@ const nextConfig: NextConfig = {
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "same-origin" },
-          // Location for the admin's own pages only: setting a code's spot from the phone's GPS, and
-          // the Map page's "Show me"
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
+          // Location and the camera for the admin's own pages only: setting a code's spot from the
+          // phone's GPS, the Map page's "Show me", and reading prize cards' QRs at the prize desk
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self)" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
         ],
       },

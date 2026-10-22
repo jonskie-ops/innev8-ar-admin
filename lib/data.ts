@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type DeskGiven, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -79,10 +79,43 @@ export const listHunters = cache(async (): Promise<Hunter[] | null> => {
   }
 });
 
-/** The prizes given at the desk lately and how many of each (null before the prize desk update). */
-export const deskGiven = cache(async (): Promise<DeskGiven | null> => {
-  const { data, error } = await (await supabase()).rpc("desk_given", { p_limit: 30 });
-  return error || !data ? null : (data as DeskGiven);
+/**
+ * Every prize given at the desk, newest first: in test mode the test ones, else the real ones (null
+ * before the prize desk update).
+ */
+export const listGiven = cache(async (testMode: boolean): Promise<Given[] | null> => {
+  const sb = await supabase();
+  try {
+    const [claims, hunters, prizes] = await Promise.all([
+      readAll<{ code: string; hunter_id: string; prize_id: string; test: boolean; claimed_at: string | null; claimed_by_name: string | null }>(
+        (from, to) => sb.from("claims").select("code, hunter_id, prize_id, test, claimed_at, claimed_by_name").order("created_at").order("id").range(from, to),
+      ),
+      readAll<{ id: string; name: string; province: string; tag: string }>((from, to) =>
+        sb.from("hunters").select("id, name, province, tag").order("created_at").order("id").range(from, to),
+      ),
+      listPrizes(),
+    ]);
+    const who = new Map(hunters.map((h) => [h.id, h]));
+    const what = new Map(prizes.map((p) => [p.id, p.name]));
+    return claims
+      .filter((c) => c.claimed_at && c.test === testMode)
+      .map((c) => {
+        const h = who.get(c.hunter_id);
+        return {
+          code: c.code,
+          at: c.claimed_at!,
+          by: c.claimed_by_name,
+          hunter: h?.name ?? "A deleted hunter",
+          province: h?.province ?? "",
+          tag: h?.tag ?? "",
+          prizeId: c.prize_id,
+          prize: what.get(c.prize_id) ?? "A deleted prize",
+        };
+      })
+      .sort((a, b) => b.at.localeCompare(a.at));
+  } catch {
+    return null;
+  }
 });
 
 /** A prize photo's address (the bucket is public, like the game's own images). */

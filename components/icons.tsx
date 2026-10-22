@@ -163,6 +163,18 @@ export const SponsorIcon = (p: P) => (
     <path d="m8.6 13.4-1.6 7.6 5-2.6 5 2.6-1.6-7.6" />
   </Svg>
 );
+export const CameraIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </Svg>
+);
+export const KeyboardIcon = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="6.5" width="18" height="11" rx="2" />
+    <path d="M7 10h.01M10.5 10h.01M14 10h.01M17.5 10h.01M8 14h8" />
+  </Svg>
+);
 /** The prize desk: a ticket being checked */
 export const DeskIcon = (p: P) => (
   <Svg {...p}>

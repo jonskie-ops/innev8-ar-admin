@@ -6356,8 +6356,40 @@ html[data-full-map] .navbar {
   }
 }
 
-/* The prize desk: the code typed (or scanned) and checked, the claim with Give prize, and beside it
-   what's left of each prize and the latest given */
+/* The prize desk: checking a card (typed, or the camera) beside the card itself; under them what's
+   left of each prize, and every prize given */
+.desk {
+  display: grid;
+  gap: 22px;
+}
+.desk__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+.desk__check {
+  gap: 16px;
+}
+.desk__check-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+.desk__check-head .panel__title {
+  margin: 0;
+}
+.desk .seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.desk .seg .ico {
+  width: 17px;
+  height: 17px;
+}
 .desk__find {
   display: flex;
   flex-wrap: wrap;
@@ -6395,11 +6427,77 @@ html[data-full-map] .navbar {
   letter-spacing: 0.12em;
   color: rgba(225, 238, 255, 0.25);
 }
+/* The camera: its picture with a frame to hold the QR in, and a line under it */
+.deskcam {
+  position: relative;
+  display: grid;
+  justify-self: center;
+  width: 100%;
+  max-width: 480px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #000;
+}
+.deskcam video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.deskcam__frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(56%, 220px);
+  aspect-ratio: 1;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--turq),
+    0 0 0 999px rgba(2, 6, 17, 0.4);
+  transform: translate(-50%, -50%);
+  transition: box-shadow 0.2s;
+}
+.deskcam.is-paused .deskcam__frame {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 0 999px rgba(2, 6, 17, 0.65);
+}
+.deskcam__note {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+.deskcam__note.is-off {
+  color: #ffc4c4;
+}
+.deskcam__note .ico {
+  width: 30px;
+  height: 30px;
+}
+.deskcam__tip {
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  left: 0;
+  text-align: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
 .desk__gave {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin: 14px 0 0;
+  margin: 0;
   padding: 14px 16px;
   border: 1px solid rgba(32, 201, 188, 0.45);
   border-radius: 14px;
@@ -6418,8 +6516,10 @@ html[data-full-map] .navbar {
 .desk__gave small {
   color: var(--muted);
 }
+/* The card being checked (or, before one, what shows there) */
 .desk__claim {
   gap: 16px;
+  align-content: start;
   border-color: var(--line-strong);
 }
 .desk__claim.is-ready {
@@ -6427,6 +6527,25 @@ html[data-full-map] .navbar {
 }
 .desk__claim.is-not {
   border-color: rgba(255, 107, 107, 0.45);
+}
+.desk__empty {
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  min-height: 220px;
+  border-style: dashed;
+  text-align: center;
+  color: var(--faint);
+}
+.desk__empty .ico {
+  width: 34px;
+  height: 34px;
+}
+.desk__empty p {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
 }
 .desk__prize,
 .desk__who {
@@ -6509,59 +6628,137 @@ html[data-full-map] .navbar {
   padding-block: 14px;
   font-size: 16px;
 }
-.desk__stock,
-.desk__recent {
+/* What's left of each prize, a box each */
+.desk__h {
+  margin: 0 0 12px;
+  font: 700 16px/1.3 var(--font-h);
+}
+.desk__stock {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.desk__stock li,
-.desk__recent li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 0;
-  border-top: 1px solid var(--line);
-}
-.desk__stock li:first-child,
-.desk__recent li:first-child {
-  border-top: 0;
-}
-.desk__stock li > span:first-child,
-.desk__recent li > span:not(.avatar) {
+.desk__stock li {
   display: grid;
-  flex: 1;
-  gap: 2px;
-  min-width: 0;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(var(--deep-rgb), 0.5);
 }
-.desk__stock small,
-.desk__recent small,
-.desk__recent time {
+.desk__stock li > b {
+  font: 700 15px/1.3 var(--font-h);
+}
+.desk__stock small {
   color: var(--faint);
   font-size: 12.5px;
 }
 .desk__nums {
-  display: grid;
-  justify-items: end;
-  gap: 2px;
-  text-align: right;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
 }
-.desk__nums b {
+.desk__nums strong {
   color: var(--turq);
-  font-family: var(--font-h);
+  font: 800 20px/1 var(--font-h);
 }
-.desk__nums b.is-out {
+.desk__stock li.is-out .desk__nums strong {
   color: #ffb4b4;
 }
-.desk__recent .avatar {
+/* Every prize given: a table (scrolls sideways on a phone) */
+.desk__log-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.desk__log-head .panel__title {
+  margin: 0;
+}
+.desk__log-head .count {
+  margin-left: 4px;
+}
+.desk__table-wrap {
+  overflow-x: auto;
+}
+.desk__table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.desk__table th {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  color: var(--faint);
+  font: 600 11px/1 var(--font-m);
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.desk__table td {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.desk__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.desk__table tbody tr:hover td {
+  background: rgba(140, 190, 255, 0.04);
+}
+.desk__table time {
+  display: grid;
+  gap: 2px;
+  white-space: nowrap;
+}
+.desk__table time small,
+.desk__player small {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+.desk__table code {
+  font: 600 13px/1 var(--font-m);
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.desk__player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.desk__player > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+.desk__player .avatar {
   flex: none;
   width: 32px;
   height: 32px;
   font-size: 13px;
 }
-.desk__recent time {
-  flex: none;
+.desk__row-acts {
+  text-align: right;
+}
+.desk__none {
+  padding: 28px 20px;
+  text-align: center;
+}
+@media (max-width: 1100px) {
+  .desk__top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .desk__empty {
+    min-height: 0;
+    padding-block: 28px;
+  }
 }
 @media (max-width: 959px) {
   .desk__find > .btn {

@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import { Head } from "@/components/bits";
 import { DeskPanel } from "@/components/DeskPanel";
 import { requireTeammate } from "@/lib/dal";
-import { deskGiven, getSettings, inGame, listCodes, listLocations, listPrizes } from "@/lib/data";
+import { getSettings, inGame, listCodes, listGiven, listLocations, listPrizes } from "@/lib/data";
 
 export const metadata: Metadata = { title: "Prize desk" };
 
 /** Where staff give out prizes: anyone on the team, admins and staff. */
 export default async function DeskPage() {
   const me = await requireTeammate();
-  const [given, prizes, settings, codes, { locations }] = await Promise.all([
-    deskGiven(),
+  const settings = await getSettings();
+  const [given, prizes, codes, { locations }] = await Promise.all([
+    listGiven(settings.test_mode),
     listPrizes(),
-    getSettings(),
     listCodes(),
     listLocations(),
   ]);
