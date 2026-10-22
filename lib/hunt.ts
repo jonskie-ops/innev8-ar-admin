@@ -244,6 +244,29 @@ export type Hunter = {
   meetings: number;
 };
 
+/** A player's standing, as the database works it out from their finds (the prize desk). */
+export type Standing = { count: number; total: number; finds: number; score: number; legendary: boolean };
+
+/** A claim code at the prize desk: whose it is, the prize, and how it stands. */
+export type DeskClaim = {
+  code: string;
+  /** Made in test mode, and whether test mode is on now */
+  test: boolean;
+  testNow: boolean;
+  claimedAt: string | null;
+  claimedBy: string | null;
+  hunter: { id: string; name: string; province: string; tag: string };
+  prize: { id: string; name: string; photo: string | null; rule: PrizeRule; value: number | null; stock: number; live: boolean };
+  standing: Standing;
+  won: boolean;
+};
+
+/** Prizes given at the desk lately, and how many of each. */
+export type DeskGiven = {
+  recent: { code: string; at: string; given_by: string | null; hunter: string; province: string; prize: string }[];
+  counts: Record<string, number>;
+};
+
 export type Activity = {
   id: number;
   at: string;

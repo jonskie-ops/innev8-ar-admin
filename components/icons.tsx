@@ -163,6 +163,13 @@ export const SponsorIcon = (p: P) => (
     <path d="m8.6 13.4-1.6 7.6 5-2.6 5 2.6-1.6-7.6" />
   </Svg>
 );
+/** The prize desk: a ticket being checked */
+export const DeskIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h14a1.5 1.5 0 0 1 1.5 1.5V10a2 2 0 0 0 0 4v2.5A1.5 1.5 0 0 1 19 18H5a1.5 1.5 0 0 1-1.5-1.5V14a2 2 0 0 0 0-4z" />
+    <path d="m8.5 12 2.2 2.2 4.8-4.7" />
+  </Svg>
+);
 /** A player with their hunter QR */
 export const HunterIcon = (p: P) => (
   <Svg {...p}>

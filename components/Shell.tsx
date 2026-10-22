@@ -11,6 +11,7 @@ import { Find, type Findable } from "./Find";
 import { I8Mark } from "./I8Mark";
 import {
   CalendarIcon,
+  DeskIcon,
   GearIcon,
   GiftIcon,
   GlobeIcon,
@@ -32,13 +33,14 @@ const NAV = [
   { href: "/map", label: "Map", short: "Map", Icon: MapIcon },
   { href: "/locations", label: "Locations", short: "Places", Icon: PlacesIcon },
   { href: "/prizes", label: "Prizes", short: "Prizes", Icon: GiftIcon },
+  { href: "/desk", label: "Prize desk", short: "Desk", Icon: DeskIcon },
   { href: "/sponsors", label: "Sponsors", short: "Sponsors", Icon: SponsorIcon },
   { href: "/hunters", label: "Hunters", short: "Hunters", Icon: HunterIcon },
   { href: "/event", label: "Event", short: "Event", Icon: CalendarIcon },
   { href: "/team", label: "Team", short: "Team", Icon: TeamIcon },
 ] as const;
-/** On phones, the tab bar has room for all but the hunters and the team (on the Account page there) */
-const TABS = NAV.filter(({ href }) => href !== "/hunters" && href !== "/team");
+/** On phones, the tab bar has room for all but the prize desk, the hunters and the team (on the Account page there) */
+const TABS = NAV.filter(({ href }) => href !== "/desk" && href !== "/hunters" && href !== "/team");
 
 /**
  * The admin's frame: a rail of icons down the side, with your account and sign out at its foot (on

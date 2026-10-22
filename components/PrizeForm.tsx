@@ -93,6 +93,8 @@ export function PrizeForm({
           <label className="field field--short">
             <span className="field__label">In stock</span>
             <input name="stock" inputMode="numeric" defaultValue={prize.stock} required />
+            {/* (what it was when this page got it: left alone, the prize desk's gives since then stay) */}
+            <input type="hidden" name="stock_was" value={prize.stock} />
             <span className="field__hint">How many you have to give away.</span>
           </label>
         </section>

@@ -59,7 +59,10 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
     if (error) return failed("Couldn't upload the photo. Try again.");
     photo = path;
   } else if (checked(fd, "remove_photo")) photo = null;
-  const row = photo === undefined ? v : { ...v, photo_path: photo };
+  // The stock as this page had it: not changed here, so the prize desk's gives since then stay
+  const { stock, ...rest } = v;
+  const base = id && fd.get("stock_was") === String(stock) ? rest : v;
+  const row = photo === undefined ? base : { ...base, photo_path: photo };
   const cleanup = () => photo && sb.storage.from("prizes").remove([photo]);
 
   if (!id) {

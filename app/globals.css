@@ -518,13 +518,13 @@ input:disabled {
   flex-direction: column;
   gap: clamp(2px, 1dvh, 8px);
 }
-/* 66px tall when there's room; less on a short window, so all eleven (the pages, your account and
+/* 66px tall when there's room; less on a short window, so all twelve (the pages, your account and
    sign out) fit under the logo without running into each other */
 .rail__link {
   position: relative;
   display: grid;
   place-items: center;
-  height: clamp(32px, calc((100dvh - 200px) / 11), 66px);
+  height: clamp(30px, calc((100dvh - 200px) / 12), 66px);
   flex: none;
   color: rgba(225, 238, 255, 0.6);
   text-decoration: none;
@@ -6312,5 +6312,222 @@ html[data-full-map] .navbar {
   }
   100% {
     transform: translateX(290%);
+  }
+}
+
+/* The prize desk: the code typed (or scanned) and checked, the claim with Give prize, and beside it
+   what's left of each prize and the latest given */
+.desk__find {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.desk__find .field {
+  flex: 1 1 260px;
+  margin: 0;
+}
+.desk__find > .btn {
+  margin-bottom: 26px;
+}
+.desk__input {
+  position: relative;
+  display: block;
+}
+.desk__input .ico {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 20px;
+  height: 20px;
+  color: var(--faint);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.desk__input input {
+  padding: 14px 14px 14px 44px;
+  font: 700 20px/1.2 var(--font-m);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.desk__input input::placeholder {
+  letter-spacing: 0.12em;
+  color: rgba(225, 238, 255, 0.25);
+}
+.desk__gave {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(32, 201, 188, 0.45);
+  border-radius: 14px;
+  background: rgba(32, 201, 188, 0.1);
+}
+.desk__gave .ico {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  color: var(--turq);
+}
+.desk__gave span {
+  display: grid;
+  gap: 2px;
+}
+.desk__gave small {
+  color: var(--muted);
+}
+.desk__claim {
+  gap: 16px;
+  border-color: var(--line-strong);
+}
+.desk__claim.is-ready {
+  border-color: rgba(32, 201, 188, 0.5);
+}
+.desk__claim.is-not {
+  border-color: rgba(255, 107, 107, 0.45);
+}
+.desk__prize,
+.desk__who {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.desk__prize > span:last-child,
+.desk__who > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.desk__prize b {
+  font: 700 19px/1.3 var(--font-h);
+}
+.desk__who b {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  font: 700 15.5px/1.4 var(--font-h);
+}
+.desk__prize small,
+.desk__who small {
+  color: var(--faint);
+  font-size: 13px;
+}
+.desk__photo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 76px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(140, 190, 255, 0.08);
+  color: var(--faint);
+}
+.desk__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.desk__who .avatar {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+}
+.desk__state {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+.desk__state .ico {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.desk__state.is-ready {
+  background: rgba(32, 201, 188, 0.12);
+  color: #9ff3e9;
+}
+.desk__state.is-not {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ffc4c4;
+}
+.desk__acts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.desk__give {
+  min-width: 180px;
+  padding-block: 14px;
+  font-size: 16px;
+}
+.desk__stock,
+.desk__recent {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.desk__stock li,
+.desk__recent li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+}
+.desk__stock li:first-child,
+.desk__recent li:first-child {
+  border-top: 0;
+}
+.desk__stock li > span:first-child,
+.desk__recent li > span:not(.avatar) {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+.desk__stock small,
+.desk__recent small,
+.desk__recent time {
+  color: var(--faint);
+  font-size: 12.5px;
+}
+.desk__nums {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+.desk__nums b {
+  color: var(--turq);
+  font-family: var(--font-h);
+}
+.desk__nums b.is-out {
+  color: #ffb4b4;
+}
+.desk__recent .avatar {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+}
+.desk__recent time {
+  flex: none;
+}
+@media (max-width: 959px) {
+  .desk__find > .btn {
+    width: 100%;
+    margin-bottom: 0;
+  }
+  .desk__give {
+    flex: 1;
   }
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type DeskGiven, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -77,6 +77,12 @@ export const listHunters = cache(async (): Promise<Hunter[] | null> => {
   } catch {
     return null;
   }
+});
+
+/** The prizes given at the desk lately and how many of each (null before the prize desk update). */
+export const deskGiven = cache(async (): Promise<DeskGiven | null> => {
+  const { data, error } = await (await supabase()).rpc("desk_given", { p_limit: 30 });
+  return error || !data ? null : (data as DeskGiven);
 });
 
 /** A prize photo's address (the bucket is public, like the game's own images). */

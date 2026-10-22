@@ -11,6 +11,7 @@ will read from.
 | **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at; directions |
 | **Locations** | Where the hunt can be played (below): Leyte Academic Center, and any added since. Each has its map for the game, its areas (the codes' zones), its QR codes and an on/off switch |
 | **Prizes** | Name, photo, description, who wins it (all the codes, a number of codes, the legendary code, or a number of points) and how many are in stock |
+| **Prize desk** | Where prizes are given out (below): type or scan the code on a player's prize card, check it, and give the prize, once. Admins and staff. On a phone it's on the Account page |
 | **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
 | **Hunters** | The players with a hunter ID (below): find one by name, province or tag, and see who they've met. Admins delete one, or tick several and delete them together. On a phone it's on the Account page |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
@@ -106,6 +107,38 @@ Adding and changing sponsors needs the update `supabase/migrations/2026102100000
 (run it in the SQL Editor). It starts with the 8 sponsors the game came with, on their own badges.
 Until it's run, the Sponsors page shows those 8 and says what to run, and codes can still be given
 any of them.
+
+## Prize desk
+
+Each code a player collects is sent to the database (a find, against their hunter ID), with where
+their phone was. A find counts only if the phone was near the code: within the code's distance, plus
+20 m and the phone's own GPS error (up to 40 m more). Codes with only a map pin (no GPS spot set on
+site) aren't checked, and nothing is in random-spots mode. Who won each prize is worked out from the
+finds, by the same rules as the game.
+
+A player who wins a prize gets a **claim code** on their prize card: a QR, and the same 8 characters
+under it (`K7M2-P9QX`). At the **Prize desk** page:
+
+1. **Type the code** (any case, with or without the dash) and press Enter, or **scan the QR** with a
+   USB barcode scanner: it types the code and presses Enter for you.
+2. The desk shows the prize, the player (name, province, hunter tag) and their confirmed finds, and
+   whether it can be given: **Ready to give**, or why not: already claimed (when, and by whom), not
+   won, none left, or a test code.
+3. **Give prize** marks it claimed and lowers the prize's stock by one, together. The same code a
+   second time is refused, and the player's card then says **Claimed**.
+
+Admins can **Take back** a prize given by mistake: it can be given again, and the stock goes back up.
+Beside the desk: how many of each prize are left and given, and the prizes given lately. Recent
+changes says who gave what to whom.
+
+**Test mode:** finds, prize codes and gives made while it's on are kept apart. Gives don't change the
+stock, and once test mode is off none of it counts: testers' codes are refused at the desk.
+
+A prize's page keeps the desk's gives: saving it changes the stock only if you changed the number.
+
+This needs the update `supabase/migrations/20261024000000_prize_desk.sql` (run it in the SQL
+Editor). Until it's run, the Prize desk page says what to run, and the game's prize cards say they
+need a signal.
 
 ## Hunters
 
@@ -206,5 +239,4 @@ saved here reaches phones within about a minute. See the game's README, "Where t
 
 ## Next
 
-- **Prize desk:** finds sent to the database, and staff scan a player's prize QR to mark it claimed.
 - **Extra tasks:** "Networking" tasks under a code's clue.

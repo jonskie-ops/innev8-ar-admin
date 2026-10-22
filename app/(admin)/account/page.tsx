@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PasswordForm, SignOutForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
-import { HunterIcon, KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
+import { DeskIcon, HunterIcon, KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
 import { requireTeammate } from "@/lib/dal";
 import { listTeam } from "@/lib/data";
@@ -57,6 +57,10 @@ export default async function AccountPage() {
       />
       {!first && (
         <p className="phone-team">
+          <Link href="/desk" className="btn btn--ghost btn--sm">
+            <DeskIcon />
+            Prize desk
+          </Link>
           <Link href="/hunters" className="btn btn--ghost btn--sm">
             <HunterIcon />
             Hunters: the players

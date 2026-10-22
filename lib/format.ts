@@ -127,6 +127,7 @@ const KIND: Record<string, string> = {
   zones: "zone",
   team: "teammate",
   hunters: "hunter",
+  claims: "prize",
   settings: "",
 };
 
@@ -137,6 +138,7 @@ const list = (xs: string[]) =>
 export function didWhat(a: Activity) {
   const kind = KIND[a.what] ?? a.what;
   if (a.what === "hunters" && /^\d+ hunters$/.test(a.label)) return "removed"; // ("removed 12 hunters": deleted together)
+  if (a.what === "claims") return a.action === "removed" ? "took back" : "gave"; // ("gave Tote bag to Ana", at the prize desk)
   if (a.action === "added") return `added the ${kind}`;
   if (a.action === "removed") return `removed the ${kind}`;
   const live = a.changes.find((c) => c.startsWith("live:"));

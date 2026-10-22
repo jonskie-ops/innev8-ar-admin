@@ -49,6 +49,12 @@ export async function requireTeammate({ settingPassword = false } = {}): Promise
  * For server actions, which anyone can call directly: the signed-in admin, or null. Checked again
  * in every action, whatever page it's on.
  */
+/** For server actions anyone on the team may do (the prize desk): the teammate, or null. */
+export async function teammateOnly(): Promise<Teammate | null> {
+  const me = (await currentUser())?.teammate;
+  return me && !me.mustChangePassword ? me : null;
+}
+
 export async function adminOnly(): Promise<Teammate | null> {
   const me = (await currentUser())?.teammate;
   return me && me.role === "admin" && !me.mustChangePassword ? me : null;

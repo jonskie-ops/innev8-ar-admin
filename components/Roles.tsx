@@ -3,6 +3,7 @@ import { CheckIcon, CloseIcon } from "./icons";
 /** What each role can do, and whether staff can too (admins can do all of it). */
 const CAN: [what: string, staff: boolean][] = [
   ["See the QR codes, prizes, map, event and team", true],
+  ["Give prizes at the prize desk", true],
   ["Change QR codes, clues and pins", false],
   ["Change prizes and their stock", false],
   ["Change the dates and test mode", false],
