@@ -1,14 +1,10 @@
 import { HoldProgress } from "./Progress";
 
-/** While a page loads (inside the frame, which stays put): its outline, shimmering, and "Loading…". */
+/** While a page loads (inside the frame, which stays put): its outline, shimmering. */
 export function PageLoading() {
   return (
-    <div className="skel" role="status">
+    <div className="skel" role="status" aria-label="Loading">
       <HoldProgress />
-      <p className="skel__note">
-        <span className="spin" aria-hidden="true" />
-        Loading…
-      </p>
       <div className="skel__head" aria-hidden="true">
         <i className="skel__line skel__line--eyebrow" />
         <i className="skel__line skel__line--title" />

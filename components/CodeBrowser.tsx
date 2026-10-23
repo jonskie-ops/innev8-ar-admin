@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { GAME_URL, RARITIES, RARITY_LABEL, taskOf, type Location, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
+import { RARITIES, RARITY_LABEL, taskOf, type Location, type Rarity, type SponsorView, type Task, type Zone } from "@/lib/hunt";
 import { pad, SponsorBadge } from "./bits";
 import { PlaceTabs } from "./PlaceTabs";
 import {
@@ -14,7 +14,6 @@ import {
   ChevronRightIcon,
   CopyIcon,
   EyeIcon,
-  ExternalIcon,
   MapIcon,
   PencilIcon,
   PinIcon,
@@ -320,16 +319,6 @@ export function CodeBrowser({
             <MapIcon />
             On the map
           </Link>
-          <a
-            href={`${GAME_URL}/?s=${encodeURIComponent(c.code)}`}
-            target="_blank"
-            rel="noopener"
-            className="btn btn--ghost btn--sm"
-            title="Opens the game straight to this code. It counts as found in the game on this device."
-          >
-            <ExternalIcon />
-            Try in the game
-          </a>
         </div>
       </section>
     </div>
