@@ -164,12 +164,13 @@ export type SponsorView = { id: string; name: string; badge: string };
 export const sponsorIn = (sponsors: SponsorView[], id: string | undefined): SponsorView | null =>
   sponsors.find((s) => s.id === id) ?? null;
 
-export type PrizeRule = "all" | "count" | "legendary" | "points";
+export type PrizeRule = "all" | "count" | "legendary" | "points" | "code";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "all", label: "Collect every QR code" },
   { id: "count", label: "Collect a number of QR codes", value: "QR codes" },
   { id: "legendary", label: "Find the legendary (gold) code" },
   { id: "points", label: "Reach a number of points", value: "points" },
+  { id: "code", label: "Find a chosen QR code" },
 ];
 
 export type Prize = {
@@ -179,14 +180,18 @@ export type Prize = {
   photo_path: string | null;
   rule: PrizeRule;
   rule_value: number | null;
+  /** "code": the code to find (null if it's been deleted since), and the sentence players read
+   *  (both missing before the prize code update) */
+  rule_code?: string | null;
+  rule_text?: string | null;
   stock: number;
   live: boolean;
   sort: number;
   updated_at: string;
 };
 
-/** "Collect all 8 QR codes", "Reach 1,000 points"… */
-export function ruleText(p: Pick<Prize, "rule" | "rule_value">, total: number) {
+/** "Collect all 8 QR codes", "Reach 1,000 points", or the organisers' own ("Get the Symphonics QR") */
+export function ruleText(p: Pick<Prize, "rule" | "rule_value" | "rule_text">, total: number) {
   switch (p.rule) {
     case "all":
       return `Collect all ${total} QR codes`;
@@ -196,6 +201,8 @@ export function ruleText(p: Pick<Prize, "rule" | "rule_value">, total: number) {
       return "Find the legendary code";
     case "points":
       return `Reach ${(p.rule_value ?? 0).toLocaleString("en-PH")} points`;
+    case "code":
+      return p.rule_text || "Find a chosen QR code";
   }
 }
 
@@ -212,6 +219,8 @@ export function prizeNeeds(p: Pick<Prize, "rule" | "rule_value">, codes: number,
       return { needs: "The legendary code", share: of(1, codes) };
     case "points":
       return { needs: `${v.toLocaleString("en-PH")} of ${points.toLocaleString("en-PH")} pts`, share: of(v, points) };
+    case "code":
+      return { needs: "A chosen QR code", share: of(1, codes) };
   }
 }
 

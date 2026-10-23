@@ -5,7 +5,8 @@ import { CheckIcon } from "@/components/icons";
 import { PrizeForm } from "@/components/PrizeForm";
 import { deletePrize, savePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
-import { getPrize, inGame, listCodes, listLocations, photoUrl } from "@/lib/data";
+import { getPrize, inGame, listCodes, listLocations, locationOf, photoUrl } from "@/lib/data";
+import { pad } from "@/components/bits";
 import { stamp } from "@/lib/format";
 import type { Prize } from "@/lib/hunt";
 
@@ -35,12 +36,20 @@ export default async function PrizePage({
     photo_path: null,
     rule: "all",
     rule_value: null,
+    rule_code: null,
+    rule_text: null,
     stock: 1,
     live: true,
     sort: 0,
     updated_at: "",
   };
   const { added } = await searchParams;
+  // The codes a prize can be for ("Find a chosen QR code"), location by location
+  const choices = locations.flatMap((l) =>
+    codes
+      .filter((c) => locationOf(c) === l.id)
+      .map((c) => ({ id: c.id, label: `#${pad(c.num)} ${c.name}${locations.length > 1 ? ` · ${l.name}` : ""}` })),
+  );
 
   return (
     <>
@@ -60,6 +69,7 @@ export default async function PrizePage({
         prize={prize}
         photo={photoUrl(prize.photo_path)}
         total={codes.filter(inGame(locations)).length}
+        codes={choices}
         save={savePrize.bind(null, isNew ? null : prize.id)}
         remove={isNew ? undefined : deletePrize.bind(null, prize.id)}
         canEdit={canEdit}

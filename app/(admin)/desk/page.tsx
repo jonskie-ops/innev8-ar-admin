@@ -32,7 +32,7 @@ export default async function DeskPage() {
       {given ? (
         <DeskPanel
           given={given}
-          prizes={prizes.filter((p) => p.live).map((p) => ({ id: p.id, name: p.name, rule: p.rule, rule_value: p.rule_value, stock: p.stock }))}
+          prizes={prizes.filter((p) => p.live).map((p) => ({ id: p.id, name: p.name, rule: p.rule, rule_value: p.rule_value, rule_text: p.rule_text, stock: p.stock }))}
           total={total}
           isAdmin={me.role === "admin"}
         />

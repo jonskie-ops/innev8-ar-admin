@@ -12,7 +12,7 @@ import { ConfirmButton } from "./form";
 import { AlertIcon, CameraIcon, CheckIcon, GiftIcon, KeyboardIcon, SearchIcon } from "./icons";
 import { Spinner } from "./Progress";
 
-export type DeskPrize = { id: string; name: string; rule: DeskClaim["prize"]["rule"]; rule_value: number | null; stock: number };
+export type DeskPrize = { id: string; name: string; rule: DeskClaim["prize"]["rule"]; rule_value: number | null; rule_text?: string | null; stock: number };
 type Mode = "type" | "camera";
 
 /** This device's choice of typing or the camera (kept on it, for the next time). */
@@ -173,7 +173,7 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
               <span className="desk__photo">{claim.prize.photo ? <img src={claim.prize.photo} alt="" /> : <GiftIcon />}</span>
               <span>
                 <b>{claim.prize.name}</b>
-                <small>{ruleText({ rule: claim.prize.rule, rule_value: claim.prize.value }, total)}</small>
+                <small>{ruleText(prizes.find((p) => p.id === claim.prize.id) ?? { rule: claim.prize.rule, rule_value: claim.prize.value }, total)}</small>
               </span>
             </div>
             <div className="desk__who">

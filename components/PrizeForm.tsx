@@ -16,6 +16,7 @@ export function PrizeForm({
   prize,
   photo,
   total,
+  codes,
   save,
   remove,
   canEdit,
@@ -23,6 +24,8 @@ export function PrizeForm({
   prize: Prize;
   photo: string | null;
   total: number;
+  /** The codes a prize can be for ("Find a chosen QR code"): "#03 Capstone Rooms" */
+  codes: { id: string; label: string }[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
   canEdit: boolean;
@@ -47,10 +50,19 @@ export function PrizeForm({
       <fieldset className="edit__main" disabled={!canEdit}>
         <section className="panel">
           <h2 className="panel__title">The prize</h2>
-          <label className="field">
-            <span className="field__label">Name</span>
-            <input name="name" defaultValue={prize.name} maxLength={60} required placeholder="INNEV8 summit kit" />
-          </label>
+          {/* Its name, and beside it how many there are */}
+          <div className="row2 row2--stock">
+            <label className="field">
+              <span className="field__label">Name</span>
+              <input name="name" defaultValue={prize.name} maxLength={60} required placeholder="INNEV8 summit kit" />
+            </label>
+            <label className="field">
+              <span className="field__label">In stock</span>
+              <input name="stock" inputMode="numeric" defaultValue={prize.stock} required title="How many you have to give away" />
+              {/* (what it was when this page got it: left alone, the prize desk's gives since then stay) */}
+              <input type="hidden" name="stock_was" value={prize.stock} />
+            </label>
+          </div>
           <label className="field">
             <span className="field__label">
               Description <Counter n={desc} max={300} />
@@ -90,13 +102,32 @@ export function PrizeForm({
               </label>
             ))}
           </div>
-          <label className="field field--short">
-            <span className="field__label">In stock</span>
-            <input name="stock" inputMode="numeric" defaultValue={prize.stock} required />
-            {/* (what it was when this page got it: left alone, the prize desk's gives since then stay) */}
-            <input type="hidden" name="stock_was" value={prize.stock} />
-            <span className="field__hint">How many you have to give away.</span>
-          </label>
+          {/* A chosen code: which one, and the sentence players read */}
+          {rule === "code" && (
+            <div className="row2 rules__code">
+              <label className="field">
+                <span className="field__label">The QR code</span>
+                <select name="rule_code" defaultValue={prize.rule_code ?? ""} required>
+                  <option value="" disabled>
+                    Choose a QR code
+                  </option>
+                  {codes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                {prize.rule === "code" && !prize.rule_code && (
+                  <span className="field__hint is-bad">Its QR code was deleted: choose another, or nobody can win it.</span>
+                )}
+              </label>
+              <label className="field">
+                <span className="field__label">What players read</span>
+                <input name="rule_text" defaultValue={prize.rule_text ?? ""} maxLength={80} required placeholder="Get the Symphonics QR" />
+                <span className="field__hint">Whoever finds that code wins it.</span>
+              </label>
+            </div>
+          )}
         </section>
       </fieldset>
 

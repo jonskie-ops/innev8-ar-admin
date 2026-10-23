@@ -109,6 +109,8 @@ const FIELD: Record<string, string> = {
   outlines: "map",
   rule: "who wins",
   rule_value: "who wins",
+  rule_code: "who wins",
+  rule_text: "who wins",
   stock: "stock",
   sort: "order",
   starts_at: "dates",

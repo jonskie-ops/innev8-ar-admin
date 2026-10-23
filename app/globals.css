@@ -334,6 +334,9 @@ input:disabled {
   line-height: 1.5;
   color: var(--faint);
 }
+.field__hint.is-bad {
+  color: #ffb4b4;
+}
 .field--short {
   max-width: 180px;
 }
@@ -352,6 +355,9 @@ input:disabled {
 }
 .row2--num {
   grid-template-columns: 96px 1fr;
+}
+.row2--stock {
+  grid-template-columns: 1fr 120px;
 }
 .check {
   display: inline-flex;
@@ -3393,6 +3399,10 @@ button.vpin:focus-visible .vpin__head {
   display: grid;
   gap: 8px;
 }
+/* "Find a chosen QR code": which code, and the sentence players read */
+.rules__code {
+  align-items: start;
+}
 .rules__opt {
   position: relative;
   display: flex;
@@ -5592,6 +5602,9 @@ html[data-full-map] .navbar {
   }
   .row2--num {
     grid-template-columns: 80px 1fr;
+  }
+  .row2--stock {
+    grid-template-columns: 1fr 96px;
   }
   .rarity {
     grid-template-columns: 1fr;

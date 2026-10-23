@@ -24,6 +24,9 @@ export const NEEDS_GPS =
 export const NEEDS_LOCATIONS =
   "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
 
+export const NEEDS_PRIZE_CODE =
+  "A prize for finding a chosen QR code needs the prize code update first: run supabase/migrations/20261026000000_prize_code_rule.sql in Supabase's SQL Editor.";
+
 export const NEEDS_CODE_NUMBERS =
   "Numbers starting at 1 at each location need the code numbers update first: run supabase/migrations/20261025000000_code_numbers.sql in Supabase's SQL Editor.";
 
