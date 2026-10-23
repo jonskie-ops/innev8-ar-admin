@@ -38,7 +38,8 @@ export default async function LocationPage({
     lng: 0,
     width: 300,
     outlines: null,
-    live: true,
+    // Off to start with while another location is on (on once its codes are ready); on if none is
+    live: !locations.some((l) => l.live),
     sort: 0,
     updated_at: "",
   };

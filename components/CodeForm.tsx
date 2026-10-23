@@ -77,6 +77,7 @@ export function CodeForm({
   const [clue, setClue] = useState(code.clue.length);
   const [blurb, setBlurb] = useState(code.blurb.length);
   const [num, setNum] = useState(String(code.num));
+  const [suggested, setSuggested] = useState(String(code.num));
   const [task, setTask] = useState<Task>(code.task ?? "none");
   const [sponsor, setSponsor] = useState(code.sponsor ?? firstSponsor(code.num));
   // Where it is: a location, one of its areas, and on its map
@@ -106,6 +107,13 @@ export function CodeForm({
     const p = planOf(l);
     setLocId(id);
     setZone(zones.find((z) => (z.location_id ?? DEFAULT_LOCATION) === id)?.id ?? "");
+    // A new code's number, while it's still the one suggested: the next at that location
+    const there = others.filter((o) => (o.location_id ?? DEFAULT_LOCATION) === id).map((o) => o.num);
+    if (code.id === "new" && num === suggested) {
+      const n = String(Math.max(0, ...there) + 1);
+      setNum(n);
+      setSuggested(n);
+    }
     const a = p.pinArea;
     putSpot({ ...p.toLatLng((a.x0 + a.x1) / 2, (a.y0 + a.y1) / 2), accuracy: null, from: "pin" }, p);
   };

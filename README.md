@@ -68,8 +68,10 @@ The hunt can be played somewhere other than Leyte Academic Center. On the **Loca
   draws it again; **Get the map again** picks up buildings added to OpenStreetMap since.
 - **Areas:** each location's zones (an area named after it to start with): rename, add, or remove one
   no code is in.
-- **On/off:** off hides the location and its codes from the game. Players see the codes of every
-  location that's on; with more than one, the game's map has a chip for each and opens on the nearest.
+- **On/off:** off hides the location and its codes from the game. A new location starts off when another
+  is already on (switch it on once its codes are ready), and on when none is. Players see the codes of every
+  location that's on; with more than one, the game's map has a chip for each and opens on the nearest. With
+  every location off the game says there are no QR codes right now.
 - **Delete** only once it has no codes (move them on their pages, or delete them). Leyte Academic
   Center stays. Its map starts on the plan drawn by hand for the summit; moving it, changing its
   width or **Get the map again** draws it from OpenStreetMap like the others (its codes keep their
@@ -83,6 +85,11 @@ Account page there.
 This needs the update `supabase/migrations/20261022000000_locations.sql` (run it in the SQL Editor):
 it starts with Leyte Academic Center, with every code and zone at it. Until it's run, the admin and
 the game work as before, and the Locations page says what to run.
+
+QR code numbers start at 1 at each location (Leyte Academic Center's #01–#08, a new location's own
+#01, #02…): a number is taken only within its location, and a new code gets the next one there. That
+needs the update `supabase/migrations/20261025000000_code_numbers.sql` (run it in the SQL Editor);
+until then a number is taken at every location, and adding one says what to run.
 
 ## Sponsors
 

@@ -5,7 +5,7 @@ import { CodeForm } from "@/components/CodeForm";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
 import { requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listSponsors, listZones } from "@/lib/data";
+import { listCodes, listLocations, listSponsors, listZones, locationOf } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Code } from "@/lib/hunt";
 import { DEFAULT_LOCATION, planOf } from "@/lib/venue";
@@ -33,9 +33,10 @@ export default async function CodePage({
   ]);
   const found = codes.find((c) => c.id === id);
   if (!isNew && !found) notFound();
-  const next = Math.max(0, ...codes.map((c) => c.num)) + 1;
-  // A new code: at the location asked for (?at=, from its Locations page), in the middle of its map
+  // A new code: at the location asked for (?at=, from its Locations page), in the middle of its map,
+  // with the number after its location's last (each location's start at 1)
   const where = locations.find((l) => l.id === at) ?? locations[0];
+  const next = Math.max(0, ...codes.filter((c) => locationOf(c) === where.id).map((c) => c.num)) + 1;
   const plan = planOf(where);
   const middle = { x: (plan.pinArea.x0 + plan.pinArea.x1) / 2, y: (plan.pinArea.y0 + plan.pinArea.y1) / 2 };
   const code: Code = found ?? {

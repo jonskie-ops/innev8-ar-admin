@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
-import { checked, dbError, decimal, done, failed, Invalid, NEEDS_GPS, NEEDS_LOCATIONS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
@@ -91,7 +91,10 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
     throw e;
   }
   const sb = await supabase();
-  const taken = `Number ${v.num} is already used by another QR code.`;
+  const taken = `Number ${v.num} is already used by another QR code at this location.`;
+  // Before the code numbers update a number is taken at every location, not just its own
+  const numbers = (e: { code?: string; message: string }) =>
+    e.code === "23505" && e.message.includes("codes_num_key") ? NEEDS_CODE_NUMBERS : dbError(e, taken);
   // A database without the networking, sponsors or GPS update yet: save the rest (when none of
   // those was changed; a GPS spot that's just the map pin's place counts as unchanged)
   const { task, sponsor, lat, lng, accuracy, radius, location_id, ...rest } = v;
@@ -117,12 +120,12 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
     const newId = "c" + pick(6, "abcdefghjkmnpqrstuvwxyz23456789");
     const code = `I8AR-${String(v.num).padStart(2, "0")}-${pick(4)}`;
     const { error } = await sb.from("codes").insert({ ...row, id: newId, code });
-    if (error) return failed(dbError(error, taken));
+    if (error) return failed(numbers(error));
     revalidatePath("/", "layout");
     redirect(`/codes/${newId}?added=1`);
   }
   const { data, error } = await sb.from("codes").update(row).eq("id", id).select("id");
-  if (error) return failed(dbError(error, taken));
+  if (error) return failed(numbers(error));
   if (!data?.length) return failed("This QR code was removed by someone else.");
   revalidatePath("/", "layout");
   return done("Saved");

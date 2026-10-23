@@ -246,7 +246,15 @@ export function LocationForm({
       <fieldset className="edit__side" disabled={!canEdit}>
         <section className="panel">
           <h2 className="panel__title">In the game</h2>
-          <Toggle name="live" defaultChecked={location.live} hint="Off: its QR codes are hidden from the game.">
+          <Toggle
+            name="live"
+            defaultChecked={location.live}
+            hint={
+              isNew && !location.live
+                ? "Starts off, as another location is on: switch it on once its QR codes are ready. Off: its QR codes are hidden from the game."
+                : "Off: its QR codes are hidden from the game."
+            }
+          >
             On
           </Toggle>
         </section>

@@ -24,6 +24,9 @@ export const NEEDS_GPS =
 export const NEEDS_LOCATIONS =
   "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
 
+export const NEEDS_CODE_NUMBERS =
+  "Numbers starting at 1 at each location need the code numbers update first: run supabase/migrations/20261025000000_code_numbers.sql in Supabase's SQL Editor.";
+
 export const NEEDS_SPONSOR_LOGOS =
   "Adding and changing sponsors needs the sponsor logos update first: run supabase/migrations/20261021000000_sponsor_logos.sql in Supabase's SQL Editor.";
 
