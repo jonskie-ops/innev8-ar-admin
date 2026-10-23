@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { findPlaces } from "@/lib/actions/locations";
 import type { FormState } from "@/lib/form";
+import { deleteQuestion } from "@/lib/format";
 import { MAP_WIDTH, mapState, type Location, type Rarity } from "@/lib/hunt";
 import { latLngText, parseLatLng } from "@/lib/venue";
 import { pad } from "./bits";
 import { AutoSaveToast, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
-import { AlertIcon, LocateIcon, MapIcon, PlacesIcon, PlusIcon, QrIcon, SearchIcon, TrashIcon } from "./icons";
+import { LocateIcon, MapIcon, PlacesIcon, PlusIcon, QrIcon, SearchIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 import { PlaceMap } from "./PlaceMap";
 import { Spinner } from "./Progress";
@@ -334,17 +335,10 @@ export function LocationForm({
           {!isNew ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
             {remove ? (
-              codes.length ? (
-                <span className="savebar__note">
-                  <AlertIcon />
-                  To delete it, move or delete its {codes.length} QR code{codes.length === 1 ? "" : "s"} first
-                </span>
-              ) : (
-                <ConfirmButton action={remove} question={`Delete ${location.name}, with its areas?`}>
-                  <TrashIcon />
-                  Delete
-                </ConfirmButton>
-              )
+              <ConfirmButton action={remove} question={deleteQuestion(location.name, codes.length)}>
+                <TrashIcon />
+                Delete
+              </ConfirmButton>
             ) : isNew ? (
               <SaveButton pending={pending} busy="Adding…">
                 Add location

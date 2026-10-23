@@ -72,7 +72,8 @@ The hunt can be played somewhere other than Leyte Academic Center. On the **Loca
   is already on (switch it on once its codes are ready), and on when none is. Players see the codes of every
   location that's on; with more than one, the game's map has a chip for each and opens on the nearest. With
   every location off the game says there are no QR codes right now.
-- **Delete** only once it has no codes (move them on their pages, or delete them). Leyte Academic
+- **Delete** (on its page, or the bin on its card here) takes its areas and its QR codes with it (it asks
+  first, saying how many); players keep what they found. Leyte Academic
   Center stays. Its map starts on the plan drawn by hand for the summit; moving it, changing its
   width or **Get the map again** draws it from OpenStreetMap like the others (its codes keep their
   spots on the ground and move onto the new map).

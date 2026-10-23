@@ -6046,6 +6046,12 @@ html[data-full-map] .navbar {
   font: 600 12px/1 var(--font-m);
   color: var(--faint);
 }
+.lcard__acts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px; /* the same with or without a delete button */
+}
 .lcard.is-off .lcard__main {
   opacity: 0.6;
 }

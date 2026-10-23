@@ -150,13 +150,16 @@ export async function redrawMap(id: string): Promise<FormState> {
   return done("Drawing it…");
 }
 
-/** Removes a location, with its areas: only once it has no QR codes. Leyte Academic Center stays. */
+/**
+ * Removes a location, with its areas and its QR codes (gone from the game, as deleting each would:
+ * players keep what they found, as their finds don't hang on the code). Leyte Academic Center stays.
+ */
 export async function deleteLocation(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
   if (id === DEFAULT_LOCATION) return failed("Leyte Academic Center is the first location: it stays (turn it off instead).");
   const sb = await supabase();
-  const { count } = await sb.from("codes").select("id", { count: "exact", head: true }).eq("location_id", id);
-  if (count) return failed(`It still has ${count} QR code${count === 1 ? "" : "s"}: move ${count === 1 ? "it" : "them"} to another location (on each code's page) or delete ${count === 1 ? "it" : "them"} first.`);
+  const { error: codesError } = await sb.from("codes").delete().eq("location_id", String(id));
+  if (codesError) return failed(dbError(codesError));
   const { error } = await sb.from("locations").delete().eq("id", String(id));
   if (error) return failed(dbError(error));
   revalidatePath("/", "layout");

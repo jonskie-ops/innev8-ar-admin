@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Head } from "@/components/bits";
-import { AlertIcon, PlusIcon } from "@/components/icons";
+import { ConfirmButton } from "@/components/form";
+import { AlertIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { VenueMap } from "@/components/VenueMap";
+import { deleteLocation } from "@/lib/actions/locations";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listLocations, listZones, locationOf } from "@/lib/data";
+import { deleteQuestion } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Locations" };
 
@@ -72,7 +75,20 @@ export default async function LocationsPage() {
               {ready && (
                 <span className="lcard__foot">
                   <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
-                  <LiveSwitch kind="locations" id={l.id} live={l.live} label={`${l.name} in the game`} disabled={!canEdit} />
+                  <span className="lcard__acts">
+                    <LiveSwitch kind="locations" id={l.id} live={l.live} label={`${l.name} in the game`} disabled={!canEdit} />
+                    {/* Delete, right here (not the first location): with its areas and its codes */}
+                    {canEdit && l.id !== "lac" && (
+                      <ConfirmButton
+                        action={deleteLocation.bind(null, l.id)}
+                        question={deleteQuestion(l.name, here.length)}
+                        className="icon-btn icon-btn--danger"
+                        label={`Delete ${l.name}`}
+                      >
+                        <TrashIcon />
+                      </ConfirmButton>
+                    )}
+                  </span>
                 </span>
               )}
             </li>

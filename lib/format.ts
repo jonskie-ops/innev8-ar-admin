@@ -150,3 +150,10 @@ export function didWhat(a: Activity) {
   if (fields.length) parts.push(`changed the ${list(fields)} of`);
   return parts.join(" and ");
 }
+
+/** Deleting a location: what goes with it (its areas, and its QR codes if it has any). */
+export function deleteQuestion(name: string, codes: number) {
+  if (!codes) return `Delete ${name}, with its areas?`;
+  const them = codes === 1 ? "its QR code" : `its ${codes} QR codes`;
+  return `Delete ${name}, with its areas and ${them}? ${codes === 1 ? "It's" : "They're"} gone from the game for everyone; players keep what they found.`;
+}
