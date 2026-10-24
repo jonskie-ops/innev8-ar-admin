@@ -3903,25 +3903,50 @@ button.vpin:focus-visible .vpin__head {
 .auth-art__big > span:first-child {
   text-shadow: 0 6px 40px rgba(var(--shade0-rgb), 0.8);
 }
+/* Phones and small tablets: the map is the page's background, dimmed, behind everything; the
+   headline stays at the top, and the form sits on a glassy panel below it */
 @media (max-width: 899px) {
   .auth {
+    position: relative;
+    isolation: isolate;
     grid-template-columns: 1fr;
   }
+  /* Pinned to the screen, so it stays put behind the form as the page scrolls */
   .auth-art {
-    order: -1;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     min-height: 0;
-    height: 320px;
   }
+  /* Dims the map so the form reads over it: lighter at the top (by the headline), darker below */
+  .auth-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      180deg,
+      rgba(var(--shade0-rgb), 0.2) 0,
+      rgba(var(--shade0-rgb), 0.45) 45%,
+      rgba(var(--shade0-rgb), 0.7) 100%
+    );
+    pointer-events: none;
+  }
+  /* Centred on the screen. The map is tilted back in 3D, so what's drawn sits in the lower part
+     of its box: its middle is about 1.125 × its width below the box's top (the box is 1.607 ×
+     the width tall, and the drawing's middle is ~70% of the way down) */
   .auth-art .fin-world {
-    bottom: calc(-75% + 30px);
-    width: min(400px, 105vw);
+    top: calc(50dvh - min(520px, 118vw) * 1.125);
+    bottom: auto;
+    width: min(520px, 118vw);
+    opacity: 0.8;
   }
   /* Small: the map and the emblem, without the province tags */
   .auth-art .fin-pin {
     display: none;
   }
   .auth-art__copy {
-    padding-top: 56px;
+    padding: 44px 20px 0;
   }
   .auth-art__eyebrow {
     display: none;
@@ -3930,12 +3955,25 @@ button.vpin:focus-visible .vpin__head {
     font-size: clamp(1.9rem, 8.6vw, 2.6rem);
   }
   .auth__side {
-    padding: 36px 20px 72px;
+    z-index: 2;
+    align-content: start;
+    min-height: 100dvh;
+    padding: 172px 16px 72px;
     border-right: 0;
+    background: none;
+  }
+  .auth__form {
+    padding: 24px 20px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(var(--shade0-rgb), 0.5);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
   }
   .auth__logo {
     height: 42px;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
   }
 }
 
