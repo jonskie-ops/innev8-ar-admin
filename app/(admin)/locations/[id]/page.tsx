@@ -69,7 +69,8 @@ export default async function LocationPage({
         codes={here}
         othersOn={locations.filter((l) => l.live && l.id !== location.id).map((l) => l.name)}
         save={saveLocation.bind(null, found ? found.id : null)}
-        remove={found && found.id !== "lac" ? deleteLocation.bind(null, found.id) : undefined}
+        remove={found ? deleteLocation.bind(null, found.id) : undefined}
+        last={locations.length === 1}
         redraw={found ? redrawMap.bind(null, found.id) : undefined}
         canEdit={canEdit}
         side={

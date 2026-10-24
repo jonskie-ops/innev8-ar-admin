@@ -165,17 +165,22 @@ export default async function OverviewPage() {
                 </li>
               ))}
             </CardRail>
-          ) : !places.length && locations.length ? (
+          ) : !places.length ? (
             <Link href="/locations" className="panel dash__empty">
-              No map is on in the game: turn one on in Locations
+              <span className="dash__fx" aria-hidden="true" />
+              {locations.length ? "No map is on in the game: turn one on in Locations" : "No locations yet: add one in Locations"}
             </Link>
           ) : canEdit ? (
             <Link href={places[0] ? `/codes/new?at=${places[0].id}` : "/codes/new"} className="panel dash__empty">
+              <span className="dash__fx" aria-hidden="true" />
               <PlusIcon />
               No QR codes yet: add the first one
             </Link>
           ) : (
-            <p className="panel dash__empty">No QR codes yet.</p>
+            <p className="panel dash__empty">
+              <span className="dash__fx" aria-hidden="true" />
+              No QR codes yet.
+            </p>
           )}
         </section>
 
@@ -198,7 +203,8 @@ export default async function OverviewPage() {
               </div>
             ) : (
               <Link href="/locations" className="panel dash__empty">
-                No map is on in the game: turn one on in Locations
+                <span className="dash__fx" aria-hidden="true" />
+                {locations.length ? "No map is on in the game: turn one on in Locations" : "No locations yet: add one in Locations"}
               </Link>
             )}
           </section>

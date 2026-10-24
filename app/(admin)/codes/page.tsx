@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Head } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
-import { PlusIcon, QrIcon } from "@/components/icons";
+import { PlusIcon } from "@/components/icons";
 import { requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listSponsors, listZones, locationOf, placeOn } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
@@ -50,7 +50,11 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
       <Head
         eyebrow="The hunt"
         title="QR codes"
-        lead={`${live} of ${codes.length} in the game. Tap a number to see that code.`}
+        lead={
+          codes.length
+            ? `${live} of ${codes.length} in the game. Tap a number to see that code.`
+            : "Where each QR code hides, the clue that leads to it, and what it's worth."
+        }
       >
         {canEdit && (
           <Link href="/codes/new" className="btn btn--primary btn--sm">
@@ -67,18 +71,15 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
           locations={locations.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
           initial={typeof code === "string" ? code : null} canEdit={canEdit} />
       ) : (
-        <section className="panel empty-state">
-          <span className="empty-state__icon">
-            <QrIcon />
-          </span>
+        <section className="empty-text">
           <h2>No QR codes yet</h2>
-          <p>Add the first one: where it hides, the clue that leads to it, and what it&apos;s worth.</p>
-          {canEdit && (
-            <Link href="/codes/new" className="btn btn--primary btn--sm">
-              <PlusIcon />
-              Add the first QR code
-            </Link>
-          )}
+          <p>
+            {!locations.length
+              ? "Each QR code is at a location, and there's none yet: add one first on the Locations page."
+              : canEdit
+                ? "Add the hunt's codes with Add QR code: where each hides, the clue that leads to it, and what it's worth."
+                : "The QR codes show here once an admin adds them."}
+          </p>
         </section>
       )}
     </>

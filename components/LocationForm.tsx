@@ -32,6 +32,7 @@ export function LocationForm({
   location,
   codes,
   othersOn = [],
+  last = false,
   save,
   remove,
   redraw,
@@ -42,6 +43,8 @@ export function LocationForm({
   codes: PlacedCode[];
   /** The other locations that are on (one at a time: switching this on turns them off, asked first) */
   othersOn?: string[];
+  /** The only location (deleting it leaves none) */
+  last?: boolean;
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
   redraw?: () => Promise<FormState>;
@@ -342,7 +345,7 @@ export function LocationForm({
           {!isNew ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
             {remove ? (
-              <ConfirmButton action={remove} question={deleteQuestion(location.name, codes.length)}>
+              <ConfirmButton action={remove} question={deleteQuestion(location.name, codes.length, hand, last)}>
                 <TrashIcon />
                 Delete
               </ConfirmButton>

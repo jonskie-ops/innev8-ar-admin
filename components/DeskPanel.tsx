@@ -9,7 +9,7 @@ import { photoStyle, ruleText, type DeskClaim, type Given, type PhotoFit } from 
 import { Avatar } from "./bits";
 import { DeskCamera } from "./DeskCamera";
 import { ConfirmButton } from "./form";
-import { AlertIcon, CameraIcon, CheckIcon, GiftIcon, KeyboardIcon, SearchIcon } from "./icons";
+import { AlertIcon, CameraIcon, CheckIcon, CloseIcon, GiftIcon, KeyboardIcon, QrIcon, SearchIcon } from "./icons";
 import { Spinner } from "./Progress";
 
 export type DeskPrize = { id: string; name: string; rule: DeskClaim["prize"]["rule"]; rule_value: number | null; rule_text?: string | null; photo_fit?: PhotoFit; photo_zoom?: number; stock: number };
@@ -35,9 +35,9 @@ function standingOf(c: DeskClaim): { ready: boolean; note: string } {
 }
 
 /**
- * The prize desk: a player's prize card checked (its code typed, a USB scanner typing it, or its QR
- * read by the camera), shown beside it with whether it can be given, and given. Under them: what's
- * left of each prize, and every prize given at the desk (admins can take one back).
+ * The prize desk: a player's prize card checked in a pop-up (its code typed, a USB scanner typing it,
+ * or its QR read by the camera), then shown there with whether it can be given, and given. Under it:
+ * every prize given at the desk (admins can take one back).
  */
 export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; prizes: DeskPrize[]; total: number; isAdmin: boolean }) {
   const router = useRouter();
@@ -48,6 +48,8 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
   const [gave, setGave] = useState<{ who: string; prize: string; note: string; at: number } | null>(null);
   const [pending, start] = useTransition();
   const last = useRef<{ code: string; until: number } | null>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
   const claim = answer?.claim;
   const state = claim ? standingOf(claim) : null;
 
@@ -89,199 +91,237 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
     check(code);
   };
 
-  const counts = given.reduce<Record<string, number>>((n, g) => ({ ...n, [g.prizeId]: (n[g.prizeId] ?? 0) + 1 }), {});
+  // The pop-up: opened by its button, or by a USB scanner (or typing) anywhere on the page, its first
+  // character kept; closed, it starts again from an empty box (and the camera stops)
+  const openDesk = (typed = "") => {
+    if (typed) {
+      setMode("type");
+      setText(typed);
+    }
+    setOpen(true);
+  };
+  const close = () => {
+    if (pending) return;
+    dialog.current?.close();
+    setOpen(false);
+    setAnswer(null);
+    setGave(null);
+    setText("");
+  };
+  useEffect(() => {
+    if (!open) return;
+    if (!dialog.current?.open) dialog.current?.showModal();
+    input.current?.focus();
+  }, [open]);
+  useEffect(() => {
+    if (open) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.ctrlKey || e.metaKey || e.altKey || !/^[a-z0-9]$/i.test(e.key)) return;
+      if (t.closest("input, textarea, select, [contenteditable]") || document.querySelector("dialog[open]")) return;
+      e.preventDefault();
+      openDesk(e.key.toUpperCase());
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   return (
     <div className="desk">
-      <div className="desk__top">
-        <section className="panel desk__check" aria-labelledby="desk-check">
-          <div className="desk__check-head">
-            <h2 className="panel__title" id="desk-check">
-              Check a prize card
-            </h2>
-            <div className="seg" role="group" aria-label="How to check it">
-              <button type="button" className="seg__btn" aria-pressed={mode === "type"} onClick={() => pick("type")}>
-                <KeyboardIcon />
-                Type code
-              </button>
-              <button type="button" className="seg__btn" aria-pressed={mode === "camera"} onClick={() => pick("camera")}>
-                <CameraIcon />
-                Scan with camera
+      <button type="button" className="panel desk__open" aria-haspopup="dialog" onClick={() => openDesk()}>
+        <span className="desk__open-ico">
+          <QrIcon />
+        </span>
+        <span className="desk__open-text">
+          <b>Check a prize card</b>
+          <small>Type its code, scan its QR with the camera, or just start scanning with a USB scanner.</small>
+        </span>
+        <span className="btn btn--primary btn--sm" aria-hidden="true">
+          <SearchIcon />
+          Check a card
+        </span>
+      </button>
+
+      <dialog
+        ref={dialog}
+        className="confirm confirm--desk"
+        aria-labelledby="desk-check"
+        // (a click on the dimmed page beside it closes it; its keys stay its own)
+        onClick={(e) => {
+          e.stopPropagation();
+          if (e.target === e.currentTarget) close();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        onCancel={(e) => {
+          e.preventDefault();
+          close();
+        }}
+      >
+        {open && (
+          <div className="confirm__box desk__box">
+            <div className="confirm__head">
+              <h2 className="confirm__title" id="desk-check">
+                {claim ? "Their prize card" : "Check a prize card"}
+              </h2>
+              <button type="button" className="icon-btn" aria-label="Close" onClick={close} disabled={pending}>
+                <CloseIcon />
               </button>
             </div>
-          </div>
-
-          {mode === "type" ? (
-            <form
-              className="desk__find"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (text.trim()) check(text);
-              }}
-            >
-              <label className="field">
-                <span className="field__label">Prize code</span>
-                <span className="desk__input">
-                  <SearchIcon />
-                  <input
-                    ref={input}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="K7M2-P9QX"
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    autoFocus
-                    aria-describedby="desk-hint"
-                  />
-                </span>
-                <span className="field__hint" id="desk-hint">
-                  The code under the QR on the player&apos;s prize card. A USB scanner types it for you.
-                </span>
-              </label>
-              <button type="submit" className="btn btn--primary" disabled={pending || !text.trim()}>
-                {pending && !claim ? <Spinner /> : null}
-                Check
-              </button>
-            </form>
-          ) : (
-            <DeskCamera paused={busy} onCode={fromCamera} />
-          )}
-
-          {gave && (
-            <p key={gave.at} className="desk__gave" role="status">
-              <CheckIcon />
-              <span>
-                <b>
-                  Gave {gave.prize} to {gave.who}
-                </b>
-                <small>{gave.note}. Ready for the next player.</small>
-              </span>
-            </p>
-          )}
-          {answer?.error && !claim && (
-            <p className="status status--error" role="alert">
-              <AlertIcon />
-              {answer.error}
-            </p>
-          )}
-        </section>
-
-        {claim && state ? (
-          <section className={state.ready ? "panel desk__claim is-ready" : "panel desk__claim is-not"} aria-label="The prize card">
-            <div className="desk__prize">
-              <span className="desk__photo">
-                {claim.prize.photo ? (
-                  <img
-                    src={claim.prize.photo}
-                    alt=""
-                    style={(() => {
-                      const p = prizes.find((x) => x.id === claim.prize.id);
-                      return photoStyle(p?.photo_fit, p?.photo_zoom);
-                    })()}
-                  />
-                ) : (
-                  <GiftIcon />
+            {claim && state ? (
+              <section className={state.ready ? "panel desk__claim is-ready" : "panel desk__claim is-not"} aria-label="The prize card">
+                <div className="desk__prize">
+                  <span className="desk__photo">
+                    {claim.prize.photo ? (
+                      <img
+                        src={claim.prize.photo}
+                        alt=""
+                        style={(() => {
+                          const p = prizes.find((x) => x.id === claim.prize.id);
+                          return photoStyle(p?.photo_fit, p?.photo_zoom);
+                        })()}
+                      />
+                    ) : (
+                      <GiftIcon />
+                    )}
+                  </span>
+                  <span>
+                    <b>{claim.prize.name}</b>
+                    <small>{ruleText(prizes.find((p) => p.id === claim.prize.id) ?? { rule: claim.prize.rule, rule_value: claim.prize.value }, total)}</small>
+                  </span>
+                </div>
+                <div className="desk__who">
+                  <Avatar name={claim.hunter.name} />
+                  <span>
+                    <b>
+                      {claim.hunter.name}
+                      <span className="tag">{claim.hunter.tag}</span>
+                      {claim.test && <span className="tag tag--wait">Test</span>}
+                    </b>
+                    <small>
+                      {claim.hunter.province} · {claim.standing.count} of {claim.standing.total} QR codes ·{" "}
+                      {claim.standing.score.toLocaleString("en-PH")} points{claim.standing.legendary ? " · found the legendary code" : ""}
+                    </small>
+                  </span>
+                </div>
+                <p className={state.ready ? "desk__state is-ready" : "desk__state is-not"} role="status">
+                  {state.ready ? <CheckIcon /> : <AlertIcon />}
+                  {state.note}
+                </p>
+                {answer?.error && (
+                  <p className="status status--error" role="alert">
+                    <AlertIcon />
+                    {answer.error}
+                  </p>
                 )}
-              </span>
-              <span>
-                <b>{claim.prize.name}</b>
-                <small>{ruleText(prizes.find((p) => p.id === claim.prize.id) ?? { rule: claim.prize.rule, rule_value: claim.prize.value }, total)}</small>
-              </span>
-            </div>
-            <div className="desk__who">
-              <Avatar name={claim.hunter.name} />
-              <span>
-                <b>
-                  {claim.hunter.name}
-                  <span className="tag">{claim.hunter.tag}</span>
-                  {claim.test && <span className="tag tag--wait">Test</span>}
-                </b>
-                <small>
-                  {claim.hunter.province} · {claim.standing.count} of {claim.standing.total} QR codes ·{" "}
-                  {claim.standing.score.toLocaleString("en-PH")} points{claim.standing.legendary ? " · found the legendary code" : ""}
-                </small>
-              </span>
-            </div>
-            <p className={state.ready ? "desk__state is-ready" : "desk__state is-not"} role="status">
-              {state.ready ? <CheckIcon /> : <AlertIcon />}
-              {state.note}
-            </p>
-            {answer?.error && (
-              <p className="status status--error" role="alert">
-                <AlertIcon />
-                {answer.error}
-              </p>
-            )}
-            <div className="desk__acts">
-              {state.ready && (
-                <button
-                  type="button"
-                  className="btn btn--primary desk__give"
-                  disabled={pending}
-                  onClick={() =>
-                    start(async () => {
-                      const r = await giveClaim(claim.code);
-                      if (r.error) return setAnswer({ ...r, claim });
-                      setGave({ who: claim.hunter.name, prize: claim.prize.name, note: r.ok ?? "Given", at: r.at });
-                      next();
-                    })
-                  }
-                >
-                  {pending ? <Spinner /> : <GiftIcon />}
-                  Give prize
-                </button>
-              )}
-              {isAdmin && claim.claimedAt && !(claim.test && !claim.testNow) && (
-                <ConfirmButton
-                  action={async () => {
-                    const r = await undoClaim(claim.code);
-                    if (!r.error) setAnswer(await lookupClaim(claim.code));
-                    return r.error ? { error: r.error, at: r.at } : null;
-                  }}
-                  question={`Take ${claim.prize.name} back from ${claim.hunter.name}? Only if it was given by mistake: it can be given again, and the stock goes back up.`}
-                  confirm="Take back"
-                >
-                  Take back
-                </ConfirmButton>
-              )}
-              <button type="button" className="btn btn--ghost" onClick={next}>
-                {state.ready ? "Cancel" : "Next player"}
-              </button>
-            </div>
-          </section>
-        ) : (
-          <section className="panel desk__claim desk__empty" aria-label="The prize card">
-            <GiftIcon />
-            <p>
-              {mode === "type" ? "Type or scan a prize card's code" : "Hold a prize card's QR up to the camera"}: the player, their prize
-              and whether it can be given show here.
-            </p>
-          </section>
-        )}
-      </div>
+                <div className="desk__acts">
+                  {state.ready && (
+                    <button
+                      type="button"
+                      className="btn btn--primary desk__give"
+                      disabled={pending}
+                      onClick={() =>
+                        start(async () => {
+                          const r = await giveClaim(claim.code);
+                          if (r.error) return setAnswer({ ...r, claim });
+                          setGave({ who: claim.hunter.name, prize: claim.prize.name, note: r.ok ?? "Given", at: r.at });
+                          next();
+                        })
+                      }
+                    >
+                      {pending ? <Spinner /> : <GiftIcon />}
+                      Give prize
+                    </button>
+                  )}
+                  {isAdmin && claim.claimedAt && !(claim.test && !claim.testNow) && (
+                    <ConfirmButton
+                      action={async () => {
+                        const r = await undoClaim(claim.code);
+                        if (!r.error) setAnswer(await lookupClaim(claim.code));
+                        return r.error ? { error: r.error, at: r.at } : null;
+                      }}
+                      question={`Take ${claim.prize.name} back from ${claim.hunter.name}? Only if it was given by mistake: it can be given again, and the stock goes back up.`}
+                      confirm="Take back"
+                    >
+                      Take back
+                    </ConfirmButton>
+                  )}
+                  <button type="button" className="btn btn--ghost" onClick={next}>
+                    {state.ready ? "Cancel" : "Next player"}
+                  </button>
+                </div>
+              </section>
+            ) : (
+              <>
+                <div className="seg" role="group" aria-label="How to check it">
+                  <button type="button" className="seg__btn" aria-pressed={mode === "type"} onClick={() => pick("type")}>
+                    <KeyboardIcon />
+                    Type code
+                  </button>
+                  <button type="button" className="seg__btn" aria-pressed={mode === "camera"} onClick={() => pick("camera")}>
+                    <CameraIcon />
+                    Scan with camera
+                  </button>
+                </div>
 
-      <section aria-labelledby="desk-left">
-        <h2 className="desk__h" id="desk-left">
-          Prizes left
-        </h2>
-        {prizes.length ? (
-          <ul className="desk__stock" role="list">
-            {prizes.map((p) => (
-              <li key={p.id} className={p.stock ? undefined : "is-out"}>
-                <b>{p.name}</b>
-                <small>{ruleText(p, total)}</small>
-                <span className="desk__nums">
-                  <strong>{p.stock ? p.stock.toLocaleString("en-PH") : "None"}</strong> left ·{" "}
-                  {(counts[p.id] ?? 0).toLocaleString("en-PH")} given
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="empty">No prizes are on. Add them on the Prizes page.</p>
+                {mode === "type" ? (
+                  <form
+                    className="desk__find"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (text.trim()) check(text);
+                    }}
+                  >
+                    <label className="field">
+                      <span className="field__label">Prize code</span>
+                      <span className="desk__input">
+                        <SearchIcon />
+                        <input
+                          ref={input}
+                          value={text}
+                          onChange={(e) => setText(e.target.value)}
+                          placeholder="K7M2-P9QX"
+                          autoComplete="off"
+                          autoCapitalize="characters"
+                          spellCheck={false}
+                          autoFocus
+                          aria-describedby="desk-hint"
+                        />
+                      </span>
+                      <span className="field__hint" id="desk-hint">
+                        The code under the QR on the player&apos;s prize card. A USB scanner types it for you.
+                      </span>
+                    </label>
+                    <button type="submit" className="btn btn--primary" disabled={pending || !text.trim()}>
+                      {pending && !claim ? <Spinner /> : null}
+                      Check
+                    </button>
+                  </form>
+                ) : (
+                  <DeskCamera paused={busy} onCode={fromCamera} />
+                )}
+
+                {gave && (
+                  <p key={gave.at} className="desk__gave" role="status">
+                    <CheckIcon />
+                    <span>
+                      <b>
+                        Gave {gave.prize} to {gave.who}
+                      </b>
+                      <small>{gave.note}. Ready for the next player.</small>
+                    </span>
+                  </p>
+                )}
+                {answer?.error && !claim && (
+                  <p className="status status--error" role="alert">
+                    <AlertIcon />
+                    {answer.error}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         )}
-      </section>
+      </dialog>
 
       <GivenTable given={given} isAdmin={isAdmin} />
     </div>

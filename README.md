@@ -74,8 +74,9 @@ The hunt can be played somewhere other than Leyte Academic Center. On the **Loca
   ready), and on when none is. Home shows only the location that's on: its codes, its map and their counts.
   With every location off the game says there are no QR codes right now.
 - **Delete** (on its page, or the bin on its card here) takes its areas and its QR codes with it (it asks
-  first, saying how many); players keep what they found. Leyte Academic
-  Center stays. Its map starts on the plan drawn by hand for the summit; moving it, changing its
+  first, saying how many); players keep what they found. Any location can be deleted, Leyte Academic
+  Center and the last one too: with none, the game says there are no QR codes, and adding a QR code
+  asks for a location first. Leyte Academic Center's map starts on the plan drawn by hand for the summit; moving it, changing its
   width or **Get the map again** draws it from OpenStreetMap like the others (its codes keep their
   spots on the ground and move onto the new map).
 
@@ -126,19 +127,20 @@ site) aren't checked, and nothing is in random-spots mode. Who won each prize is
 finds, by the same rules as the game.
 
 A player who wins a prize gets a **claim code** on their prize card: a QR, and the same 8 characters
-under it (`K7M2-P9QX`). At the **Prize desk** page:
+under it (`K7M2-P9QX`). At the **Prize desk** page, **Check a prize card** opens a pop-up (so does
+a USB scanner scanning, or typing a code, anywhere on the page):
 
 1. **Type code**: type it (any case, with or without the dash) and press Enter, or scan the QR with
    a USB barcode scanner, which types it and presses Enter for you. Or **Scan with camera**: hold
    the player's prize QR up to the computer's camera (or a phone's back camera); it's read by
    itself. Each device remembers which of the two it used.
-2. The desk shows the prize, the player (name, province, hunter tag) and their confirmed finds, and
+2. The pop-up shows the prize, the player (name, province, hunter tag) and their confirmed finds, and
    whether it can be given: **Ready to give**, or why not: already claimed (when, and by whom), not
    won, none left, or a test code.
 3. **Give prize** marks it claimed and lowers the prize's stock by one, together. The same code a
    second time is refused, and the player's card then says **Claimed**.
 
-Under it: how many of each prize are left and given, and a table of **every prize given** at the
+Under it: a table of **every prize given** at the
 desk (when, the player, the prize, its code, who gave it), with a search. It refreshes every 30
 seconds, for gives at another desk. Admins can **Take back** a prize given by mistake (on the card,
 or its row): it can be given again, and the stock goes back up. Recent changes says who gave what to

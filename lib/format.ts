@@ -164,9 +164,16 @@ export function turnOnQuestion(name: string, others: string[]) {
   };
 }
 
-/** Deleting a location: what goes with it (its areas, and its QR codes if it has any). */
-export function deleteQuestion(name: string, codes: number) {
-  if (!codes) return `Delete ${name}, with its areas?`;
+/**
+ * Deleting a location: what goes with it (its areas, its QR codes if it has any, and `hand`: Leyte
+ * Academic Center's plan drawn by hand for the summit, which can't be brought back), and `last`: that
+ * there's no location left after it.
+ */
+export function deleteQuestion(name: string, codes: number, hand = false, last = false) {
+  const plan =
+    (hand ? " Its map drawn by hand for the summit goes too: added again, it gets a map from OpenStreetMap." : "") +
+    (last ? " It's the last location: the game has no QR codes until you add another." : "");
+  if (!codes) return `Delete ${name}, with its areas?${plan}`;
   const them = codes === 1 ? "its QR code" : `its ${codes} QR codes`;
-  return `Delete ${name}, with its areas and ${them}? ${codes === 1 ? "It's" : "They're"} gone from the game for everyone; players keep what they found.`;
+  return `Delete ${name}, with its areas and ${them}? ${codes === 1 ? "It's" : "They're"} gone from the game for everyone; players keep what they found.${plan}`;
 }

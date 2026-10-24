@@ -17,8 +17,6 @@ import {
   MapIcon,
   PencilIcon,
   PinIcon,
-  PlusIcon,
-  QrIcon,
 } from "./icons";
 import { LiveSwitch } from "./LiveSwitch";
 import { QrGlyph } from "./QrGlyph";
@@ -192,22 +190,21 @@ export function CodeBrowser({
 
       {/* A location with no QR codes yet: say so, and (admins) add the first one there */}
       {!c && (
-        <section className="panel empty-state qb__none" aria-live="polite">
-          <span className="empty-state__icon">
-            <QrIcon />
-          </span>
+        <section className="empty-text qb__none" aria-live="polite">
           <h2>No QR codes at {place.name} yet</h2>
           <p>
-            {canEdit
-              ? "Add its first one: it goes on this map, in this location's area."
-              : "The organisers haven't added any here yet."}
+            {canEdit ? (
+              <>
+                Add its first one with{" "}
+                <Link href={`/codes/new?at=${encodeURIComponent(place.id)}`} className="qb__add">
+                  Add a QR code here
+                </Link>
+                : it goes on this map, in this location&apos;s area.
+              </>
+            ) : (
+              "The organisers haven't added any here yet."
+            )}
           </p>
-          {canEdit && (
-            <Link href={`/codes/new?at=${encodeURIComponent(place.id)}`} className="btn btn--primary btn--sm">
-              <PlusIcon />
-              Add a QR code here
-            </Link>
-          )}
         </section>
       )}
 

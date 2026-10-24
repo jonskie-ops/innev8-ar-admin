@@ -159,12 +159,15 @@ export async function redrawMap(id: string): Promise<FormState> {
 
 /**
  * Removes a location, with its areas and its QR codes (gone from the game, as deleting each would:
- * players keep what they found, as their finds don't hang on the code). Leyte Academic Center stays.
+ * players keep what they found, as their finds don't hang on the code). Any of them, Leyte Academic
+ * Center and the last one too (until another is added there are no QR codes to add).
  */
 export async function deleteLocation(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
-  if (id === DEFAULT_LOCATION) return failed("Leyte Academic Center is the first location: it stays (turn it off instead).");
   const sb = await supabase();
+  const { data: all, error: notYet } = await sb.from("locations").select("id");
+  if (notYet) return failed(NEEDS_LOCATIONS);
+  if (!all.some((l) => l.id === id)) return failed("This location was removed by someone else.");
   const { error: codesError } = await sb.from("codes").delete().eq("location_id", String(id));
   if (codesError) return failed(dbError(codesError));
   const { error } = await sb.from("locations").delete().eq("id", String(id));

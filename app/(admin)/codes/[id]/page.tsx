@@ -34,6 +34,8 @@ export default async function CodePage({
   ]);
   const found = codes.find((c) => c.id === id);
   if (!isNew && !found) notFound();
+  // A code needs a location to be at
+  if (isNew && !locations.length) redirect("/locations");
   // A new code: at the location asked for (?at=, from its Locations page), in the middle of its map,
   // with the number after its location's last (each location's start at 1)
   const where = locations.find((l) => l.id === at) ?? locations[0];

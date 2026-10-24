@@ -21,6 +21,16 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const [codes, zones, { locations }, { code, at }] = await Promise.all([listCodes(), listZones(), listLocations(), searchParams]);
   const asked = codes.find((c) => c.id === code);
   const place = firstPlace(locations, codes, typeof at === "string" ? at : asked && locationOf(asked));
+  if (!place)
+    return (
+      <>
+        <Head eyebrow="Where they are" title="Map" />
+        <section className="empty-text">
+          <h2>No locations yet</h2>
+          <p>Add where the hunt is played on the Locations page: its map shows here, with its QR codes.</p>
+        </section>
+      </>
+    );
   const plan = planOf(place);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const spots: Spot[] = codes

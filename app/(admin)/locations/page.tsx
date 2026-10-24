@@ -42,68 +42,80 @@ export default async function LocationsPage() {
         </p>
       )}
 
-      <ul className="lcards" role="list">
-        {locations.map((l) => {
-          const here = codes.filter((c) => locationOf(c) === l.id);
-          const areas = zones.filter((z) => (z.location_id ?? "lac") === l.id);
-          // Switching it on turns the one that's on off: asked first
-          const onNow = locations.filter((o) => o.live && o.id !== l.id).map((o) => o.name);
-          const body = (
-            <>
-              <div className="lcard__map">
-                <VenueMap place={l} pins={here} zones={areas} label={`Map of ${l.name}`} still />
-              </div>
-              <div className="lcard__body">
-                <b>
-                  {l.name}
-                  {l.id === "lac" && <span className="tag">First</span>}
-                </b>
-                <small>{l.address || "No address"}</small>
-                <small>
-                  {here.length} QR code{here.length === 1 ? "" : "s"} · {areas.length} area{areas.length === 1 ? "" : "s"}
-                </small>
-              </div>
-            </>
-          );
-          return (
-            <li key={l.id} className={l.live ? "lcard" : "lcard is-off"}>
-              {ready ? (
-                <Link href={`/locations/${l.id}`} className="lcard__main">
-                  {body}
-                </Link>
-              ) : (
-                <span className="lcard__main">{body}</span>
-              )}
-              {ready && (
-                <span className="lcard__foot">
-                  <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
-                  <span className="lcard__acts">
-                    <LiveSwitch
-                      kind="locations"
-                      id={l.id}
-                      live={l.live}
-                      label={`${l.name} in the game`}
-                      disabled={!canEdit}
-                      ask={onNow.length ? turnOnQuestion(l.name, onNow) : undefined}
-                    />
-                    {/* Delete, right here (not the first location): with its areas and its codes */}
-                    {canEdit && l.id !== "lac" && (
-                      <ConfirmButton
-                        action={deleteLocation.bind(null, l.id)}
-                        question={deleteQuestion(l.name, here.length)}
-                        className="icon-btn icon-btn--danger"
-                        label={`Delete ${l.name}`}
-                      >
-                        <TrashIcon />
-                      </ConfirmButton>
-                    )}
+      {ready && !locations.length && (
+        <section className="empty-text">
+          <h2>No locations yet</h2>
+          <p>
+            {canEdit
+              ? "Add where the hunt is played with Add location: where it is and its map for the game. Then its QR codes."
+              : "Where the hunt is played shows here once an admin adds it."}
+          </p>
+        </section>
+      )}
+      {locations.length > 0 && (
+        <ul className="lcards" role="list">
+          {locations.map((l) => {
+            const here = codes.filter((c) => locationOf(c) === l.id);
+            const areas = zones.filter((z) => (z.location_id ?? "lac") === l.id);
+            // Switching it on turns the one that's on off: asked first
+            const onNow = locations.filter((o) => o.live && o.id !== l.id).map((o) => o.name);
+            const body = (
+              <>
+                <div className="lcard__map">
+                  <VenueMap place={l} pins={here} zones={areas} label={`Map of ${l.name}`} still />
+                </div>
+                <div className="lcard__body">
+                  <b>
+                    {l.name}
+                    {l.id === "lac" && <span className="tag">First</span>}
+                  </b>
+                  <small>{l.address || "No address"}</small>
+                  <small>
+                    {here.length} QR code{here.length === 1 ? "" : "s"} · {areas.length} area{areas.length === 1 ? "" : "s"}
+                  </small>
+                </div>
+              </>
+            );
+            return (
+              <li key={l.id} className={l.live ? "lcard" : "lcard is-off"}>
+                {ready ? (
+                  <Link href={`/locations/${l.id}`} className="lcard__main">
+                    {body}
+                  </Link>
+                ) : (
+                  <span className="lcard__main">{body}</span>
+                )}
+                {ready && (
+                  <span className="lcard__foot">
+                    <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
+                    <span className="lcard__acts">
+                      <LiveSwitch
+                        kind="locations"
+                        id={l.id}
+                        live={l.live}
+                        label={`${l.name} in the game`}
+                        disabled={!canEdit}
+                        ask={onNow.length ? turnOnQuestion(l.name, onNow) : undefined}
+                      />
+                      {/* Delete, right here: with its areas and its codes */}
+                      {canEdit && (
+                        <ConfirmButton
+                          action={deleteLocation.bind(null, l.id)}
+                          question={deleteQuestion(l.name, here.length, l.id === "lac" && l.outlines == null, locations.length === 1)}
+                          className="icon-btn icon-btn--danger"
+                          label={`Delete ${l.name}`}
+                        >
+                          <TrashIcon />
+                        </ConfirmButton>
+                      )}
+                    </span>
                   </span>
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </>
   );
 }
