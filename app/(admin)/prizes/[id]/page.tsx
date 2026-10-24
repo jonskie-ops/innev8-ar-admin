@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head } from "@/components/bits";
+import { Head, pad } from "@/components/bits";
+import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { PrizeForm } from "@/components/PrizeForm";
 import { deletePrize, savePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
 import { getPrize, inGame, listCodes, listLocations, locationOf, photoUrl } from "@/lib/data";
-import { pad } from "@/components/bits";
 import { stamp } from "@/lib/format";
 import type { Prize } from "@/lib/hunt";
 
@@ -64,6 +64,7 @@ export default async function PrizePage({
           Added{prize.live ? " and live in the game" : ""}.
         </p>
       )}
+      {added && <AddedToast>Prize added</AddedToast>}
       <PrizeForm
         key={prize.id}
         prize={prize}

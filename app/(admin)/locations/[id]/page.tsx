@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AreasPanel } from "@/components/AreasPanel";
 import { Head } from "@/components/bits";
+import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { LocationForm } from "@/components/LocationForm";
 import { deleteLocation, redrawMap, saveLocation } from "@/lib/actions/locations";
@@ -61,6 +62,7 @@ export default async function LocationPage({
           codes here on their pages.
         </p>
       )}
+      {added && <AddedToast>Location added</AddedToast>}
       <LocationForm
         key={location.id}
         location={location}

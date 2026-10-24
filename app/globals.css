@@ -2659,6 +2659,12 @@ a.vpin:focus-visible .vpin__head {
   gap: 18px;
   align-items: start;
 }
+/* A location with no QR codes yet: in the details' place, beside its map */
+.qb__none {
+  max-width: none;
+  margin: 0;
+  padding-block: 56px;
+}
 .qb__map {
   position: sticky;
   top: 20px;

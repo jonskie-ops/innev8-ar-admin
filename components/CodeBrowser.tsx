@@ -17,6 +17,8 @@ import {
   MapIcon,
   PencilIcon,
   PinIcon,
+  PlusIcon,
+  QrIcon,
 } from "./icons";
 import { LiveSwitch } from "./LiveSwitch";
 import { QrGlyph } from "./QrGlyph";
@@ -61,7 +63,7 @@ export function CodeBrowser({
 }: {
   codes: CodeItem[];
   zones: Zone[];
-  /** One location at a time (tabs above when there's more than one with codes): its map and its codes */
+  /** One location at a time (tabs above when there's more than one, with codes or not): its map and its codes */
   locations: Pick<Location, "id" | "name" | "lat" | "lng" | "width" | "outlines" | "live">[];
   initial: string | null;
   canEdit: boolean;
@@ -108,6 +110,7 @@ export function CodeBrowser({
     setAt(id);
     const first = codes.find((x) => x.location === id);
     if (first) pick(first.id);
+    else setPicked(null); // a location with no codes yet: its map, and the way to add one
   };
 
   // ← → for the previous and next code, when not typing somewhere
@@ -126,12 +129,11 @@ export function CodeBrowser({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!c) return null;
-
   return (
     <>
     <PlaceTabs
-      places={withCodes.map((l) => ({ id: l.id, name: l.name, live: l.live, codes: codes.filter((x) => x.location === l.id).length }))}
+      // Every location, those with no codes yet too (pick one to see its map and add its first code)
+      places={locations.map((l) => ({ id: l.id, name: l.name, live: l.live, codes: codes.filter((x) => x.location === l.id).length }))}
       current={place.id}
       onPick={goTo}
     />
@@ -144,7 +146,7 @@ export function CodeBrowser({
             place={place}
             pins={here.map((x) => ({ ...x, live: shown(x) }))}
             zones={zones.filter((z) => (z.location_id ?? "lac") === place.id)}
-            selected={c.id}
+            selected={c?.id}
             pick={pick}
             label={`Map of ${place.name}: tap a number`}
           />
@@ -160,6 +162,7 @@ export function CodeBrowser({
         </div>
 
         {/* ‹ 01 02 03 … › under the map: the numbers centred, sliding sideways when there are many */}
+        {c && (
         <nav className="qpager" aria-label="QR codes">
           <button type="button" className="qpager__arrow" aria-label="Previous QR code" title="Previous (←)" onClick={() => step(-1)}>
             <ChevronLeftIcon />
@@ -184,8 +187,31 @@ export function CodeBrowser({
             <ChevronRightIcon />
           </button>
         </nav>
+        )}
       </section>
 
+      {/* A location with no QR codes yet: say so, and (admins) add the first one there */}
+      {!c && (
+        <section className="panel empty-state qb__none" aria-live="polite">
+          <span className="empty-state__icon">
+            <QrIcon />
+          </span>
+          <h2>No QR codes at {place.name} yet</h2>
+          <p>
+            {canEdit
+              ? "Add its first one: it goes on this map, in this location's area."
+              : "The organisers haven't added any here yet."}
+          </p>
+          {canEdit && (
+            <Link href={`/codes/new?at=${encodeURIComponent(place.id)}`} className="btn btn--primary btn--sm">
+              <PlusIcon />
+              Add a QR code here
+            </Link>
+          )}
+        </section>
+      )}
+
+      {c && (
       <section
         ref={detail}
         className={`panel qd qd--${c.rarity}${shown(c) ? "" : " is-off"}`}
@@ -321,6 +347,7 @@ export function CodeBrowser({
           </Link>
         </div>
       </section>
+      )}
     </div>
     </>
   );

@@ -142,6 +142,29 @@ export function AutoSaveToast({ state, pending, waiting }: { state: FormState; p
   );
 }
 
+/**
+ * Something just added ("QR code added"): the same toast as "All changes saved", shown once on the
+ * page the Add went on to (its `?added=1`). The flag comes off the address straight away, so a
+ * reload doesn't say it again.
+ */
+export function AddedToast({ children }: { children: ReactNode }) {
+  const ready = useHydrated();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("added")) return;
+    url.searchParams.delete("added");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
+  if (!ready) return null;
+  return createPortal(
+    <p className="savetoast is-done" role="status">
+      <CheckIcon />
+      {children}
+    </p>,
+    document.body,
+  );
+}
+
 const never = () => () => {};
 /** False until the page's scripts are running (the server's HTML can't submit through the action yet). */
 export const useHydrated = () =>

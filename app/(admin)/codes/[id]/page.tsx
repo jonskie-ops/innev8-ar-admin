@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Head, pad } from "@/components/bits";
 import { CodeForm } from "@/components/CodeForm";
+import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
 import { requireTeammate } from "@/lib/dal";
@@ -73,6 +74,7 @@ export default async function CodePage({
           Added{code.live ? " and live in the game" : ""}.
         </p>
       )}
+      {added && <AddedToast>QR code added</AddedToast>}
       <CodeForm
         key={code.id}
         code={code}
