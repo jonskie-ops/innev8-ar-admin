@@ -67,6 +67,7 @@ export default async function LocationPage({
         key={location.id}
         location={location}
         codes={here}
+        othersOn={locations.filter((l) => l.live && l.id !== location.id).map((l) => l.name)}
         save={saveLocation.bind(null, found ? found.id : null)}
         remove={found && found.id !== "lac" ? deleteLocation.bind(null, found.id) : undefined}
         redraw={found ? redrawMap.bind(null, found.id) : undefined}

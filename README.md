@@ -10,12 +10,12 @@ will read from.
 | **QR codes** | One location at a time (a tab each, those with no codes yet too: an empty one offers **Add a QR code here**): its map and every code's number. Tap one (or use ← →) and its details show beside it, with its switch and its code value. Edit opens its page: name, clue, description, rarity and points, zone and spot, its pin (drag it), and **On the ground**: its GPS spot and how close players must be to see it (below). Codes can be added and deleted. Changes save by themselves |
 | **Map** | Leyte Academic Center on a real map, with each QR code as a pin at its GPS spot inside a ring: how close players must be to see it. Admins drag a pin to move its code, inside the area the game's map shows. **Show me** puts your phone on the map with every code's distance, for walking the venue. Satellite (Esri) and street (OpenStreetMap) maps through Leaflet, free and without a key; Google's map to look at |
 | **Locations** | Where the hunt can be played (below): Leyte Academic Center, and any added since. Each has its map for the game, its areas (the codes' zones), its QR codes and an on/off switch |
-| **Prizes** | Name, how many are in stock, photo, description, and who wins it: all the codes, a number of codes, the legendary code, a number of points, or **a chosen QR code** (pick the code and write the sentence players read, e.g. "Get the Symphonics QR"; needs `supabase/migrations/20261026000000_prize_code_rule.sql`) |
+| **Prizes** | Name, how many are in stock, photo (**Fill the box** or **Whole photo**, and its **Size**, 50–200%, shown that way everywhere; the photo itself is kept as uploaded; needs `supabase/migrations/20261027000000_prize_photo_look.sql`), description, and who wins it: all the codes, a number of codes, the legendary code, a number of points, or **a chosen QR code** (pick the code and write the sentence players read, e.g. "Get the Symphonics QR"; needs `supabase/migrations/20261026000000_prize_code_rule.sql`) |
 | **Prize desk** | Where prizes are given out (below): type or scan the code on a player's prize card, check it, and give the prize, once. Admins and staff. On a phone it's on the Account page |
 | **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
 | **Hunters** | The players with a hunter ID (below): find one by name, province or tag, and see who they've met. Admins delete one, or tick several and delete them together. On a phone it's on the Account page |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
-| **Team** | Who can sign in, as **admin** (changes everything) or **staff** (looks, can't change) |
+| **Team** | Who can sign in, as **admin** (changes everything) or **staff** (looks, can't change): open someone to see what they can do. **Add teammate** (top right) opens a pop-up, which shows their temporary password once |
 | **Account** | Your password |
 
 Every page has the same frame: the pages as icons down the side, with your account and sign out at
@@ -68,10 +68,11 @@ The hunt can be played somewhere other than Leyte Academic Center. On the **Loca
   draws it again; **Get the map again** picks up buildings added to OpenStreetMap since.
 - **Areas:** each location's zones (an area named after it to start with): rename, add, or remove one
   no code is in.
-- **On/off:** off hides the location and its codes from the game. A new location starts off when another
-  is already on (switch it on once its codes are ready), and on when none is. Players see the codes of every
-  location that's on; with more than one, the game's map has a chip for each and opens on the nearest. With
-  every location off the game says there are no QR codes right now.
+- **On/off:** off hides the location and its codes from the game. One location is on at a time: switching
+  one on (on its card or its page) asks first, then turns the one that's on off. Any or all can be turned
+  off without asking. A new location starts off when another is already on (switch it on once its codes are
+  ready), and on when none is. Home shows only the location that's on: its codes, its map and their counts.
+  With every location off the game says there are no QR codes right now.
 - **Delete** (on its page, or the bin on its card here) takes its areas and its QR codes with it (it asks
   first, saying how many); players keep what they found. Leyte Academic
   Center stays. Its map starts on the plan drawn by hand for the summit; moving it, changing its

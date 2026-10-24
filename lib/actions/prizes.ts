@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_PRIZE_CODE, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
-import type { PrizeRule } from "../hunt";
+import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_PRIZE_CODE, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { PHOTO_ZOOM, type PhotoFit, type PrizeRule } from "../hunt";
 import { supabase } from "../supabase";
 
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -31,6 +31,10 @@ function readPrize(fd: FormData) {
     }),
     stock: whole(fd, "stock", "Stock", 0, 100000),
     live: checked(fd, "live"),
+    // How its photo sits in its box (kept apart below: a database without the photo look update
+    // has no such columns)
+    photo_fit: oneOf<PhotoFit>(fd, "photo_fit", "Photo fit", ["cover", "contain"]),
+    photo_zoom: whole(fd, "photo_zoom", "The photo's size", PHOTO_ZOOM.min, PHOTO_ZOOM.max),
   };
 }
 
@@ -53,6 +57,12 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
   if (file && file.size > PHOTO_MAX) return failed("The photo is over 5 MB. Use a smaller one.");
 
   const sb = await supabase();
+  // The photo's look: saved when the database has the columns; otherwise only the default (as
+  // every photo was) goes through, and anything else says what to run
+  const { photo_fit, photo_zoom, ...fields } = v;
+  const { error: noLook } = await sb.from("prizes").select("photo_fit").limit(1);
+  if (noLook && (photo_fit !== "cover" || photo_zoom !== PHOTO_ZOOM.default)) return failed(NEEDS_PHOTO_LOOK);
+  v = noLook ? fields : v;
   if (v.rule === "code") {
     const { data: code } = await sb.from("codes").select("id").eq("id", v.rule_code!).maybeSingle();
     if (!code) return failed("That QR code was deleted by someone else. Choose another.");

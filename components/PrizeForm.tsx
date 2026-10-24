@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import type { FormState } from "@/lib/form";
-import { PRIZE_RULES, type Prize, type PrizeRule } from "@/lib/hunt";
+import { PHOTO_ZOOM, photoStyle, PRIZE_RULES, type PhotoFit, type Prize, type PrizeRule } from "@/lib/hunt";
 import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { ImageIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
@@ -30,7 +30,14 @@ export function PrizeForm({
   remove?: () => Promise<FormState>;
   canEdit: boolean;
 }) {
-  const { formRef, state, pending, waiting, onSubmit, onChange } = useAutoSave(save, Boolean(remove) && canEdit);
+  const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
+  // How the photo sits in its box, everywhere it's shown: filling it or whole, and its size
+  const [fit, setFit] = useState<PhotoFit>(prize.photo_fit ?? "cover");
+  const [zoom, setZoom] = useState(prize.photo_zoom ?? PHOTO_ZOOM.default);
+  const pickFit = (f: PhotoFit) => {
+    setFit(f);
+    changed();
+  };
   const [rule, setRule] = useState<PrizeRule>(prize.rule);
   const [desc, setDesc] = useState(prize.description.length);
   const [picked, setPicked] = useState<string | null>(null);
@@ -139,7 +146,7 @@ export function PrizeForm({
           </h2>
           <div className="photo">
             {shown ? (
-              <img src={shown} alt="" className="photo__img" />
+              <img src={shown} alt="" className="photo__img" style={photoStyle(fit, zoom)} />
             ) : (
               <span className="photo__none">
                 <ImageIcon />
@@ -167,7 +174,51 @@ export function PrizeForm({
               Remove the photo
             </label>
           )}
-          <span className="field__hint">JPG, PNG or WebP, up to 5 MB. Square works best.</span>
+          {/* Its look, wherever it's shown (the photo itself is kept as it is) */}
+          <input type="hidden" name="photo_fit" value={fit} />
+          {shown && (
+            <div className="photolook">
+              <div className="seg" role="group" aria-label="How the photo fits">
+                <button type="button" aria-pressed={fit === "cover"} onClick={() => pickFit("cover")}>
+                  Fill the box
+                </button>
+                <button type="button" aria-pressed={fit === "contain"} onClick={() => pickFit("contain")}>
+                  Whole photo
+                </button>
+              </div>
+              <label className="photolook__size">
+                <span className="field__label">
+                  Size <b>{zoom}%</b>
+                </span>
+                <input
+                  type="range"
+                  name="photo_zoom"
+                  min={PHOTO_ZOOM.min}
+                  max={PHOTO_ZOOM.max}
+                  step={5}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                />
+              </label>
+              {(fit !== "contain" || zoom !== PHOTO_ZOOM.default) && (
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => {
+                    setFit("contain");
+                    setZoom(PHOTO_ZOOM.default);
+                    changed();
+                  }}
+                >
+                  Original size
+                </button>
+              )}
+            </div>
+          )}
+          {!shown && <input type="hidden" name="photo_zoom" value={zoom} />}
+          <span className="field__hint">
+            JPG, PNG or WebP, up to 5 MB. Fill the box crops its edges; Whole photo shows all of it. The size zooms it in or out.
+          </span>
         </section>
         <section className="panel">
           <h2 className="panel__title">In the game</h2>

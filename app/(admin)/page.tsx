@@ -11,7 +11,7 @@ import { PlaceMaps } from "@/components/PlaceMaps";
 import { requireTeammate } from "@/lib/dal";
 import { getSettings, hunterStats, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
-import { firstSponsor, GAME_URL, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
+import { firstSponsor, GAME_URL, photoStyle, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
 const RING = 2 * Math.PI * 22;
 const BADGE = {
@@ -35,9 +35,10 @@ export default async function OverviewPage() {
     listLocations(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
-  // In the game: on, at a location that's on
+  // Only the map that's on in the game (its codes, on or off); in the game: on, at a location that's on
   const playable = inGame(locations);
-  const on = placeOn(locations);
+  const places = locations.filter((l) => l.live);
+  const here = codes.filter(placeOn(locations));
   const live = codes.filter(playable);
   const points = live.reduce((n, c) => n + c.points, 0);
 
@@ -61,6 +62,7 @@ export default async function OverviewPage() {
     id: p.id,
     name: p.name,
     photo: photoUrl(p.photo_path),
+    look: photoStyle(p.photo_fit, p.photo_zoom),
     ...prizeNeeds(p, live.length, points),
     stock: p.stock,
     live: p.live,
@@ -76,7 +78,7 @@ export default async function OverviewPage() {
     action: a.action,
   }));
 
-  const share = codes.length ? live.length / codes.length : 0;
+  const share = here.length ? live.length / here.length : 0;
 
   return (
     <div className="dash">
@@ -129,18 +131,18 @@ export default async function OverviewPage() {
               </Link>
             </h2>
             <Link href="/codes" className="more">
-              {live.length} of {codes.length} live
+              {live.length} of {here.length} live
               <ArrowRightIcon />
             </Link>
           </div>
-          {codes.length ? (
+          {here.length ? (
             <CardRail label="QR codes">
-              {codes.map((c, i) => (
+              {here.map((c, i) => (
                 <li key={c.id}>
-                  <Link href={`/codes?code=${c.id}`} className={`ccard ccard--${c.rarity}${playable(c) ? "" : " is-off"}`}>
+                  <Link href={`/codes?code=${c.id}`} className={`ccard ccard--${c.rarity}${c.live ? "" : " is-off"}`}>
                     <span className="ccard__cover">
                       <span className="ccard__num">#{pad(c.num)}</span>
-                      <span className="ccard__state">{!c.live ? "Off" : on(c) ? "Live" : "Hidden"}</span>
+                      <span className="ccard__state">{c.live ? "Live" : "Off"}</span>
                       <span className="ccard__floor" aria-hidden="true" />
                       <span className="ccard__qr" style={{ "--i": i } as CSSProperties} aria-hidden="true">
                         <QrGlyph seed={c.id} />
@@ -163,8 +165,12 @@ export default async function OverviewPage() {
                 </li>
               ))}
             </CardRail>
+          ) : !places.length && locations.length ? (
+            <Link href="/locations" className="panel dash__empty">
+              No map is on in the game: turn one on in Locations
+            </Link>
           ) : canEdit ? (
-            <Link href="/codes/new" className="panel dash__empty">
+            <Link href={places[0] ? `/codes/new?at=${places[0].id}` : "/codes/new"} className="panel dash__empty">
               <PlusIcon />
               No QR codes yet: add the first one
             </Link>
@@ -182,13 +188,19 @@ export default async function OverviewPage() {
                 <ArrowRightIcon />
               </Link>
             </div>
-            <div className="panel dash__map">
-              <PlaceMaps
-                places={locations.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
-                pins={codes.map((c) => ({ id: c.id, num: c.num, name: c.name, rarity: c.rarity, x: c.x, y: c.y, live: playable(c), location: locationOf(c) }))}
-                zones={zones}
-              />
-            </div>
+            {places.length ? (
+              <div className="panel dash__map">
+                <PlaceMaps
+                  places={places.map(({ id, name, lat, lng, width, outlines, live }) => ({ id, name, lat, lng, width, outlines, live }))}
+                  pins={here.map((c) => ({ id: c.id, num: c.num, name: c.name, rarity: c.rarity, x: c.x, y: c.y, live: c.live, location: locationOf(c) }))}
+                  zones={zones}
+                />
+              </div>
+            ) : (
+              <Link href="/locations" className="panel dash__empty">
+                No map is on in the game: turn one on in Locations
+              </Link>
+            )}
           </section>
 
           <section aria-labelledby="rarity-title">
@@ -265,7 +277,7 @@ export default async function OverviewPage() {
             <span className="pill__text">
               <b>QR codes live</b>
               <small>
-                {live.length} of {codes.length} in the game
+                {live.length} of {here.length} in the game
               </small>
             </span>
             <span className="ring" role="img" aria-label={`${Math.round(share * 100)}% live`}>

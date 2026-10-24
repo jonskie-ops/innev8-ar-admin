@@ -8,7 +8,7 @@ import { VenueMap } from "@/components/VenueMap";
 import { deleteLocation } from "@/lib/actions/locations";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listLocations, listZones, locationOf } from "@/lib/data";
-import { deleteQuestion } from "@/lib/format";
+import { deleteQuestion, turnOnQuestion } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Locations" };
 
@@ -23,7 +23,7 @@ export default async function LocationsPage() {
       <Head
         eyebrow="Where they are"
         title="Locations"
-        lead="Where the hunt can be played. Each QR code is at one location, and players see the codes of every location that's on."
+        lead="Where the hunt can be played. Each QR code is at one location, and one location is on in the game at a time: players see its codes."
       >
         {canEdit && ready && (
           <Link href="/locations/new" className="btn btn--primary btn--sm">
@@ -46,6 +46,8 @@ export default async function LocationsPage() {
         {locations.map((l) => {
           const here = codes.filter((c) => locationOf(c) === l.id);
           const areas = zones.filter((z) => (z.location_id ?? "lac") === l.id);
+          // Switching it on turns the one that's on off: asked first
+          const onNow = locations.filter((o) => o.live && o.id !== l.id).map((o) => o.name);
           const body = (
             <>
               <div className="lcard__map">
@@ -76,7 +78,14 @@ export default async function LocationsPage() {
                 <span className="lcard__foot">
                   <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
                   <span className="lcard__acts">
-                    <LiveSwitch kind="locations" id={l.id} live={l.live} label={`${l.name} in the game`} disabled={!canEdit} />
+                    <LiveSwitch
+                      kind="locations"
+                      id={l.id}
+                      live={l.live}
+                      label={`${l.name} in the game`}
+                      disabled={!canEdit}
+                      ask={onNow.length ? turnOnQuestion(l.name, onNow) : undefined}
+                    />
                     {/* Delete, right here (not the first location): with its areas and its codes */}
                     {canEdit && l.id !== "lac" && (
                       <ConfirmButton

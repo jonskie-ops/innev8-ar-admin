@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { giveClaim, lookupClaim, undoClaim, type DeskAnswer } from "@/lib/actions/desk";
 import { stamp } from "@/lib/format";
-import { ruleText, type DeskClaim, type Given } from "@/lib/hunt";
+import { photoStyle, ruleText, type DeskClaim, type Given, type PhotoFit } from "@/lib/hunt";
 import { Avatar } from "./bits";
 import { DeskCamera } from "./DeskCamera";
 import { ConfirmButton } from "./form";
 import { AlertIcon, CameraIcon, CheckIcon, GiftIcon, KeyboardIcon, SearchIcon } from "./icons";
 import { Spinner } from "./Progress";
 
-export type DeskPrize = { id: string; name: string; rule: DeskClaim["prize"]["rule"]; rule_value: number | null; rule_text?: string | null; stock: number };
+export type DeskPrize = { id: string; name: string; rule: DeskClaim["prize"]["rule"]; rule_value: number | null; rule_text?: string | null; photo_fit?: PhotoFit; photo_zoom?: number; stock: number };
 type Mode = "type" | "camera";
 
 /** This device's choice of typing or the camera (kept on it, for the next time). */
@@ -170,7 +170,20 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
         {claim && state ? (
           <section className={state.ready ? "panel desk__claim is-ready" : "panel desk__claim is-not"} aria-label="The prize card">
             <div className="desk__prize">
-              <span className="desk__photo">{claim.prize.photo ? <img src={claim.prize.photo} alt="" /> : <GiftIcon />}</span>
+              <span className="desk__photo">
+                {claim.prize.photo ? (
+                  <img
+                    src={claim.prize.photo}
+                    alt=""
+                    style={(() => {
+                      const p = prizes.find((x) => x.id === claim.prize.id);
+                      return photoStyle(p?.photo_fit, p?.photo_zoom);
+                    })()}
+                  />
+                ) : (
+                  <GiftIcon />
+                )}
+              </span>
               <span>
                 <b>{claim.prize.name}</b>
                 <small>{ruleText(prizes.find((p) => p.id === claim.prize.id) ?? { rule: claim.prize.rule, rule_value: claim.prize.value }, total)}</small>

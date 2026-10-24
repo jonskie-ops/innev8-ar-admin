@@ -139,7 +139,10 @@ export async function deleteCode(id: string): Promise<FormState> {
   redirect("/codes");
 }
 
-/** On or off in the game, for a QR code, a prize or a location (all its codes). */
+/**
+ * On or off in the game, for a QR code, a prize or a location (all its codes). Only one location is
+ * on at a time: switching one on switches the others off.
+ */
 export async function setLive(kind: "codes" | "prizes" | "locations", id: string, live: boolean): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
   if (kind !== "codes" && kind !== "prizes" && kind !== "locations") return failed("Unknown item.");
@@ -150,6 +153,10 @@ export async function setLive(kind: "codes" | "prizes" | "locations", id: string
     .select("id");
   if (error) return failed(dbError(error));
   if (!data?.length) return failed("It was removed by someone else.");
+  if (kind === "locations" && live === true) {
+    const { error: others } = await (await supabase()).from("locations").update({ live: false }).eq("live", true).neq("id", String(id));
+    if (others) return failed(dbError(others));
+  }
   revalidatePath("/", "layout");
   return done(live ? "On" : "Off");
 }

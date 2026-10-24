@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 /** The game's vocabulary, as the admin shows it (same as innev8-ar-js/lib/hunt.ts). */
 
 export type Rarity = "common" | "rare" | "legendary";
@@ -184,11 +186,28 @@ export type Prize = {
    *  (both missing before the prize code update) */
   rule_code?: string | null;
   rule_text?: string | null;
+  /** How its photo sits in its box: filling it (cropped) or whole, zoomed (%); missing before the
+   *  photo look update */
+  photo_fit?: PhotoFit;
+  photo_zoom?: number;
   stock: number;
   live: boolean;
   sort: number;
   updated_at: string;
 };
+
+export type PhotoFit = "cover" | "contain";
+export const PHOTO_ZOOM = { min: 50, max: 200, default: 100 } as const;
+
+/**
+ * A prize photo's look, as the style on its <img> (every photo box crops what spills over): filling
+ * the box or the whole photo, then zoomed. Nothing for the default (filling, 100%).
+ */
+export function photoStyle(fit: PhotoFit | null | undefined, zoom: number | null | undefined): CSSProperties | undefined {
+  const z = zoom ?? PHOTO_ZOOM.default;
+  if ((fit ?? "cover") === "cover" && z === PHOTO_ZOOM.default) return undefined;
+  return { objectFit: fit ?? "cover", transform: z === PHOTO_ZOOM.default ? undefined : `scale(${z / 100})` };
+}
 
 /** "Collect all 8 QR codes", "Reach 1,000 points", or the organisers' own ("Get the Symphonics QR") */
 export function ruleText(p: Pick<Prize, "rule" | "rule_value" | "rule_text">, total: number) {

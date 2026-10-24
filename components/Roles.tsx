@@ -54,3 +54,20 @@ export function RoleTable({ mine }: { mine?: "admin" | "staff" }) {
     </table>
   );
 }
+
+/** What one role can do, as a list (a teammate's row, opened). */
+export function RoleList({ role }: { role: "admin" | "staff" }) {
+  return (
+    <ul className="canlist" role="list">
+      {CAN.map(([what, staff]) => {
+        const can = role === "admin" || staff;
+        return (
+          <li key={what} className={can ? undefined : "is-no"}>
+            {can ? <Yes /> : <No />}
+            {what}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

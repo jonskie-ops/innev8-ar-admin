@@ -8,7 +8,7 @@ import { LiveSwitch } from "@/components/LiveSwitch";
 import { deletePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listPrizes, photoUrl } from "@/lib/data";
-import { ruleText } from "@/lib/hunt";
+import { photoStyle, ruleText } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "Prizes" };
 
@@ -40,7 +40,7 @@ export default async function PrizesPage() {
             return (
               <li key={p.id} className={p.live ? "prize" : "prize is-off"}>
                 <Link href={`/prizes/${p.id}`} className="prize__main">
-                  <span className="prize__photo">{src ? <img src={src} alt="" loading="lazy" /> : <GiftIcon />}</span>
+                  <span className="prize__photo">{src ? <img src={src} alt="" loading="lazy" style={photoStyle(p.photo_fit, p.photo_zoom)} /> : <GiftIcon />}</span>
                   <span className="prize__body">
                     <b>{p.name}</b>
                     <small>{ruleText(p, total)}</small>

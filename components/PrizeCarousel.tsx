@@ -9,6 +9,8 @@ export type PrizeSlide = {
   id: string;
   name: string;
   photo: string | null;
+  /** How the photo sits in its box (the prize's photo fit and size) */
+  look?: CSSProperties;
   /** "4 of 8 QR codes", "The gold code"… and that share of the hunt, 0–100 */
   needs: string;
   share: number;
@@ -44,7 +46,7 @@ export function PrizeCarousel({ prizes }: { prizes: PrizeSlide[] }) {
           if (d < -n / 2) d += n;
           const front = d === 0;
           const photo = x.photo ? (
-            <img src={x.photo} alt="" loading="lazy" />
+            <img src={x.photo} alt="" loading="lazy" style={x.look} />
           ) : (
             <span className="pc__ph">
               <GiftIcon />

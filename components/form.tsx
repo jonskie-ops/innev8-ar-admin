@@ -239,82 +239,113 @@ export function ConfirmButton({
   label?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const id = useId();
-  const [error, setError] = useState<string | null>(null);
-  const [pending, start] = useTransition();
-  const { title, more } = splitQuestion(question);
-  const close = () => {
-    if (!pending) dialog.current?.close();
-  };
   return (
     <>
       <button
         type="button"
         className={className}
-        onClick={() => {
-          setError(null);
-          dialog.current?.showModal();
-        }}
+        onClick={() => dialog.current?.showModal()}
         aria-label={label}
         aria-haspopup="dialog"
       >
         {children}
       </button>
-      <dialog
-        ref={dialog}
-        className="confirm"
-        aria-labelledby={`${id}-t`}
-        aria-describedby={more ? `${id}-q` : undefined}
-        // (it sits inside lists and forms: its clicks and keys stay its own; a click on the dimmed
-        // page beside it closes it)
-        onClick={(e) => {
-          e.stopPropagation();
-          if (e.target === e.currentTarget) close();
-        }}
-        onKeyDown={(e) => e.stopPropagation()}
-        onCancel={(e) => {
-          if (pending) e.preventDefault();
-        }}
-      >
-        <div className="confirm__box">
-          <h2 className="confirm__title" id={`${id}-t`}>
-            {title}
-          </h2>
-          {more && (
-            <p className="confirm__q" id={`${id}-q`}>
-              {more}
-            </p>
-          )}
-          {error && (
-            <p className="confirm__err" role="alert">
-              <AlertIcon />
-              {error}
-            </p>
-          )}
-          <div className="confirm__btns">
-            <button type="button" className="btn btn--ghost" onClick={close} disabled={pending} autoFocus>
-              Cancel
-            </button>
-            <button
-              type="button"
-              className={pending ? "btn btn--danger is-busy" : "btn btn--danger"}
-              disabled={pending}
-              aria-busy={pending || undefined}
-              onClick={() =>
-                start(async () => {
-                  const r = await action();
-                  setError(r?.error ?? null);
-                  if (!r?.error) dialog.current?.close();
-                })
-              }
-            >
-              {pending && <Spinner />}
-              {confirm}
-            </button>
-          </div>
-        </div>
-      </dialog>
+      <AskDialog ref={dialog} question={question} confirm={confirm} action={action} />
     </>
+  );
+}
+
+/**
+ * The pop-up that asks first ("Turn on Office?", what that does, Cancel / Turn on), opened by its
+ * owner with `ref.current.showModal()`. Its yes runs `action` (and `onYes` once it's done); Esc,
+ * Cancel or a click beside it closes it (`onNo`), not while the action runs.
+ */
+export function AskDialog({
+  ref,
+  question,
+  confirm,
+  tone = "danger",
+  action,
+  onYes,
+  onNo,
+}: {
+  ref: React.RefObject<HTMLDialogElement | null>;
+  question: string;
+  confirm: string;
+  tone?: "danger" | "primary";
+  action?: () => Promise<FormState>;
+  onYes?: () => void;
+  onNo?: () => void;
+}) {
+  const id = useId();
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const { title, more } = splitQuestion(question);
+  const no = () => {
+    if (pending) return;
+    ref.current?.close();
+    setError(null);
+    onNo?.();
+  };
+  const btn = `btn btn--${tone}`;
+  return (
+    <dialog
+      ref={ref}
+      className="confirm"
+      aria-labelledby={`${id}-t`}
+      aria-describedby={more ? `${id}-q` : undefined}
+      // (it sits inside lists and forms: its clicks and keys stay its own; a click on the dimmed
+      // page beside it closes it)
+      onClick={(e) => {
+        e.stopPropagation();
+        if (e.target === e.currentTarget) no();
+      }}
+      onKeyDown={(e) => e.stopPropagation()}
+      onCancel={(e) => {
+        e.preventDefault();
+        no();
+      }}
+    >
+      <div className="confirm__box">
+        <h2 className="confirm__title" id={`${id}-t`}>
+          {title}
+        </h2>
+        {more && (
+          <p className="confirm__q" id={`${id}-q`}>
+            {more}
+          </p>
+        )}
+        {error && (
+          <p className="confirm__err" role="alert">
+            <AlertIcon />
+            {error}
+          </p>
+        )}
+        <div className="confirm__btns">
+          <button type="button" className="btn btn--ghost" onClick={no} disabled={pending} autoFocus>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className={pending ? `${btn} is-busy` : btn}
+            disabled={pending}
+            aria-busy={pending || undefined}
+            onClick={() =>
+              start(async () => {
+                const r = action ? await action() : null;
+                setError(r?.error ?? null);
+                if (r?.error) return;
+                ref.current?.close();
+                onYes?.();
+              })
+            }
+          >
+            {pending && <Spinner />}
+            {confirm}
+          </button>
+        </div>
+      </div>
+    </dialog>
   );
 }
 

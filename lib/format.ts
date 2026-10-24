@@ -102,6 +102,8 @@ const FIELD: Record<string, string> = {
   random_spots: "random spots",
   description: "description",
   photo_path: "photo",
+  photo_fit: "photo",
+  photo_zoom: "photo",
   badge_path: "logo",
   location_id: "location",
   address: "address",
@@ -151,6 +153,15 @@ export function didWhat(a: Activity) {
   if (live) parts.push(live === "live:on" ? "turned on" : "turned off");
   if (fields.length) parts.push(`changed the ${list(fields)} of`);
   return parts.join(" and ");
+}
+
+/** Switching a location on while others are on: only one is on in the game at a time, so they go off. */
+export function turnOnQuestion(name: string, others: string[]) {
+  const them = others.length > 1 ? `${others.slice(0, -1).join(", ")} and ${others[others.length - 1]}` : others[0];
+  return {
+    question: `Turn on ${name}? Only one location can be on in the game at a time, so ${them} will be turned off and ${others.length > 1 ? "their" : "its"} QR codes hidden from players.`,
+    confirm: `Turn on ${name}`,
+  };
 }
 
 /** Deleting a location: what goes with it (its areas, and its QR codes if it has any). */

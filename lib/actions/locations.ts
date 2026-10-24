@@ -65,6 +65,11 @@ async function drawLater(where: Omit<Where, "outlines">) {
   });
 }
 
+/** Only one location is on in the game at a time: the others go off when one is switched on. */
+async function onlyOn(sb: Awaited<ReturnType<typeof supabase>>, id: string) {
+  await sb.from("locations").update({ live: false }).eq("live", true).neq("id", id);
+}
+
 function readPlace(fd: FormData) {
   const lat = Number(fd.get("lat"));
   const lng = Number(fd.get("lng"));
@@ -118,6 +123,7 @@ export async function saveLocation(id: string | null, _: FormState, fd: FormData
     const sort = Math.max(0, ...all.map((l) => l.sort ?? 0)) + 1;
     const { error } = await sb.from("locations").insert({ ...row, id: newId, sort });
     if (error) return failed(dbError(error, "Someone added a location with that name just now. Try again."));
+    if (v.live) await onlyOn(sb, newId);
     // An area for its codes to start with
     const { data: zones } = await sb.from("zones").select("id");
     await sb.from("zones").insert({ id: idFrom(v.name, new Set((zones ?? []).map((z) => z.id))), name: v.name, location_id: newId, sort: 1 });
@@ -128,6 +134,7 @@ export async function saveLocation(id: string | null, _: FormState, fd: FormData
   const { data, error } = await sb.from("locations").update(row).eq("id", id).select("id");
   if (error) return failed(dbError(error));
   if (!data?.length) return failed("This location was removed by someone else.");
+  if (v.live) await onlyOn(sb, id!);
   if (moved) await drawLater({ id: id!, lat: v.lat, lng: v.lng, width: v.width });
   revalidatePath("/", "layout");
   return done("Saved");

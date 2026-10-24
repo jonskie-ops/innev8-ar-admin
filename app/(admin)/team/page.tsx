@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Head } from "@/components/bits";
-import { TeamPanel } from "@/components/TeamPanel";
+import { AddTeammate, TeamPanel } from "@/components/TeamPanel";
 import { requireTeammate } from "@/lib/dal";
 import { listTeam } from "@/lib/data";
 
@@ -16,7 +16,9 @@ export default async function TeamPage() {
         eyebrow="Access"
         title="Team"
         lead={`${members.length} organiser${members.length === 1 ? "" : "s"} can sign in, and nobody else can.${canEdit ? " Add someone, change a role, or give a new temporary password." : ""}`}
-      />
+      >
+        {canEdit && <AddTeammate />}
+      </Head>
       <TeamPanel members={members} me={me.id} canEdit={canEdit} />
     </>
   );

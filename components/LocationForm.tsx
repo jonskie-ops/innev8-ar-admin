@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { findPlaces } from "@/lib/actions/locations";
 import type { FormState } from "@/lib/form";
-import { deleteQuestion } from "@/lib/format";
+import { deleteQuestion, turnOnQuestion } from "@/lib/format";
 import { MAP_WIDTH, mapState, type Location, type Rarity } from "@/lib/hunt";
 import { latLngText, parseLatLng } from "@/lib/venue";
 import { pad } from "./bits";
@@ -31,6 +31,7 @@ export type PlacedCode = { id: string; num: number; name: string; rarity: Rarity
 export function LocationForm({
   location,
   codes,
+  othersOn = [],
   save,
   remove,
   redraw,
@@ -39,6 +40,8 @@ export function LocationForm({
 }: {
   location: Location;
   codes: PlacedCode[];
+  /** The other locations that are on (one at a time: switching this on turns them off, asked first) */
+  othersOn?: string[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
   redraw?: () => Promise<FormState>;
@@ -250,10 +253,14 @@ export function LocationForm({
           <Toggle
             name="live"
             defaultChecked={location.live}
+            ask={othersOn.length ? turnOnQuestion(name.trim() || "this location", othersOn) : undefined}
+            onAsked={changed}
             hint={
               isNew && !location.live
-                ? "Starts off, as another location is on: switch it on once its QR codes are ready. Off: its QR codes are hidden from the game."
-                : "Off: its QR codes are hidden from the game."
+                ? `Starts off, as ${othersOn[0] ?? "another location"} is on: switch it on once its QR codes are ready (only one location is on at a time). Off: its QR codes are hidden from the game.`
+                : othersOn.length
+                  ? `Only one location is on at a time: switching this on turns ${othersOn.join(", ")} off. Off: its QR codes are hidden from the game.`
+                  : "Only one location is on at a time. Off: its QR codes are hidden from the game."
             }
           >
             On
