@@ -647,9 +647,11 @@ input:disabled {
 .topbar__logo {
   display: none;
 }
+/* The bell and the summit link sit on the right, beside who's signed in */
 .topbar__acts {
   display: flex;
   gap: 10px;
+  margin-left: auto;
 }
 .find {
   position: relative;
@@ -836,6 +838,13 @@ input:disabled {
 .changes {
   position: relative;
 }
+/* Near the right edge now, so the list opens leftwards from the bell */
+@media (min-width: 960px) {
+  .changes .pop {
+    left: auto;
+    right: 0;
+  }
+}
 /* Never taller than the window: the title stays put and the changes scroll under it */
 .pop {
   display: flex;
@@ -864,7 +873,6 @@ input:disabled {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-left: auto;
 }
 .me__link {
   display: flex;
