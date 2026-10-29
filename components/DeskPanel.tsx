@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { giveClaim, lookupClaim, undoClaim, type DeskAnswer } from "@/lib/actions/desk";
+import { giveClaim, lookupClaim, undoClaim, type DeskAnswer, type Repeat } from "@/lib/actions/desk";
 import { stamp } from "@/lib/format";
 import { photoStyle, ruleText, type DeskClaim, type Given, type PhotoFit } from "@/lib/hunt";
 import { Avatar } from "./bits";
@@ -28,7 +28,8 @@ const date = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", month: 
 /** Whether a looked-up claim can be given, and if not, why (the desk's words). */
 function standingOf(c: DeskClaim): { ready: boolean; note: string } {
   if (c.test && !c.testNow) return { ready: false, note: "Test code: it doesn't count now that test mode is off" };
-  if (c.claimedAt) return { ready: false, note: `Already claimed, ${stamp(c.claimedAt)}${c.claimedBy ? ` (given by ${c.claimedBy})` : ""}` };
+  if (c.claimedAt)
+    return { ready: false, note: `Already claimed${c.givenTo ? ` by ${c.givenTo}` : ""}, ${stamp(c.claimedAt)}${c.claimedBy ? ` (given by ${c.claimedBy})` : ""}` };
   if (!c.won) return { ready: false, note: "Not won: their confirmed finds don't add up to this prize" };
   if (!c.test && c.prize.stock <= 0) return { ready: false, note: "None left: add stock on the prize's page first" };
   return { ready: true, note: c.test ? "Ready to give (test mode: the stock stays)" : `Ready to give · ${c.prize.stock.toLocaleString("en-PH")} in stock` };
@@ -36,8 +37,9 @@ function standingOf(c: DeskClaim): { ready: boolean; note: string } {
 
 /**
  * The prize desk: a player's prize card checked in a pop-up (its code typed, a USB scanner typing it,
- * or its QR read by the camera), then shown there with whether it can be given, and given. Under it:
- * every prize given at the desk (admins can take one back).
+ * or its QR read by the camera), then shown there with whether it can be given, and given to the
+ * person whose name (from their ID or badge) is typed: one person playing as two players is warned
+ * about. Under it: every prize given at the desk (admins can take one back).
  */
 export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; prizes: DeskPrize[]; total: number; isAdmin: boolean }) {
   const router = useRouter();
@@ -46,6 +48,9 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
   const [text, setText] = useState("");
   const [answer, setAnswer] = useState<DeskAnswer | null>(null);
   const [gave, setGave] = useState<{ who: string; prize: string; note: string; at: number } | null>(null);
+  // The person's name from their ID or badge, and an earlier give of this prize to that name
+  const [person, setPerson] = useState("");
+  const [repeat, setRepeat] = useState<Repeat | null>(null);
   const [pending, start] = useTransition();
   const last = useRef<{ code: string; until: number } | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -77,6 +82,8 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
 
   const check = (code: string) => {
     setGave(null);
+    setPerson("");
+    setRepeat(null);
     start(async () => setAnswer(await lookupClaim(code)));
   };
   // Ready for the next card: the box empty (typing), or the camera reading again
@@ -84,6 +91,8 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
     if (claim) last.current = { code: claim.code, until: Date.now() + SAME_CARD_MS };
     setAnswer(null);
     setText("");
+    setPerson("");
+    setRepeat(null);
     if (mode === "type") input.current?.focus();
   };
   const fromCamera = (code: string) => {
@@ -107,7 +116,18 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
     setAnswer(null);
     setGave(null);
     setText("");
+    setPerson("");
+    setRepeat(null);
   };
+  // Given to the person named; `again`: past the warning that this name already had it
+  const give = (c: DeskClaim, again = false) =>
+    start(async () => {
+      const r = await giveClaim(c.code, person, again);
+      if (r.repeat) return setRepeat(r.repeat);
+      if (r.error) return setAnswer({ ...r, claim: c });
+      setGave({ who: `${c.hunter.name} (${person.trim().replace(/\s+/g, " ")})`, prize: c.prize.name, note: r.ok ?? "Given", at: r.at });
+      next();
+    });
   useEffect(() => {
     if (!open) return;
     if (!dialog.current?.open) dialog.current?.showModal();
@@ -207,6 +227,40 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
                   {state.ready ? <CheckIcon /> : <AlertIcon />}
                   {state.note}
                 </p>
+                {state.ready && (
+                  <label className="field desk__person">
+                    <span className="field__label">Their name, from their ID or badge</span>
+                    <input
+                      value={person}
+                      onChange={(e) => {
+                        setPerson(e.target.value);
+                        setRepeat(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && person.trim() && !pending) give(claim, Boolean(repeat));
+                      }}
+                      placeholder="Juan Dela Cruz"
+                      maxLength={80}
+                      autoComplete="off"
+                      spellCheck={false}
+                      autoFocus
+                      aria-describedby="desk-person-hint"
+                    />
+                    <span className="field__hint" id="desk-person-hint">
+                      Kept with the prize, so one person can&apos;t get it twice as another player.
+                    </span>
+                  </label>
+                )}
+                {repeat && (
+                  <p className="desk__state is-warn" role="alert">
+                    <AlertIcon />
+                    <span>
+                      {claim.prize.name} was already given to {repeat.to}, {stamp(repeat.at)}
+                      {repeat.hunter ? `, as the player ${repeat.hunter}${repeat.tag ? ` (${repeat.tag})` : ""}` : ""}
+                      {repeat.by ? `, by ${repeat.by}` : ""}. If it&apos;s the same person, don&apos;t give it again.
+                    </span>
+                  </p>
+                )}
                 {answer?.error && (
                   <p className="status status--error" role="alert">
                     <AlertIcon />
@@ -218,18 +272,11 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
                     <button
                       type="button"
                       className="btn btn--primary desk__give"
-                      disabled={pending}
-                      onClick={() =>
-                        start(async () => {
-                          const r = await giveClaim(claim.code);
-                          if (r.error) return setAnswer({ ...r, claim });
-                          setGave({ who: claim.hunter.name, prize: claim.prize.name, note: r.ok ?? "Given", at: r.at });
-                          next();
-                        })
-                      }
+                      disabled={pending || !person.trim()}
+                      onClick={() => give(claim, Boolean(repeat))}
                     >
                       {pending ? <Spinner /> : <GiftIcon />}
-                      Give prize
+                      {repeat ? "Different person: give it" : "Give prize"}
                     </button>
                   )}
                   {isAdmin && claim.claimedAt && !(claim.test && !claim.testNow) && (
@@ -328,13 +375,13 @@ export function DeskPanel({ given, prizes, total, isAdmin }: { given: Given[]; p
   );
 }
 
-/** Every prize given at the desk, newest first: found by player, prize, code or who gave it. */
+/** Every prize given at the desk, newest first: found by player, name, prize, code or who gave it. */
 function GivenTable({ given, isAdmin }: { given: Given[]; isAdmin: boolean }) {
   const [q, setQ] = useState("");
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const rows = words.length
     ? given.filter((g) => {
-        const t = `${g.hunter} ${g.province} ${g.tag} ${g.prize} ${g.code} ${g.code.slice(0, 4)}-${g.code.slice(4)} ${g.by ?? ""}`.toLowerCase();
+        const t = `${g.hunter} ${g.province} ${g.tag} ${g.givenTo ?? ""} ${g.prize} ${g.code} ${g.code.slice(0, 4)}-${g.code.slice(4)} ${g.by ?? ""}`.toLowerCase();
         return words.every((w) => t.includes(w));
       })
     : given;
@@ -347,7 +394,7 @@ function GivenTable({ given, isAdmin }: { given: Given[]; isAdmin: boolean }) {
         {given.length > 0 && (
           <label className="hunters__find">
             <SearchIcon />
-            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Player, prize, code or who gave it" aria-label="Find a prize given" />
+            <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Player, name, prize, code or who gave it" aria-label="Find a prize given" />
           </label>
         )}
       </div>
@@ -358,6 +405,7 @@ function GivenTable({ given, isAdmin }: { given: Given[]; isAdmin: boolean }) {
               <tr>
                 <th scope="col">When</th>
                 <th scope="col">Player</th>
+                <th scope="col">Name on ID</th>
                 <th scope="col">Prize</th>
                 <th scope="col">Code</th>
                 <th scope="col">Given by</th>
@@ -389,6 +437,7 @@ function GivenTable({ given, isAdmin }: { given: Given[]; isAdmin: boolean }) {
                       </span>
                     </span>
                   </td>
+                  <td>{g.givenTo ?? "—"}</td>
                   <td>{g.prize}</td>
                   <td>
                     <code>

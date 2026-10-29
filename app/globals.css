@@ -6941,6 +6941,11 @@ html[data-full-map] .navbar {
   background: rgba(255, 107, 107, 0.12);
   color: #ffc4c4;
 }
+.desk__state.is-warn {
+  background: rgba(214, 181, 109, 0.14);
+  color: var(--gold);
+  font-weight: 500;
+}
 .desk__acts {
   display: flex;
   flex-wrap: wrap;

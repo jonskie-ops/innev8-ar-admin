@@ -86,10 +86,13 @@ export const listHunters = cache(async (): Promise<Hunter[] | null> => {
 export const listGiven = cache(async (testMode: boolean): Promise<Given[] | null> => {
   const sb = await supabase();
   try {
+    type Claim = { code: string; hunter_id: string; prize_id: string; test: boolean; claimed_at: string | null; claimed_by_name: string | null; given_to?: string | null };
+    const claimsWith = (cols: string) =>
+      readAll<Claim>((from, to) => sb.from("claims").select(cols).order("created_at").order("id").range(from, to) as unknown as Result<Claim[]>);
+    const cols = "code, hunter_id, prize_id, test, claimed_at, claimed_by_name";
     const [claims, hunters, prizes] = await Promise.all([
-      readAll<{ code: string; hunter_id: string; prize_id: string; test: boolean; claimed_at: string | null; claimed_by_name: string | null }>(
-        (from, to) => sb.from("claims").select("code, hunter_id, prize_id, test, claimed_at, claimed_by_name").order("created_at").order("id").range(from, to),
-      ),
+      // (no given_to before the desk names update)
+      claimsWith(`${cols}, given_to`).catch(() => claimsWith(cols)),
       readAll<{ id: string; name: string; province: string; tag: string }>((from, to) =>
         sb.from("hunters").select("id, name, province, tag").order("created_at").order("id").range(from, to),
       ),
@@ -105,6 +108,7 @@ export const listGiven = cache(async (testMode: boolean): Promise<Given[] | null
           code: c.code,
           at: c.claimed_at!,
           by: c.claimed_by_name,
+          givenTo: c.given_to ?? null,
           hunter: h?.name ?? "A deleted hunter",
           province: h?.province ?? "",
           tag: h?.tag ?? "",

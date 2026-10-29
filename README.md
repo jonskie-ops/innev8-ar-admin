@@ -170,6 +170,10 @@ they joined and how many hunters they've met.
 Deleting needs the update `supabase/migrations/20261023000000_hunters.sql` (run it in the SQL
 Editor). Until it's run, the list shows but deleting says what to run.
 
+Only admins delete hunters: players can't delete themselves (the game has no Delete profile). The
+update `supabase/migrations/20261029000000_no_hunter_leave.sql` takes away the database function
+the game used for that.
+
 ## Security
 
 There's no sign-up: an admin adds each organiser, who gets a temporary password and chooses their

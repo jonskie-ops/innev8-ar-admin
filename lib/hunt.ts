@@ -283,17 +283,20 @@ export type DeskClaim = {
   testNow: boolean;
   claimedAt: string | null;
   claimedBy: string | null;
+  /** The person's name as the desk typed it from their ID (null before …_desk_names.sql) */
+  givenTo?: string | null;
   hunter: { id: string; name: string; province: string; tag: string };
   prize: { id: string; name: string; photo: string | null; rule: PrizeRule; value: number | null; stock: number; live: boolean };
   standing: Standing;
   won: boolean;
 };
 
-/** A prize given at the desk: when, to whom, which, its claim code, and who gave it. */
+/** A prize given at the desk: when, to whom (the player, and the name on their ID), which, its claim code, and who gave it. */
 export type Given = {
   code: string;
   at: string;
   by: string | null;
+  givenTo: string | null;
   hunter: string;
   province: string;
   tag: string;
