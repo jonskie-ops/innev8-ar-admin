@@ -76,7 +76,7 @@ export default async function CodePage({
           Added{code.live ? " and live in the game" : ""}.
         </p>
       )}
-      {added && <AddedToast>QR code added</AddedToast>}
+      {added === "1" && <AddedToast>QR code added</AddedToast>}
       <CodeForm
         key={code.id}
         code={code}

@@ -62,7 +62,7 @@ export default async function LocationPage({
           codes here on their pages.
         </p>
       )}
-      {added && <AddedToast>Location added</AddedToast>}
+      {added === "1" && <AddedToast>Location added</AddedToast>}
       <LocationForm
         key={location.id}
         location={location}

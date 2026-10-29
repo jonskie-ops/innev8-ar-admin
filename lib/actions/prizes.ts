@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { afterAdd } from "@/lib/back";
 import { adminOnly } from "../dal";
 import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_PRIZE_CODE, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { PHOTO_ZOOM, type PhotoFit, type PrizeRule } from "../hunt";
@@ -95,7 +96,7 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
       return failed(v.rule === "code" && noCodeRule(error) ? NEEDS_PRIZE_CODE : dbError(error));
     }
     revalidatePath("/", "layout");
-    redirect(`/prizes/${data.id}?added=1`);
+    redirect(afterAdd(fd, `/prizes/${data.id}`, "prize"));
   }
   const { data, error } = await sb.from("prizes").update(row).eq("id", id).select("id");
   if (error || !data?.length) {

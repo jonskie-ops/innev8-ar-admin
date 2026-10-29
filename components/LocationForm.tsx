@@ -9,7 +9,7 @@ import { deleteQuestion, turnOnQuestion } from "@/lib/format";
 import { MAP_WIDTH, mapState, type Location, type Rarity } from "@/lib/hunt";
 import { latLngText, parseLatLng } from "@/lib/venue";
 import { pad } from "./bits";
-import { AutoSaveToast, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
+import { AutoSaveToast, BackField, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
 import { LocateIcon, MapIcon, PlacesIcon, PlusIcon, QrIcon, SearchIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
@@ -350,9 +350,12 @@ export function LocationForm({
                 Delete
               </ConfirmButton>
             ) : isNew ? (
-              <SaveButton pending={pending} busy="Adding…">
-                Add location
-              </SaveButton>
+              <>
+                <BackField />
+                <SaveButton pending={pending} busy="Adding…">
+                  Add location
+                </SaveButton>
+              </>
             ) : null}
           </span>
         </div>

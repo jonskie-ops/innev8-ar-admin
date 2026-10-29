@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { afterAdd } from "@/lib/back";
 import { after } from "next/server";
 import { adminOnly } from "../dal";
 import { checked, dbError, done, failed, Invalid, NEEDS_LOCATIONS, NOT_ADMIN, text, whole, type FormState } from "../form";
@@ -129,7 +130,7 @@ export async function saveLocation(id: string | null, _: FormState, fd: FormData
     await sb.from("zones").insert({ id: idFrom(v.name, new Set((zones ?? []).map((z) => z.id))), name: v.name, location_id: newId, sort: 1 });
     await drawLater({ id: newId, lat: v.lat, lng: v.lng, width: v.width });
     revalidatePath("/", "layout");
-    redirect(`/locations/${newId}?added=1`);
+    redirect(afterAdd(fd, `/locations/${newId}`, "location"));
   }
   const { data, error } = await sb.from("locations").update(row).eq("id", id).select("id");
   if (error) return failed(dbError(error));

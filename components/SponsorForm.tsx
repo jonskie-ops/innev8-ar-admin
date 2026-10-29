@@ -7,7 +7,7 @@ import type { FormState } from "@/lib/form";
 import type { Rarity } from "@/lib/hunt";
 import { LOGO_TYPES, makeBadge, type Background } from "./badge";
 import { pad } from "./bits";
-import { AutoSaveToast, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
+import { AutoSaveToast, BackField, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
 import { ImageIcon, TrashIcon } from "./icons";
 import { QrGlyph } from "./QrGlyph";
 
@@ -189,7 +189,10 @@ export function SponsorForm({
                 Delete
               </ConfirmButton>
             ) : (
-              <SaveButton pending={pending || making}>Add sponsor</SaveButton>
+              <>
+                <BackField />
+                <SaveButton pending={pending || making}>Add sponsor</SaveButton>
+              </>
             )}
           </span>
         </div>

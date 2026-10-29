@@ -22,7 +22,7 @@ import {
 } from "@/lib/hunt";
 import { DEFAULT_LOCATION, intoPinArea, latLngText, metresBetween, parseLatLng, planOf, spotOf, spotUrl } from "@/lib/venue";
 import { pad } from "./bits";
-import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
+import { AutoSaveToast, BackField, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
 import { ExternalIcon, LocateIcon, PinIcon, PlusIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
@@ -454,7 +454,10 @@ export function CodeForm({
                 Delete
               </ConfirmButton>
             ) : (
-              <SaveButton pending={pending}>Add QR code</SaveButton>
+              <>
+                <BackField />
+                <SaveButton pending={pending}>Add QR code</SaveButton>
+              </>
             )}
           </span>
         </div>

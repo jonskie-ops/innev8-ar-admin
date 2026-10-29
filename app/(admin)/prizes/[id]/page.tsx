@@ -64,7 +64,7 @@ export default async function PrizePage({
           Added{prize.live ? " and live in the game" : ""}.
         </p>
       )}
-      {added && <AddedToast>Prize added</AddedToast>}
+      {added === "1" && <AddedToast>Prize added</AddedToast>}
       <PrizeForm
         key={prize.id}
         prize={prize}

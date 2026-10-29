@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { afterAdd } from "@/lib/back";
 import { adminOnly } from "../dal";
 import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
@@ -122,7 +123,7 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
     const { error } = await sb.from("codes").insert({ ...row, id: newId, code });
     if (error) return failed(numbers(error));
     revalidatePath("/", "layout");
-    redirect(`/codes/${newId}?added=1`);
+    redirect(afterAdd(fd, `/codes/${newId}`, "code"));
   }
   const { data, error } = await sb.from("codes").update(row).eq("id", id).select("id");
   if (error) return failed(numbers(error));

@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { useFormStatus } from "react-dom";
 import { signOut } from "@/lib/actions/auth";
 import { SUMMIT_URL } from "@/lib/hunt";
 import { Avatar } from "./bits";
+import { AddedFlash, BackTrail } from "./form";
 import { Changes, type Change } from "./Changes";
 import { Find, type Findable } from "./Find";
 import { I8Mark } from "./I8Mark";
@@ -66,6 +68,10 @@ export function Shell({
   return (
     <div className="shell">
       <NavProgress />
+      <BackTrail />
+      <Suspense fallback={null}>
+        <AddedFlash />
+      </Suspense>
       {/* (a temporary password still to change: no menu or top bar, only choosing a password) */}
       <div className={me.locked ? "frame is-locked" : "frame"}>
         {!me.locked && (

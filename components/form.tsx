@@ -13,7 +13,9 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { createPortal } from "react-dom";
+import { ADDED, type AddedKind } from "@/lib/back";
 import { failed, type FormState } from "@/lib/form";
 import { AlertIcon, CheckIcon, CopyIcon } from "./icons";
 import { Spinner } from "./Progress";
@@ -163,6 +165,58 @@ export function AddedToast({ children }: { children: ReactNode }) {
     </p>,
     document.body,
   );
+}
+
+// ---- An Add goes back to the page its form was opened from (lib/back.ts)
+
+const TRAIL = "i8adm-trail";
+/** This tab's page now and the one before it (sessionStorage). */
+type Trail = { now?: string; prev?: string };
+function readTrail(): Trail {
+  try {
+    return (JSON.parse(sessionStorage.getItem(TRAIL) ?? "{}") as Trail) ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** In the frame: notes each page this tab goes to (without an `?added=`), for BackField. */
+export function BackTrail() {
+  const path = usePathname();
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("added");
+    const here = url.pathname + url.search;
+    const t = readTrail();
+    if (t.now === here) return;
+    try {
+      sessionStorage.setItem(TRAIL, JSON.stringify({ now: here, prev: t.now }));
+    } catch {}
+  }, [path]);
+  return null;
+}
+
+/** On an add form: the page it was opened from, sent with the Add so it goes back there. */
+export function BackField() {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const t = readTrail();
+    const from = [t.now, t.prev].find((p) => p && p.split("?")[0] !== window.location.pathname);
+    if (ref.current) ref.current.value = from ?? "";
+  }, []);
+  return <input ref={ref} type="hidden" name="back" defaultValue="" />;
+}
+
+/** In the frame: "QR code added" (…) on the page an Add went back to, until it's left. */
+export function AddedFlash() {
+  const path = usePathname();
+  const kind = useSearchParams().get("added");
+  const text = kind && kind in ADDED ? ADDED[kind as AddedKind] : null;
+  const [shown, setShown] = useState<{ path: string; text: string } | null>(null);
+  // (AddedToast takes the flag off the address; the toast stays until another page)
+  if (text && (shown?.path !== path || shown.text !== text)) setShown({ path, text });
+  else if (!text && shown && shown.path !== path) setShown(null);
+  return shown && shown.path === path ? <AddedToast>{shown.text}</AddedToast> : null;
 }
 
 const never = () => () => {};

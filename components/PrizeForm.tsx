@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import type { FormState } from "@/lib/form";
 import { PHOTO_ZOOM, photoStyle, PRIZE_RULES, type PhotoFit, type Prize, type PrizeRule } from "@/lib/hunt";
-import { AutoSaveToast, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
+import { AutoSaveToast, BackField, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { ImageIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
@@ -238,7 +238,10 @@ export function PrizeForm({
                 Delete
               </ConfirmButton>
             ) : (
-              <SaveButton pending={pending}>Add prize</SaveButton>
+              <>
+                <BackField />
+                <SaveButton pending={pending}>Add prize</SaveButton>
+              </>
             )}
           </span>
         </div>

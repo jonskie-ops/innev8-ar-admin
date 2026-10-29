@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { afterAdd } from "@/lib/back";
 import { adminOnly } from "../dal";
 import { dbError, done, failed, Invalid, NEEDS_SPONSOR_LOGOS, NOT_ADMIN, text, type FormState } from "../form";
 import { supabase } from "../supabase";
@@ -83,7 +84,7 @@ export async function saveSponsor(id: string | null, _: FormState, fd: FormData)
       return failed(dbError(error, "Someone added a sponsor with that name just now. Try again."));
     }
     revalidatePath("/", "layout");
-    redirect(`/sponsors/${sponsorId}?added=1`);
+    redirect(afterAdd(fd, `/sponsors/${sponsorId}`, "sponsor"));
   }
   const { data, error } = await sb.from("sponsors").update(row).eq("id", id).select("id");
   if (error || !data?.length) {
