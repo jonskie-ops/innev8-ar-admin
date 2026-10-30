@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import { useFormStatus } from "react-dom";
 import { signOut } from "@/lib/actions/auth";
 import { SUMMIT_URL } from "@/lib/hunt";
 import { Avatar } from "./bits";
 import { AddedFlash, BackTrail } from "./form";
 import { Changes, type Change } from "./Changes";
+import { DeskCheck, type DeskPrize } from "./DeskCheck";
 import { Find, type Findable } from "./Find";
 import { I8Mark } from "./I8Mark";
 import {
-  CalendarIcon,
   DeskIcon,
   GearIcon,
   GiftIcon,
@@ -38,32 +38,69 @@ const NAV = [
   { href: "/desk", label: "Prize desk", short: "Desk", Icon: DeskIcon },
   { href: "/sponsors", label: "Sponsors", short: "Sponsors", Icon: SponsorIcon },
   { href: "/hunters", label: "Hunters", short: "Hunters", Icon: HunterIcon },
-  { href: "/event", label: "Event", short: "Event", Icon: CalendarIcon },
   { href: "/team", label: "Team", short: "Team", Icon: TeamIcon },
 ] as const;
-/** On phones, the tab bar has room for all but the prize desk, the hunters and the team (on the Account page there) */
-const TABS = NAV.filter(({ href }) => href !== "/desk" && href !== "/hunters" && href !== "/team");
+/** When the newest hunter this browser has seen on the Hunters page joined (kept on the organiser's own device). */
+const SEEN_HUNTER = "i8admin-seen-hunter";
+const seenListeners = new Set<() => void>();
+const subscribeSeen = (fn: () => void) => {
+  seenListeners.add(fn);
+  window.addEventListener("storage", fn);
+  return () => {
+    seenListeners.delete(fn);
+    window.removeEventListener("storage", fn);
+  };
+};
+const readSeenHunter = () => {
+  try {
+    return localStorage.getItem(SEEN_HUNTER) ?? "";
+  } catch {
+    return "";
+  }
+};
+const markSeenHunter = (at: string) => {
+  try {
+    localStorage.setItem(SEEN_HUNTER, at);
+  } catch {}
+  seenListeners.forEach((fn) => fn());
+};
+
+/** On phones, the tab bar has room for all but the hunters and the team (found with search there) */
+const TABS = NAV.filter(({ href }) => href !== "/hunters" && href !== "/team");
 
 /**
  * The admin's frame: a rail of icons down the side, with your account and sign out at its foot (on
- * phones, a tab bar along the bottom and sign out in the top bar), and a top bar with search, the
+ * phones, a tab bar along the bottom, and a gear in the top bar with both), and a top bar with search, the
  * latest changes, the summit's page, and who's signed in. `locked`: a temporary password still to change, so
- * only the Account page.
+ * only the Account page. Hunters has a dot while someone has joined since this browser last opened it
+ * (`newestHunter`: when the newest one joined).
  */
 export function Shell({
   me,
   find,
   changes,
+  newestHunter = null,
+  desk,
   children,
 }: {
   me: { name: string; email: string; role: "admin" | "staff"; locked: boolean };
   find: Findable[];
   changes: Change[];
+  newestHunter?: string | null;
+  /** For checking a prize card on any page: the prizes that can be won, and how many codes are in the game. */
+  desk?: { prizes: DeskPrize[]; total: number };
   children: React.ReactNode;
 }) {
   const path = usePathname();
   const current = (href: string) =>
     (href === "/" ? path === "/" : path === href || path.startsWith(href + "/")) ? ("page" as const) : undefined;
+  // New hunters: a dot on Hunters until it's opened (then, and while it's open, they're seen)
+  const seenHunter = useSyncExternalStore(subscribeSeen, readSeenHunter, () => null);
+  const onHunters = path === "/hunters";
+  useEffect(() => {
+    if (onHunters && newestHunter) markSeenHunter(newestHunter);
+  }, [onHunters, newestHunter]);
+  const newHunters = !onHunters && seenHunter !== null && !!newestHunter && newestHunter > seenHunter;
 
   return (
     <div className="shell">
@@ -80,19 +117,23 @@ export function Shell({
               <I8Mark />
             </Link>
             <nav className="rail__nav" aria-label="Admin">
-              {NAV.map(({ href, label, Icon }) => (
-                <Link key={href} href={href} className="rail__link" aria-current={current(href)}>
-                  <Icon />
-                  <LinkPending />
-                  <span className="rail__tip">{label}</span>
-                </Link>
-              ))}
+              {NAV.map(({ href, label, Icon }) => {
+                const dot = href === "/hunters" && newHunters;
+                return (
+                  <Link key={href} href={href} className="rail__link" aria-current={current(href)}>
+                    <Icon />
+                    {dot && <i className="rail__dot" aria-hidden="true" />}
+                    <LinkPending />
+                    <span className="rail__tip">{dot ? `${label} (new)` : label}</span>
+                  </Link>
+                );
+              })}
             </nav>
             <div className="rail__end">
               <Link href="/account" className="rail__link" aria-current={current("/account")}>
                 <GearIcon />
                 <LinkPending />
-                <span className="rail__tip">Your account</span>
+                <span className="rail__tip">Settings</span>
               </Link>
               <form action={signOut}>
                 <SignOutButton rail />
@@ -132,9 +173,7 @@ export function Shell({
                     </small>
                   </span>
                 </Link>
-                <form action={signOut} className="topbar__out">
-                  <SignOutButton />
-                </form>
+                <PhoneMenu current={current("/account")} />
               </div>
             </header>
           )}
@@ -142,6 +181,9 @@ export function Shell({
         </div>
       </div>
 
+      {/* Checking a prize card, right where you are: the floating camera button on phones (and typing
+          or a USB scanner on the Prize desk page) */}
+      {!me.locked && desk && <DeskCheck prizes={desk.prizes} total={desk.total} isAdmin={me.role === "admin"} typing={!!current("/desk")} />}
       {!me.locked && (
         <nav className="tabbar" aria-label="Admin">
           {TABS.map(({ href, short, Icon }) => (
@@ -157,20 +199,76 @@ export function Shell({
   );
 }
 
-/** Sign out (in the rail, or the top bar on phones): a spinner in place of the icon while it signs out. */
+/**
+ * On phones (and tablets), the top bar's gear: a little menu with the app's settings, and sign out under
+ * it. (On computers, both are at the foot of the rail.)
+ */
+function PhoneMenu({ current }: { current?: "page" }) {
+  const id = useId();
+  const box = useRef<HTMLDivElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: PointerEvent) => {
+      if (!box.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      button.current?.focus();
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+
+  return (
+    <div className="topbar__out" ref={box}>
+      <button
+        ref={button}
+        type="button"
+        className="square-btn topbar__gear"
+        aria-expanded={open}
+        aria-controls={`${id}-menu`}
+        aria-label="Settings and sign out"
+        title="Settings"
+        onClick={() => setOpen(!open)}
+      >
+        <GearIcon />
+      </button>
+      {open && (
+        <div id={`${id}-menu`} className="setmenu">
+          <Link href="/account" className="setmenu__item" aria-current={current} onClick={() => setOpen(false)}>
+            <GearIcon />
+            App settings
+          </Link>
+          <form action={signOut}>
+            <SignOutButton />
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Sign out (in the rail, or the gear's menu on phones): a spinner in place of the icon while it signs out. */
 function SignOutButton({ rail = false }: { rail?: boolean }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      className={rail ? "rail__link rail__out" : "square-btn"}
-      aria-label={pending ? "Signing out" : "Sign out"}
-      title={rail ? undefined : "Sign out"}
+      className={rail ? "rail__link rail__out" : "setmenu__item setmenu__out"}
+      aria-label={rail ? (pending ? "Signing out" : "Sign out") : undefined}
       disabled={pending}
       aria-busy={pending || undefined}
     >
       {pending ? <Spinner /> : <LogoutIcon />}
-      {rail && <span className="rail__tip">Sign out</span>}
+      {rail ? <span className="rail__tip">Sign out</span> : pending ? "Signing out…" : "Sign out"}
     </button>
   );
 }

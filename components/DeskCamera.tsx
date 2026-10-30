@@ -100,7 +100,16 @@ export function DeskCamera({ paused, onCode }: { paused: boolean; onCode: (code:
   return (
     <div className={`deskcam${state === "live" ? " is-live" : ""}${paused ? " is-paused" : ""}`}>
       <video ref={video} playsInline muted aria-label="Camera: hold the player's prize QR up to it" />
-      {state === "live" && <span className="deskcam__frame" aria-hidden="true" />}
+      {/* (the window to hold the QR in: its corners, and a line sweeping it while it reads) */}
+      {state === "live" && (
+        <span className="deskcam__frame" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+          <b className="deskcam__line" />
+        </span>
+      )}
       {state === "starting" && (
         <span className="deskcam__note">
           <Spinner />

@@ -57,9 +57,10 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
         }
       >
         {canEdit && (
-          <Link href="/codes/new" className="btn btn--primary btn--sm">
+          // (on a phone: a round plus, beside the title)
+          <Link href="/codes/new" className="btn btn--primary btn--sm head__add" aria-label="Add QR code">
             <PlusIcon />
-            Add QR code
+            <span className="head__add-text">Add QR code</span>
           </Link>
         )}
       </Head>

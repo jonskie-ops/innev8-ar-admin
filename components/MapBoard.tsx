@@ -6,7 +6,7 @@ import { areaOf, embedUrl, mapsLinks, metresBetween, planOf, PLACE, spotUrl, typ
 import { pad } from "./bits";
 import { useHydrated } from "./form";
 import { useHere } from "./here";
-import { AlertIcon, CheckIcon, ExpandIcon, ExternalIcon, LocateIcon, PinIcon, ShrinkIcon } from "./icons";
+import { AlertIcon, CheckIcon, ExpandIcon, ExternalIcon, GlobeIcon, InfoIcon, LocateIcon, MapIcon, PinIcon, SatelliteIcon, ShrinkIcon } from "./icons";
 import { SatelliteMap, type Spot } from "./SatelliteMap";
 
 /** "8 m", "120 m", "2.4 km" */
@@ -16,11 +16,13 @@ const howFar = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).t
 const noteOf = (text: string, error: boolean) => ({ text, error, at: Date.now() });
 
 type View = "air" | "map" | "google";
-const VIEWS: [View, string][] = [
-  ["air", "Satellite"],
-  ["map", "Map"],
-  ["google", "Google"],
+/** (shown as their icons) */
+const VIEWS: [View, string, (p: { className?: string }) => React.ReactNode][] = [
+  ["air", "Satellite", SatelliteIcon],
+  ["map", "Map", MapIcon],
+  ["google", "Google", GlobeIcon],
 ];
+
 
 /**
  * The venue on a real map beside the QR codes: pick one to go to it. On the satellite or street map
@@ -58,6 +60,22 @@ export function MapBoard({
   const [real, setReal] = useState(false);
   const [filled, setFilled] = useState(false);
   const full = real || filled;
+  // How the map works is behind an "i" on it (tapped, or hovered); Esc or a tap elsewhere hides it
+  const [info, setInfo] = useState(false);
+  const infoBox = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!info) return;
+    const outside = (e: PointerEvent) => {
+      if (!infoBox.current?.contains(e.target as Node)) setInfo(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setInfo(false);
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [info]);
   useEffect(() => {
     const on = () => setReal(document.fullscreenElement !== null && document.fullscreenElement === mapBox.current);
     document.addEventListener("fullscreenchange", on);
@@ -125,6 +143,27 @@ export function MapBoard({
     return true;
   };
 
+  const howTo =
+    view === "google"
+      ? "Google's map is for looking. To move a QR code, drag its pin on Satellite or Map."
+      : canEdit
+        ? "Drag a pin to move its QR code: it saves at once, and its pin on the game's map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
+        : "Each QR code is at its pin; its ring is how close players must be to see it. Only admins can move pins.";
+
+  // "Show me": on the map under Full screen, as an icon
+  const meButton = (
+    <button
+      type="button"
+      className={showMe ? "gmap__ctl gmap__me is-on" : "gmap__ctl gmap__me"}
+      aria-pressed={showMe}
+      aria-label={showMe && here ? `Show me (±${Math.round(here.accuracy)} m)` : "Show me"}
+      onClick={() => setShowMe(!showMe)}
+      title="Show where this phone is, and how far each code is"
+    >
+      <LocateIcon />
+    </button>
+  );
+
   return (
     <div className="gmap">
       <section ref={mapBox} className={filled ? "panel gmap__map is-full" : "panel gmap__map"} aria-label={`Map of ${place.name}`}>
@@ -151,20 +190,11 @@ export function MapBoard({
             )}
           </p>
           <div className="gmap__tools">
-            <button
-              type="button"
-              className={showMe ? "btn btn--ghost btn--sm gmap__me is-on" : "btn btn--ghost btn--sm gmap__me"}
-              aria-pressed={showMe}
-              onClick={() => setShowMe(!showMe)}
-              title="Show where this phone is, and how far each code is"
-            >
-              <LocateIcon />
-              {showMe && here ? `±${Math.round(here.accuracy)} m` : "Show me"}
-            </button>
-            <div className="seg" role="group" aria-label="Show as">
-              {VIEWS.map(([v, label]) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}>
-                  {label}
+            <div className="seg gmap__views" role="group" aria-label="Show as">
+              {VIEWS.map(([v, label, Icon]) => (
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} aria-label={label} title={label}>
+                  <Icon className="gmap__view-ico" />
+                  <span className="gmap__view-label">{label}</span>
                 </button>
               ))}
             </div>
@@ -222,25 +252,38 @@ export function MapBoard({
               {note.text}
             </p>
           )}
-          <button
-            type="button"
-            className="gmap__full"
-            aria-label={full ? "Exit full screen" : "Full screen"}
-            title={full ? "Exit full screen (Esc)" : "Full screen"}
-            aria-pressed={full}
-            onClick={() => void toggleFull()}
-          >
-            {full ? <ShrinkIcon /> : <ExpandIcon />}
-          </button>
+          {/* Full screen, Show me and how it works: one bar down the map's right, like its zoom */}
+          <div className="gmap__ctls">
+            <button
+              type="button"
+              className="gmap__ctl gmap__full"
+              aria-label={full ? "Exit full screen" : "Full screen"}
+              title={full ? "Exit full screen (Esc)" : "Full screen"}
+              aria-pressed={full}
+              onClick={() => void toggleFull()}
+            >
+              {full ? <ShrinkIcon /> : <ExpandIcon />}
+            </button>
+            {meButton}
+            {/* How the map works, behind an "i" */}
+            <div className="gmap__info" ref={infoBox}>
+              <button
+                type="button"
+                className="gmap__ctl gmap__info-btn"
+                aria-label="How the map works"
+                aria-expanded={info}
+                aria-controls="gmap-howto"
+                onClick={() => setInfo(!info)}
+              >
+                <InfoIcon />
+              </button>
+              <p id="gmap-howto" className={info ? "gmap__tip is-open" : "gmap__tip"} role="tooltip">
+                {howTo}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <p className="gmap__note">
-          {view === "google"
-            ? "Google's map is for looking. To move a QR code, drag its pin on Satellite or Map."
-            : canEdit
-              ? "Drag a pin to move its QR code: it saves at once, and its pin on the game's map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
-              : "Each QR code is at its pin; its ring is how close players must be to see it. Only admins can move pins."}
-        </p>
       </section>
 
       <aside className="panel gmap__list" aria-label="Show on the map">

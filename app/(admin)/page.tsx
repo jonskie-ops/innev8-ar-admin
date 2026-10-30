@@ -4,16 +4,15 @@ import Link from "next/link";
 import { pad, SponsorBadge } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
-import { ArrowRightIcon, ChevronRightIcon, ExternalIcon, GiftIcon, HunterIcon, PlusIcon, QrIcon } from "@/components/icons";
+import { ArrowRightIcon, ChevronRightIcon, GiftIcon, PlusIcon } from "@/components/icons";
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { PlaceMaps } from "@/components/PlaceMaps";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, hunterStats, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
+import { getSettings, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
-import { firstSponsor, GAME_URL, photoStyle, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
+import { firstSponsor, photoStyle, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
-const RING = 2 * Math.PI * 22;
 const BADGE = {
   test: { cls: "badge badge--test", text: "Test mode" },
   soon: { cls: "badge", text: "Coming up" },
@@ -24,13 +23,12 @@ const BADGE = {
 export default async function OverviewPage() {
   const me = await requireTeammate();
   const canEdit = me.role === "admin";
-  const [codes, zones, prizes, settings, activity, stats, { sponsors }, { locations }] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, { sponsors }, { locations }] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
     getSettings(),
     recentActivity(8),
-    hunterStats(),
     listSponsors(),
     listLocations(),
   ]);
@@ -78,7 +76,6 @@ export default async function OverviewPage() {
     action: a.action,
   }));
 
-  const share = here.length ? live.length / here.length : 0;
 
   return (
     <div className="dash">
@@ -110,15 +107,6 @@ export default async function OverviewPage() {
             )}
             <span className="chip">{dateSpan(settings.starts_at, settings.ends_at)}</span>
           </p>
-          <div className="duo">
-            <a href={GAME_URL} target="_blank" rel="noopener">
-              Open the game
-              <ExternalIcon />
-            </a>
-            <Link href="/event" className="duo__main">
-              Event settings
-            </Link>
-          </div>
         </section>
 
         {/* Each QR code, as the game shows it */}
@@ -275,42 +263,6 @@ export default async function OverviewPage() {
               <p className="empty">No changes yet. Each change made here shows up with who made it.</p>
             )}
           </section>
-
-          <Link href="/codes" className="pill">
-            <span className="pill__ico">
-              <QrIcon />
-            </span>
-            <span className="pill__text">
-              <b>QR codes live</b>
-              <small>
-                {live.length} of {here.length} in the game
-              </small>
-            </span>
-            <span className="ring" role="img" aria-label={`${Math.round(share * 100)}% live`}>
-              <svg viewBox="0 0 52 52" aria-hidden="true">
-                <circle className="ring__track" cx="26" cy="26" r="22" />
-                <circle className="ring__fill" cx="26" cy="26" r="22" strokeDasharray={`${share * RING} ${RING}`} />
-              </svg>
-              <span>{Math.round(share * 100)}%</span>
-            </span>
-          </Link>
-
-          {/* Networking: players who have a hunter QR, and how many times two of them have met */}
-          {stats && (
-            <Link href="/hunters" className="pill">
-              <span className="pill__ico pill__ico--turq">
-                <HunterIcon />
-              </span>
-              <span className="pill__text">
-                <b>
-                  {stats.hunters.toLocaleString("en-PH")} hunter{stats.hunters === 1 ? "" : "s"}
-                </b>
-                <small>
-                  {stats.meetings.toLocaleString("en-PH")} meeting{stats.meetings === 1 ? "" : "s"} so far
-                </small>
-              </span>
-            </Link>
-          )}
         </div>
       </aside>
     </div>

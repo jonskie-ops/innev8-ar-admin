@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Head, pad } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
-import { AlertIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { AlertIcon, CheckIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { deleteSponsor } from "@/lib/actions/sponsors";
 import { requireTeammate } from "@/lib/dal";
 import { listCodes, listSponsors } from "@/lib/data";
@@ -25,9 +25,10 @@ export default async function SponsorsPage() {
         lead="Their logos go on the QR codes: in a circle on the code's top-right corner, in the game. Each code's sponsor is chosen on its page."
       >
         {canEdit && ready && (
-          <Link href="/sponsors/new" className="btn btn--primary btn--sm">
+          // (on a phone: a round plus, beside the title)
+          <Link href="/sponsors/new" className="btn btn--primary btn--sm head__add" aria-label="Add sponsor">
             <PlusIcon />
-            Add sponsor
+            <span className="head__add-text">Add sponsor</span>
           </Link>
         )}
       </Head>
@@ -49,8 +50,13 @@ export default async function SponsorsPage() {
               <>
                 <img src={s.badge} alt="" width={84} height={84} className="spcard__badge" />
                 <b>{s.name}</b>
-                <small>{on.length ? `On ${on.join(", ")}` : "On no QR code"}</small>
               </>
+            );
+            // In use (on a QR code): a green check beside the bin. Not in use: nothing
+            const inUse = on.length > 0 && (
+              <span className="spcard__used" role="img" aria-label={`In use: on ${on.join(", ")}`} title={`On ${on.join(", ")}`}>
+                <CheckIcon />
+              </span>
             );
             return (
               <li key={s.id} className="spcard">
@@ -61,16 +67,19 @@ export default async function SponsorsPage() {
                 ) : (
                   <span className="spcard__main">{body}</span>
                 )}
-                {canEdit && ready && (
+                {((canEdit && ready) || inUse) && (
                   <span className="spcard__foot">
-                    <ConfirmButton
-                      action={deleteSponsor.bind(null, s.id)}
-                      question={on.length ? `Take ${s.name} off? ${on.join(", ")} will have no sponsor.` : `Take ${s.name} off?`}
-                      className="icon-btn icon-btn--danger"
-                      label={`Delete ${s.name}`}
-                    >
-                      <TrashIcon />
-                    </ConfirmButton>
+                    {inUse}
+                    {canEdit && ready && (
+                      <ConfirmButton
+                        action={deleteSponsor.bind(null, s.id)}
+                        question={on.length ? `Take ${s.name} off? ${on.join(", ")} will have no sponsor.` : `Take ${s.name} off?`}
+                        className="icon-btn icon-btn--danger"
+                        label={`Delete ${s.name}`}
+                      >
+                        <TrashIcon />
+                      </ConfirmButton>
+                    )}
                   </span>
                 )}
               </li>

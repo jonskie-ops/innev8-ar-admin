@@ -42,12 +42,6 @@ export const recentActivity = cache(async (n = 12) =>
   read<Activity[]>((await supabase()).from("activity").select("*").order("at", { ascending: false }).limit(n)),
 );
 
-/** How many players have a hunter ID, and how many meetings there have been (null before the networking update). */
-export const hunterStats = cache(async (): Promise<{ hunters: number; meetings: number } | null> => {
-  const { data, error } = await (await supabase()).rpc("hunter_stats");
-  return error || !data ? null : (data as { hunters: number; meetings: number });
-});
-
 /** All of a query's rows (the database hands out at most 1,000 at a time). */
 async function readAll<T>(page: (from: number, to: number) => Result<T[]>): Promise<T[]> {
   const rows: T[] = [];

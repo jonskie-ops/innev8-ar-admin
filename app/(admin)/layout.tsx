@@ -5,6 +5,13 @@ import { requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, placeOn, recentActivity } from "@/lib/data";
 import { didWhat } from "@/lib/format";
 import { ruleText } from "@/lib/hunt";
+import { supabase } from "@/lib/supabase";
+
+/** When the newest hunter joined (for the dot on Hunters), or null: none yet, or no networking update. */
+async function newestHunter() {
+  const { data } = await (await supabase()).from("hunters").select("created_at").order("created_at", { ascending: false }).limit(1);
+  return (data?.[0]?.created_at as string | undefined) ?? null;
+}
 
 /** The pages, and other words someone might look for them by */
 const PAGES: [href: string, title: string, sub: string, keys: string][] = [
@@ -16,9 +23,9 @@ const PAGES: [href: string, title: string, sub: string, keys: string][] = [
   ["/desk", "Prize desk", "Check a player's prize code and give the prize", "claim claims give winners scan code redeem"],
   ["/sponsors", "Sponsors", "Their logos on the QR codes", "logos brands partners badges"],
   ["/hunters", "Hunters", "The players with a hunter ID", "players participants delete networking meetings"],
-  ["/event", "Event", "Dates, test mode, the prize desk", "dates schedule summit test mode prize desk claim"],
+  ["/account#event", "Event settings", "In Settings: dates, test mode, the prize desk", "event dates schedule summit test mode prize desk claim"],
   ["/team", "Team", "Who can sign in", "people organisers staff admins sign-ins"],
-  ["/account", "Your account", "Your password", "password profile me"],
+  ["/account", "Settings", "Your account and password, and the event", "your account password profile me"],
 ];
 
 /** Every admin page: the frame, its search and the latest changes. (Each page checks access itself, too.) */
@@ -33,13 +40,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </Shell>
     );
 
-  const [codes, zones, prizes, { sponsors, ready }, { locations, ready: placesReady }, activity] = await Promise.all([
+  const [codes, zones, prizes, { sponsors, ready }, { locations, ready: placesReady }, activity, joined] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
     listSponsors(),
     listLocations(),
     recentActivity(8),
+    newestHunter(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter(inGame(locations)).length;
@@ -111,8 +119,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     action: a.action,
   }));
 
+  // Checking a prize card, on every page: the prizes that can be won, and the codes in the game
+  const desk = {
+    prizes: prizes
+      .filter((p) => p.live)
+      .map((p) => ({ id: p.id, name: p.name, rule: p.rule, rule_value: p.rule_value, rule_text: p.rule_text, photo_fit: p.photo_fit, photo_zoom: p.photo_zoom, stock: p.stock })),
+    total: live,
+  };
+
   return (
-    <Shell me={who} find={find} changes={changes}>
+    <Shell me={who} find={find} changes={changes} newestHunter={joined} desk={desk}>
       {children}
     </Shell>
   );

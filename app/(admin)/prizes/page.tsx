@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Head } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
-import { DeskIcon, GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
+import { GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { deletePrize } from "@/lib/actions/prizes";
 import { requireTeammate } from "@/lib/dal";
@@ -21,14 +21,11 @@ export default async function PrizesPage() {
   return (
     <>
       <Head eyebrow="The hunt" title="Prizes" lead="What players can win, who wins it, and how many you have.">
-        <Link href="/desk" className="btn btn--ghost btn--sm">
-          <DeskIcon />
-          Prize desk
-        </Link>
         {canEdit && (
-          <Link href="/prizes/new" className="btn btn--primary btn--sm">
+          // (on a phone: a round plus, beside the title)
+          <Link href="/prizes/new" className="btn btn--primary btn--sm head__add" aria-label="Add prize">
             <PlusIcon />
-            Add prize
+            <span className="head__add-text">Add prize</span>
           </Link>
         )}
       </Head>

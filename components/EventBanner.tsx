@@ -4,7 +4,7 @@ import { dateSpan } from "@/lib/format";
 import { untilParts, useNow } from "./Clock";
 
 /**
- * The summit at the top of the Event page: its dates and place, and a live countdown to the hunt
+ * The summit at the top of Event settings (on the Settings page): its dates and place, and a live countdown to the hunt
  * opening (or, while it's on, to it closing). As saved, not as being edited below.
  */
 export function EventBanner({

@@ -1,16 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PasswordForm, SignOutForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
-import { DeskIcon, HunterIcon, KeyIcon, LockIcon, ShieldIcon, TeamIcon } from "@/components/icons";
+import { EventBanner } from "@/components/EventBanner";
+import { EventForm } from "@/components/EventForm";
+import { CalendarIcon, KeyIcon, LockIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
+import { saveEvent } from "@/lib/actions/event";
 import { requireTeammate } from "@/lib/dal";
-import { listTeam } from "@/lib/data";
-import { day } from "@/lib/format";
+import { getSettings, listLocations, listTeam } from "@/lib/data";
+import { day, stamp, toLocalInput } from "@/lib/format";
 
-export const metadata: Metadata = { title: "Your account" };
+export const metadata: Metadata = { title: "Settings" };
 
-/** Your details, what your role can do, this device, and your password (choosing it, the first time). */
+/**
+ * Settings: your account (your details, what your role can do, this device, and your password: choosing
+ * it, the first time) and the event's settings (when the hunt runs, test mode, and the prize desk).
+ */
 export default async function AccountPage() {
   const me = await requireTeammate({ settingPassword: true });
   const first = me.mustChangePassword;
@@ -57,37 +62,59 @@ export default async function AccountPage() {
       </div>
     );
 
+  const [s, { locations }] = await Promise.all([getSettings(), listLocations()]);
   return (
     <>
       <Head
         eyebrow="Settings"
-        title="Your account"
-        lead="Your details, what you can do here, and your password."
+        title="Settings"
+        lead="Your account, and the event's settings: when the hunt runs, test mode, and the prize desk."
       />
-      <p className="phone-team">
-        <Link href="/desk" className="btn btn--ghost btn--sm">
-          <DeskIcon />
-          Prize desk
-        </Link>
-        <Link href="/hunters" className="btn btn--ghost btn--sm">
-          <HunterIcon />
-          Hunters: the players
-        </Link>
-        <Link href="/team" className="btn btn--ghost btn--sm">
-          <TeamIcon />
-          The team: who can sign in
-        </Link>
-      </p>
-      <div className="cols">
-        <div className="stack">
-          {profile}
-          {roles(me.role)}
+      <section className="setsec" aria-labelledby="account-title">
+        <h2 id="account-title" className="setsec__title">
+          <UserIcon />
+          Your account
+        </h2>
+        <div className="cols">
+          <div className="stack">
+            {profile}
+            {roles(me.role)}
+          </div>
+          <div className="stack">
+            {password}
+            {device}
+          </div>
         </div>
+      </section>
+      {/* The event (was its own page): when the hunt runs, test mode, and the prize desk */}
+      <section id="event" className="setsec" aria-labelledby="event-title">
+        <header className="setsec__head">
+          <h2 id="event-title" className="setsec__title">
+            <CalendarIcon />
+            Event settings
+          </h2>
+          <p className="setsec__lead">
+            When the hunt runs, test mode, and the prize desk. Last changed {stamp(s.updated_at)}.
+          </p>
+        </header>
         <div className="stack">
-          {password}
-          {device}
+          <EventBanner
+            startsAt={s.starts_at}
+            endsAt={s.ends_at}
+            testMode={s.test_mode}
+            place={locations.filter((l) => l.live).map((l) => l.name).join(" · ") || "No location on"}
+          />
+          <EventForm
+            startsAt={toLocalInput(s.starts_at)}
+            endsAt={toLocalInput(s.ends_at)}
+            testMode={s.test_mode}
+            randomSpots={s.random_spots ?? false}
+            claimPlace={s.claim_place}
+            save={saveEvent}
+            canEdit={me.role === "admin"}
+          />
         </div>
-      </div>
+      </section>
     </>
   );
 }

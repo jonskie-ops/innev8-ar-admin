@@ -26,9 +26,10 @@ export default async function LocationsPage() {
         lead="Where the hunt can be played. Each QR code is at one location, and one location is on in the game at a time: players see its codes."
       >
         {canEdit && ready && (
-          <Link href="/locations/new" className="btn btn--primary btn--sm">
+          // (on a phone: a round plus, beside the title)
+          <Link href="/locations/new" className="btn btn--primary btn--sm head__add" aria-label="Add location">
             <PlusIcon />
-            Add location
+            <span className="head__add-text">Add location</span>
           </Link>
         )}
       </Head>
@@ -59,11 +60,13 @@ export default async function LocationsPage() {
             const areas = zones.filter((z) => (z.location_id ?? "lac") === l.id);
             // Switching it on turns the one that's on off: asked first
             const onNow = locations.filter((o) => o.live && o.id !== l.id).map((o) => o.name);
+            const map = (
+              <div className="lcard__map">
+                <VenueMap place={l} pins={here} zones={areas} label={`Map of ${l.name}`} still />
+              </div>
+            );
             const body = (
               <>
-                <div className="lcard__map">
-                  <VenueMap place={l} pins={here} zones={areas} label={`Map of ${l.name}`} still />
-                </div>
                 <div className="lcard__body">
                   <b>
                     {l.name}
@@ -78,6 +81,28 @@ export default async function LocationsPage() {
             );
             return (
               <li key={l.id} className={l.live ? "lcard" : "lcard is-off"}>
+                {/* Its map (opens it too), with its on/off switch on the map's corner */}
+                <div className="lcard__top">
+                  {ready ? (
+                    <Link href={`/locations/${l.id}`} className="lcard__maplink" tabIndex={-1} aria-hidden="true">
+                      {map}
+                    </Link>
+                  ) : (
+                    map
+                  )}
+                  {ready && (
+                    <span className="lcard__live">
+                      <LiveSwitch
+                        kind="locations"
+                        id={l.id}
+                        live={l.live}
+                        label={`${l.name} in the game`}
+                        disabled={!canEdit}
+                        ask={onNow.length ? turnOnQuestion(l.name, onNow) : undefined}
+                      />
+                    </span>
+                  )}
+                </div>
                 {ready ? (
                   <Link href={`/locations/${l.id}`} className="lcard__main">
                     {body}
@@ -89,14 +114,6 @@ export default async function LocationsPage() {
                   <span className="lcard__foot">
                     <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
                     <span className="lcard__acts">
-                      <LiveSwitch
-                        kind="locations"
-                        id={l.id}
-                        live={l.live}
-                        label={`${l.name} in the game`}
-                        disabled={!canEdit}
-                        ask={onNow.length ? turnOnQuestion(l.name, onNow) : undefined}
-                      />
                       {/* Delete, right here: with its areas and its codes */}
                       {canEdit && (
                         <ConfirmButton

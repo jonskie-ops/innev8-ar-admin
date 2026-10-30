@@ -215,6 +215,19 @@ export const GlobeIcon = (p: P) => (
     <path d="M3.5 12h17M12 3.5c2.3 2.4 3.4 5.2 3.4 8.5s-1.1 6.1-3.4 8.5c-2.3-2.4-3.4-5.2-3.4-8.5s1.1-6.1 3.4-8.5z" />
   </Svg>
 );
+export const InfoIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 11v5.5M12 7.6v.1" />
+  </Svg>
+);
+export const SatelliteIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="m13.2 6.8 4 4-6.4 6.4-4-4z" />
+    <path d="m9.7 4.3 2.5 2.5-2.9 2.9-2.5-2.5zM17.7 12.3l2.5 2.5-2.9 2.9-2.5-2.5z" />
+    <path d="M5.5 15.5a3 3 0 0 0 3 3M3.5 15.5a5 5 0 0 0 5 5" />
+  </Svg>
+);
 export const MapIcon = (p: P) => (
   <Svg {...p}>
     <path d="M9 4.5 3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2-6-2zM9 4.5v13M15 6.5v13" />

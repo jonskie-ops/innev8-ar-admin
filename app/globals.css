@@ -547,6 +547,20 @@ input:disabled {
 .rail__link:hover {
   color: var(--text);
 }
+/* New hunters since this browser last opened Hunters: the bell's blue dot, at the icon's corner */
+.rail__dot {
+  position: absolute;
+  top: calc(50% - 17px);
+  left: calc(50% + 9px);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow:
+    0 0 0 2px #071028,
+    0 0 10px var(--cyan);
+  pointer-events: none;
+}
 .rail__link:hover .ico {
   transform: scale(1.1);
 }
@@ -628,6 +642,138 @@ input:disabled {
 /* Sign out sits in the rail; on phones (no rail) it's in the top bar */
 .topbar__out {
   display: none;
+}
+/* (phones) The prize desk, floating above the tabs at the right: tap it to scan a player's prize card */
+.deskfab {
+  display: none;
+}
+@media (max-width: 959px) {
+  .deskfab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    z-index: 31;
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: linear-gradient(140deg, #f3dc9e 0%, var(--gold) 50%, #a9843a 100%);
+    cursor: pointer;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 246, 220, 0.7),
+      0 0 0 4px rgba(3, 8, 23, 0.55),
+      0 16px 30px -10px rgba(214, 181, 109, 0.8);
+    color: #1c1405;
+    -webkit-tap-highlight-color: transparent;
+    animation: deskfab-float 3.2s ease-in-out infinite;
+  }
+  /* (a ring that keeps rippling out from it) */
+  .deskfab::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(214, 181, 109, 0.75);
+    animation: deskfab-ring 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+  .deskfab .ico {
+    width: 26px;
+    height: 26px;
+    stroke-width: 2;
+  }
+}
+@keyframes deskfab-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes deskfab-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deskfab,
+  .deskfab::before {
+    animation: none;
+  }
+}
+
+/* (phones) The gear in place of sign out, and its menu: the app's settings, then sign out */
+.topbar__out {
+  position: relative;
+}
+.topbar__gear:hover,
+.topbar__gear[aria-expanded="true"] {
+  background: rgba(18, 191, 234, 0.1);
+  box-shadow: inset 0 0 0 1px var(--cyan);
+  color: var(--text);
+}
+.setmenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+  padding: 6px;
+  border-radius: 16px;
+  background: #0a1633;
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 26px 50px -16px rgba(0, 0, 0, 0.9);
+  animation: fade-in 0.18s var(--ease-out);
+}
+.setmenu form {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.setmenu__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: 600 14px/1.3 var(--font-h);
+  color: var(--text);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.setmenu__item:hover,
+.setmenu__item[aria-current="page"] {
+  background: rgba(140, 190, 255, 0.07);
+}
+.setmenu__item .ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--cyan);
+}
+.setmenu__out .ico {
+  color: var(--red);
+}
+.setmenu__out:hover {
+  background: rgba(255, 107, 107, 0.08);
+  color: #ffd2d2;
 }
 
 /* The top bar: search, the latest changes, the game, who's signed in */
@@ -1034,7 +1180,7 @@ input:disabled {
     font-size: 15px;
   }
   .main {
-    padding: 22px 16px calc(100px + env(safe-area-inset-bottom));
+    padding: 22px 16px calc(156px + env(safe-area-inset-bottom)); /* (clear of the tabs and the prize desk button) */
   }
   .tabbar {
     position: fixed;
@@ -1826,47 +1972,6 @@ a.more:hover .ico {
   font: 700 11.5px/1 var(--font-h);
   letter-spacing: 0.02em;
 }
-/* Two buttons in one pill, the main one bright */
-.duo {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(3, 8, 23, 0.55);
-  box-shadow: inset 0 0 0 1px rgba(245, 251, 255, 0.28);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-.duo a {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 17px;
-  border-radius: 999px;
-  color: var(--text);
-  font: 600 13px/1 var(--font-h);
-  text-decoration: none;
-  white-space: nowrap;
-  transition:
-    background-color 0.2s,
-    box-shadow 0.2s;
-}
-.duo a:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-.duo .ico {
-  width: 15px;
-  height: 15px;
-}
-.duo .duo__main {
-  background: linear-gradient(135deg, var(--royal), var(--cyan));
-  box-shadow: 0 6px 18px -6px rgba(18, 191, 234, 0.9);
-  color: #fff;
-}
-.duo .duo__main:hover {
-  background: linear-gradient(135deg, var(--royal), var(--cyan));
-  box-shadow: 0 8px 22px -6px rgba(18, 191, 234, 1);
-}
-
 /* The QR codes, as the game shows them: a floating tile in its rarity's colour */
 .crail {
   display: grid;
@@ -2399,97 +2504,6 @@ a.more:hover .ico {
   white-space: nowrap;
 }
 
-/* How many codes are live, as a ring */
-.pill {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 10px 10px 12px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(10, 22, 52, 0.85), rgba(6, 14, 36, 0.85));
-  box-shadow:
-    inset 0 0 0 1px rgba(140, 190, 255, 0.16),
-    0 18px 40px -22px rgba(18, 191, 234, 0.6);
-  text-decoration: none;
-  transition: box-shadow 0.25s;
-}
-.pill:hover {
-  box-shadow:
-    inset 0 0 0 1px rgba(18, 191, 234, 0.55),
-    0 18px 40px -20px rgba(18, 191, 234, 0.8);
-}
-.pill__ico {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  flex: none;
-  border-radius: 50%;
-  background: rgba(18, 191, 234, 0.12);
-  color: var(--cyan);
-}
-.pill__ico--turq {
-  background: rgba(32, 201, 188, 0.14);
-  color: var(--turq);
-}
-/* Not a link: no hover glow */
-.pill--plain:hover {
-  box-shadow:
-    inset 0 0 0 1px rgba(140, 190, 255, 0.16),
-    0 18px 40px -22px rgba(18, 191, 234, 0.6);
-}
-.pill--plain {
-  padding-right: 22px;
-}
-.pill__ico .ico {
-  width: 24px;
-  height: 24px;
-}
-.pill__text {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-  line-height: 1.35;
-}
-.pill__text b {
-  font: 600 14px/1.35 var(--font-h);
-}
-.pill__text small {
-  color: var(--faint);
-  font-size: 12px;
-}
-.ring {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  flex: none;
-}
-.ring svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.ring circle {
-  fill: none;
-  stroke-width: 4;
-}
-.ring__track {
-  stroke: rgba(140, 190, 255, 0.14);
-}
-.ring__fill {
-  stroke: var(--turq);
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(32, 201, 188, 0.8));
-}
-.ring span {
-  color: var(--muted);
-  font: 600 11px/1 var(--font-m);
-}
-
 @media (max-width: 1279px) {
   .dash {
     grid-template-columns: minmax(0, 1fr);
@@ -2549,14 +2563,6 @@ a.more:hover .ico {
   }
   .hero__when b {
     font-size: 24px;
-  }
-  .duo {
-    width: 100%;
-  }
-  .duo a {
-    flex: 1;
-    justify-content: center;
-    padding-inline: 10px;
   }
 }
 
@@ -5245,11 +5251,11 @@ button.person__who:focus-visible {
   gap: 14px;
   padding: 14px;
 }
+/* The location's name on its own row, the views a row under it, full width */
 .gmap__bar {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
   padding: 2px 4px 0;
 }
@@ -5288,15 +5294,55 @@ button.person__who:focus-visible {
 .spot__text .spot__away.is-in {
   color: var(--turq);
 }
-.gmap__tools {
+.gmap__views {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  width: 100%;
 }
-.gmap__me.is-on {
-  border-color: rgba(79, 157, 255, 0.7);
-  color: #9cc4ff;
+.gmap__views button {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding-inline: 0;
+}
+.gmap__view-ico {
+  width: 18px;
+  height: 18px;
+}
+.gmap__view-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+/* On the map, under Full screen: "Show me", then how the map works behind an "i" (tapped or hovered) */
+.gmap__ctl.gmap__me.is-on,
+.gmap__info-btn[aria-expanded="true"] {
+  background: rgba(18, 191, 234, 0.16);
+  color: var(--cyan);
+}
+.gmap__tip {
+  position: absolute;
+  top: 82px;
+  right: 50px;
+  z-index: 1002;
+  display: none;
+  width: min(300px, calc(100vw - 150px));
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(10, 22, 51, 0.96);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 14px 30px -10px rgba(0, 0, 0, 0.9);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.gmap__tip.is-open,
+.gmap__info-btn:hover + .gmap__tip {
+  display: block;
 }
 /* A code's number in its rarity's colour (a pin for the venue) */
 .gmap__num {
@@ -5485,35 +5531,97 @@ button.person__who:focus-visible {
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-/* Full screen: the button on the map, top right */
-.gmap__full {
+/* Full screen, Show me and the "i": one bar down the map's right, top, like its zoom on the left */
+.gmap__ctls {
   position: absolute;
   top: 10px;
   right: 10px;
   z-index: 1001;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
+  display: flex;
+  flex-direction: column;
   border-radius: 12px;
   background: rgba(10, 22, 51, 0.92);
   box-shadow:
     0 0 0 1px var(--line-strong),
     0 10px 24px -10px rgba(0, 0, 0, 0.9);
-  color: var(--text);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  transition: box-shadow 0.2s;
 }
-.gmap__full:hover {
-  box-shadow:
-    0 0 0 1px var(--cyan),
-    0 0 16px rgba(18, 191, 234, 0.45);
+.gmap__ctls > * + * {
+  border-top: 1px solid var(--line);
 }
-.gmap__full .ico {
+.gmap__ctl {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--text);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.gmap__ctls > :first-child {
+  border-radius: 12px 12px 0 0;
+}
+.gmap__ctls > :last-child,
+.gmap__ctls > :last-child .gmap__ctl {
+  border-radius: 0 0 12px 12px;
+}
+.gmap__ctl:hover {
+  background: #12305f;
+  color: #fff;
+}
+.gmap__ctl .ico {
   width: 20px;
   height: 20px;
   stroke-width: 2.1;
+}
+/* On a computer: across, not down, with the "i" text under it */
+@media (min-width: 601px) {
+  .gmap__ctls {
+    flex-direction: row;
+  }
+  .gmap__ctls > * + * {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+  .gmap__ctls > :first-child {
+    border-radius: 12px 0 0 12px;
+  }
+  .gmap__ctls > :last-child,
+  .gmap__ctls > :last-child .gmap__ctl {
+    border-radius: 0 12px 12px 0;
+  }
+  .gmap__tip {
+    top: 50px;
+    right: 0;
+  }
+  /* …and the views as words, beside the location's name (on a phone: icons, a row under it) */
+  .gmap__bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .gmap__views {
+    display: inline-flex;
+    width: auto;
+  }
+  .gmap__views button {
+    display: block;
+    flex: none;
+    padding: 8px 14px;
+  }
+  .gmap__view-ico {
+    display: none;
+  }
+  .gmap__view-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
 }
 /* The map panel full screen (or, where that isn't allowed, filling the window): the bar on top,
    the map taking the rest */
@@ -5538,10 +5646,6 @@ button.person__who:focus-visible {
   flex: 1;
   height: auto;
   min-height: 0;
-}
-.gmap__map:fullscreen .gmap__note,
-.gmap__map.is-full .gmap__note {
-  display: none;
 }
 .gmap__map:fullscreen::backdrop {
   background: var(--navy-950);
@@ -5595,12 +5699,6 @@ html[data-full-map] .navbar {
 .gmap__num .spin {
   width: 16px;
   height: 16px;
-}
-.gmap__note {
-  padding: 0 4px 2px;
-  color: var(--faint);
-  font-size: 12.5px;
-  line-height: 1.5;
 }
 /* The list beside it: the venue, then each QR code */
 .gmap__list {
@@ -5922,6 +6020,38 @@ html[data-full-map] .navbar {
   .head__acts .btn {
     flex: 1;
   }
+  /* An Add that's just a plus: round, at the top right, level with the title */
+  .head:has(.head__add) {
+    position: relative;
+  }
+  .head:has(.head__add) .head__text {
+    padding-right: 56px;
+  }
+  .head__acts:has(.head__add) {
+    position: absolute;
+    top: 12px;
+    right: 0;
+    width: auto;
+  }
+  .head__acts .head__add {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .head__add .ico {
+    width: 20px;
+    height: 20px;
+  }
+  .head__add-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -6094,7 +6224,24 @@ html[data-full-map] .navbar {
 .spcard__foot {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   padding: 0 12px 12px;
+}
+/* In use (on a QR code): a green check, left of the bin */
+.spcard__used {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(52, 211, 153, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.45);
+  color: #34d399;
+}
+.spcard__used .ico {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.4;
 }
 .spcard__foot .icon-btn {
   width: 32px;
@@ -6302,7 +6449,7 @@ html[data-full-map] .navbar {
 }
 .lcard {
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -6320,10 +6467,24 @@ html[data-full-map] .navbar {
   align-content: start;
   text-decoration: none;
 }
+/* Its map (a link to it too), with the on/off switch on the map's bottom-right corner */
+.lcard__top {
+  position: relative;
+}
+.lcard__maplink {
+  display: block;
+}
 .lcard__map {
   display: block;
   padding: 10px 10px 0;
   pointer-events: none;
+}
+.lcard__live {
+  position: absolute;
+  right: 20px;
+  bottom: 12px;
+  z-index: 2;
+  text-shadow: 0 1px 6px rgba(2, 6, 17, 0.9); /* ("On"/"Off", over the map) */
 }
 .lcard__map .vmap {
   border-radius: 12px;
@@ -6357,7 +6518,8 @@ html[data-full-map] .navbar {
   gap: 12px;
   min-height: 38px; /* the same with or without a delete button */
 }
-.lcard.is-off .lcard__main {
+.lcard.is-off .lcard__main,
+.lcard.is-off .lcard__map {
   opacity: 0.6;
 }
 
@@ -6518,18 +6680,36 @@ html[data-full-map] .navbar {
 }
 
 /* Phones: the team isn't in the tab bar, so the Account page links to it */
-.phone-team {
-  display: none;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: -8px 0 18px;
+/* Settings: its sections (your account, the event), each with a heading */
+.setsec + .setsec {
+  margin-top: 34px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
 }
-@media (max-width: 959px) {
-  .phone-team {
-    display: flex;
-  }
+.setsec__head {
+  margin-bottom: 18px;
 }
-
+.setsec__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  font: 700 20px/1.25 var(--font-h);
+}
+.setsec__head .setsec__title {
+  margin-bottom: 6px;
+}
+.setsec__title .ico {
+  width: 20px;
+  height: 20px;
+  color: var(--cyan);
+}
+.setsec__lead {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 /* Hunters: the players with a hunter ID. Find one; an admin ticks some (or one's bin) to delete */
 .hunters__find {
   position: relative;
@@ -6661,60 +6841,7 @@ html[data-full-map] .navbar {
   display: grid;
   gap: 22px;
 }
-/* Checking a card: a button on the page, opening a pop-up */
-.desk__open {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  width: 100%;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
-}
-.desk__open:hover {
-  border-color: var(--cyan);
-  background: rgba(18, 191, 234, 0.06);
-}
-.desk__open:focus-visible {
-  outline: 2px solid var(--cyan);
-  outline-offset: 3px;
-}
-.desk__open-ico {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: rgba(18, 191, 234, 0.12);
-  color: var(--cyan);
-}
-.desk__open-ico .ico {
-  width: 26px;
-  height: 26px;
-}
-.desk__open-text {
-  display: grid;
-  flex: 1;
-  gap: 3px;
-  min-width: 0;
-}
-.desk__open-text b {
-  font: 700 17px/1.3 var(--font-h);
-}
-.desk__open-text small {
-  color: var(--faint);
-  font-size: 13.5px;
-  line-height: 1.45;
-}
-.desk__open .btn {
-  flex: none;
-  pointer-events: none;
-}
+/* Checking a card: a pop-up (opened by the floating button, or a USB scanner or typing on the page) */
 .confirm--desk {
   width: min(620px, calc(100vw - 32px));
 }
@@ -6787,23 +6914,85 @@ html[data-full-map] .navbar {
   height: 100%;
   object-fit: cover;
 }
+.deskcam {
+  --win: min(56%, 220px);
+  --scan: var(--turq);
+}
+.deskcam.is-paused {
+  --scan: var(--gold);
+}
+/* (the window: the picture dimmed around it, a bright corner at each of its four corners, and a
+   line sweeping down and up it while it reads) */
 .deskcam__frame {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(56%, 220px);
+  width: var(--win);
   aspect-ratio: 1;
-  border-radius: 14px;
-  box-shadow:
-    0 0 0 2px var(--turq),
-    0 0 0 999px rgba(2, 6, 17, 0.4);
+  border-radius: 18px;
+  box-shadow: 0 0 0 100vmax rgba(2, 6, 17, 0.5);
   transform: translate(-50%, -50%);
   transition: box-shadow 0.2s;
 }
 .deskcam.is-paused .deskcam__frame {
-  box-shadow:
-    0 0 0 2px var(--gold),
-    0 0 0 999px rgba(2, 6, 17, 0.65);
+  box-shadow: 0 0 0 100vmax rgba(2, 6, 17, 0.7);
+}
+.deskcam__frame i {
+  position: absolute;
+  width: 22%;
+  aspect-ratio: 1;
+  border: 0 solid var(--scan);
+  filter: drop-shadow(0 0 6px var(--scan));
+  transition: border-color 0.2s;
+}
+.deskcam__frame i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-width: 4px 0 0 4px;
+  border-top-left-radius: 18px;
+}
+.deskcam__frame i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-width: 4px 4px 0 0;
+  border-top-right-radius: 18px;
+}
+.deskcam__frame i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 4px 4px;
+  border-bottom-left-radius: 18px;
+}
+.deskcam__frame i:nth-child(4) {
+  right: 0;
+  bottom: 0;
+  border-width: 0 4px 4px 0;
+  border-bottom-right-radius: 18px;
+}
+.deskcam__line {
+  position: absolute;
+  top: 6%;
+  right: 6%;
+  left: 6%;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--scan), transparent);
+  box-shadow: 0 0 14px 2px var(--scan);
+  animation: deskcam-sweep 2.2s ease-in-out infinite alternate;
+}
+.deskcam.is-paused .deskcam__line {
+  display: none;
+}
+@keyframes deskcam-sweep {
+  to {
+    top: 94%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deskcam__line {
+    top: 50%;
+    animation: none;
+  }
 }
 .deskcam__note {
   position: absolute;
@@ -6835,6 +7024,161 @@ html[data-full-map] .navbar {
   font-size: 13px;
   font-weight: 600;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+/* The scanner (the camera in the pop-up): the whole screen, a bar on top with its close, the tip
+   under the window, typing the code at the foot, and a card read coming up over it from the bottom */
+.confirm--scan {
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  overflow: hidden;
+}
+.confirm--scan[open] {
+  animation: fade-in 0.2s var(--ease-out);
+}
+.scan {
+  position: relative;
+  height: 100%;
+  background: #000;
+}
+.scan .deskcam {
+  --win: min(72vw, 52dvh, 300px);
+  position: absolute;
+  inset: 0;
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+.scan .deskcam__tip {
+  top: calc(50% + var(--win) / 2 + 22px);
+  bottom: auto;
+  padding: 0 24px;
+  font-size: 15px;
+}
+.scan__top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top)) 16px 28px;
+  background: linear-gradient(rgba(0, 0, 0, 0.7), transparent);
+}
+.scan__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: #fff;
+  font: 700 17px/1.3 var(--font-h);
+}
+.scan__title .ico {
+  width: 22px;
+  height: 22px;
+  color: var(--turq);
+}
+.scan__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.scan__close:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+.scan__close .ico {
+  width: 22px;
+  height: 22px;
+}
+.scan__foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 40px 16px calc(28px + env(safe-area-inset-bottom));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+.scan__foot > p {
+  width: min(520px, 100%);
+}
+.scan__foot .desk__gave {
+  background: rgba(4, 38, 44, 0.94);
+}
+.scan__foot .status--error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(48, 10, 16, 0.94);
+}
+.scan__type {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 24px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font: 600 15px/1 var(--font-b);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+.scan__type:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+.scan__type .ico {
+  width: 20px;
+  height: 20px;
+}
+.scan__sheet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  width: min(560px, 100%);
+  max-height: calc(100% - 72px - env(safe-area-inset-top));
+  margin: 0 auto;
+  overflow-y: auto;
+  animation: scan-sheet 0.26s var(--ease-out);
+}
+.scan__sheet .desk__claim {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  border-width: 1px 1px 0;
+  border-radius: 22px 22px 0 0;
+  background: #0b1838;
+  box-shadow: 0 -20px 50px -10px rgba(0, 0, 0, 0.8);
+}
+@keyframes scan-sheet {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scan__sheet {
+    animation: none;
+  }
 }
 .desk__gave {
   display: flex;
@@ -7039,14 +7383,6 @@ html[data-full-map] .navbar {
 .desk__none {
   padding: 28px 20px;
   text-align: center;
-}
-@media (max-width: 600px) {
-  .desk__open {
-    flex-wrap: wrap;
-  }
-  .desk__open .btn {
-    width: 100%;
-  }
 }
 @media (max-width: 959px) {
   .desk__find > .btn {
