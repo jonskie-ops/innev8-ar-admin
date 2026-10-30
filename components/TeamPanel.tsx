@@ -76,12 +76,17 @@ function Person({ m, you, canEdit }: { m: Member; you: boolean; canEdit: boolean
           {name}
           {you && <span className="tag">You</span>}
           {m.must_change_password && <span className="tag tag--wait">Hasn&apos;t signed in yet</span>}
+          {/* (phones: a role that can't be changed here sits by the name) */}
+          {!canEdit && <span className={`role role--${role} person__role-in`}>{role === "admin" ? "Admin" : "Staff"}</span>}
         </b>
         <small>
-          {m.email} · added {day(m.created_at)}
+          {m.email}
+          <span className="person__added">
+            <span className="person__sep"> · </span>added {day(m.created_at)}
+          </span>
         </small>
       </button>
-      <span className="person__role">
+      <span className={canEdit ? "person__role" : "person__role is-fixed"}>
         {canEdit ? (
           <select
             aria-label={`Role for ${name}`}
@@ -115,7 +120,7 @@ function Person({ m, you, canEdit }: { m: Member; you: boolean; canEdit: boolean
             }}
             question={`Give ${name} a new temporary password? Their current one stops working.`}
             confirm="Reset"
-            className="icon-btn"
+            className="icon-btn person__key"
             label={`Reset ${name}'s password`}
           >
             <KeyIcon />
@@ -124,7 +129,7 @@ function Person({ m, you, canEdit }: { m: Member; you: boolean; canEdit: boolean
             action={() => removeTeammate(m.user_id)}
             question={`Remove ${name} from the team? They can't sign in any more.`}
             confirm="Remove"
-            className="icon-btn icon-btn--danger"
+            className="icon-btn icon-btn--danger person__bin"
             label={`Remove ${name}`}
           >
             <TrashIcon />
@@ -188,9 +193,16 @@ export function AddTeammate() {
   };
   return (
     <>
-      <button type="button" className="btn btn--primary btn--sm" aria-haspopup="dialog" onClick={() => dialog.current?.showModal()}>
+      {/* (phones: a round + at the head's top right, like the other pages' Add) */}
+      <button
+        type="button"
+        className="btn btn--primary btn--sm head__add"
+        aria-haspopup="dialog"
+        aria-label="Add teammate"
+        onClick={() => dialog.current?.showModal()}
+      >
         <PlusIcon />
-        Add teammate
+        <span className="head__add-text">Add teammate</span>
       </button>
       <dialog
         ref={dialog}
