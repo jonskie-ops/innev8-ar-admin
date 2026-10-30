@@ -279,7 +279,7 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
               <div className="scan__top">
                 <h2 className="scan__title" id="desk-check">
                   <QrIcon />
-                  Scan a prize card
+                  <span className="sr-only">Scan a prize card</span>
                 </h2>
                 <button type="button" className="scan__close" aria-label="Close" onClick={close} disabled={pending}>
                   <CloseIcon />
@@ -290,9 +290,8 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
               ) : (
                 <div className="scan__foot">
                   {after}
-                  <button type="button" className="scan__type" onClick={() => pick("type")}>
+                  <button type="button" className="scan__type" aria-label="Type code" title="Type code" onClick={() => pick("type")}>
                     <KeyboardIcon />
-                    Type code
                   </button>
                 </div>
               )}

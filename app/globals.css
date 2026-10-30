@@ -5119,6 +5119,12 @@ button.vpin:focus-visible .vpin__head {
   font: 600 11.5px/1 var(--font-h);
   white-space: nowrap;
 }
+/* (phones: just the line between the dates, no room for how long it runs) */
+@media (max-width: 600px) {
+  .runs > .runs__line > span {
+    display: none;
+  }
+}
 /* What a winner's prize card says */
 .prizecard {
   display: flex;
@@ -7537,16 +7543,16 @@ html[data-full-map] .navbar {
   background: rgba(48, 10, 16, 0.94);
 }
 .scan__type {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 50px;
-  padding: 0 24px;
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
+  border-radius: 50%;
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
-  font: 600 15px/1 var(--font-b);
   cursor: pointer;
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
@@ -7555,8 +7561,8 @@ html[data-full-map] .navbar {
   background: rgba(255, 255, 255, 0.24);
 }
 .scan__type .ico {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 .scan__sheet {
   position: absolute;
