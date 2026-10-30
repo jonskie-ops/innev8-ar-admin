@@ -26,6 +26,7 @@ import {
   ShieldIcon,
   SponsorIcon,
   TeamIcon,
+  UserIcon,
 } from "./icons";
 import { LinkPending, NavProgress, Spinner } from "./Progress";
 
@@ -173,7 +174,7 @@ export function Shell({
                     </small>
                   </span>
                 </Link>
-                <PhoneMenu current={current("/account")} />
+                <PhoneMenu current={current("/account")} teamPage={current("/team")} />
               </div>
             </header>
           )}
@@ -200,10 +201,11 @@ export function Shell({
 }
 
 /**
- * On phones (and tablets), the top bar's gear: a little menu with the app's settings, and sign out under
- * it. (On computers, both are at the foot of the rail.)
+ * On phones (and tablets), the top bar's gear (in place of the profile picture): a little menu with your
+ * account, the team, the live site (the summit page), the app's settings, and sign out under them. (On
+ * computers, these are in the rail and the top bar.)
  */
-function PhoneMenu({ current }: { current?: "page" }) {
+function PhoneMenu({ current, teamPage }: { current?: "page"; teamPage?: "page" }) {
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -244,6 +246,20 @@ function PhoneMenu({ current }: { current?: "page" }) {
       {open && (
         <div id={`${id}-menu`} className="setmenu">
           <Link href="/account" className="setmenu__item" aria-current={current} onClick={() => setOpen(false)}>
+            <UserIcon />
+            Account
+          </Link>
+          {/* (the tab bar has no room for it) */}
+          <Link href="/team" className="setmenu__item" aria-current={teamPage} onClick={() => setOpen(false)}>
+            <TeamIcon />
+            Team
+          </Link>
+          {/* (the top bar's globe, which phones have no room for) */}
+          <a href={SUMMIT_URL} target="_blank" rel="noopener" className="setmenu__item" aria-label="Live site: the summit page, innev8.org (new tab)" onClick={() => setOpen(false)}>
+            <GlobeIcon />
+            Live site
+          </a>
+          <Link href="/account" className="setmenu__item" onClick={() => setOpen(false)}>
             <GearIcon />
             App settings
           </Link>

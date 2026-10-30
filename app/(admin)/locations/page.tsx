@@ -112,7 +112,13 @@ export default async function LocationsPage() {
                 )}
                 {ready && (
                   <span className="lcard__foot">
-                    <span className="lcard__state">{l.live ? "On in the game" : "Hidden from the game"}</span>
+                    {l.live ? (
+                      <span className="badge badge--gold" title="On in the game">
+                        Live
+                      </span>
+                    ) : (
+                      <span className="lcard__state">Hidden from the game</span>
+                    )}
                     <span className="lcard__acts">
                       {/* Delete, right here: with its areas and its codes */}
                       {canEdit && (

@@ -52,30 +52,23 @@ const pad = (n: number) => String(n).padStart(2, "0");
 /**
  * A location on a real map, with each QR code as a numbered pin inside a ring (how close players must
  * be to see it) and a dashed outline around the area the game's map shows (`area`, its corners; a
- * new one needs a new map: key it by location). An admin drags a pin to
- * move its code: `onDrop` saves it, and answers false to put the pin back where it was. `me`: this
- * phone's location, as a dot with a ring for how sure it is.
+ * new one needs a new map: key it by location). The pins stay put (a code moves on its own page). `me`:
+ * this phone's location, as a dot with a ring for how sure it is.
  */
 export function SatelliteMap({
   spots,
   area,
   view,
   picked,
-  saving,
-  canEdit,
   me = null,
   onPick,
-  onDrop,
 }: {
   spots: Spot[];
   area: [number, number][];
   view: "air" | "map";
   picked: string | null;
-  saving: string | null;
-  canEdit: boolean;
   me?: Here | null;
   onPick: (id: string) => void;
-  onDrop: (id: string, lat: number, lng: number) => Promise<boolean>;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<Leaflet.Map | null>(null);
@@ -85,9 +78,9 @@ export function SatelliteMap({
   const meMarks = useRef<{ dot: Leaflet.CircleMarker; ring: Leaflet.Circle } | null>(null);
   const [L, setL] = useState<typeof Leaflet | null>(null);
   // The latest of these, for Leaflet's own event handlers
-  const latest = useRef({ spots, onPick, onDrop, area });
+  const latest = useRef({ spots, onPick, area });
   useEffect(() => {
-    latest.current = { spots, onPick, onDrop, area };
+    latest.current = { spots, onPick, area };
   });
 
   // The map, once (Leaflet needs the browser, so it loads here)
@@ -152,8 +145,6 @@ export function SatelliteMap({
         `mpin--${s.rarity}`,
         s.live ? "" : "is-off",
         s.id === picked ? "is-picked" : "",
-        s.id === saving ? "is-saving" : "",
-        canEdit ? "can-move" : "",
       ]
         .filter(Boolean)
         .join(" ");
@@ -181,29 +172,14 @@ export function SatelliteMap({
       let pin = pins.current.get(s.id);
       if (!pin) {
         const id = s.id;
-        const made = L.marker([s.lat, s.lng], { icon, draggable: canEdit, title: `#${s.num} ${s.name}`, autoPan: true });
-        let from = made.getLatLng();
+        const made = L.marker([s.lat, s.lng], { icon, title: `#${s.num} ${s.name}` });
         made.on("click", () => latest.current.onPick(id));
-        made.on("dragstart", () => {
-          from = made.getLatLng();
-        });
-        made.on("drag", () => rings.current.get(id)?.setLatLng(made.getLatLng()));
-        made.on("dragend", () => {
-          const to = made.getLatLng();
-          void latest.current.onDrop(id, to.lat, to.lng).then((ok) => {
-            if (ok) return;
-            made.setLatLng(from);
-            rings.current.get(id)?.setLatLng(from);
-          });
-        });
         made.addTo(m);
         pins.current.set(id, made);
         pin = made;
       } else {
         pin.setLatLng([s.lat, s.lng]);
         pin.setIcon(icon);
-        if (canEdit) pin.dragging?.enable();
-        else pin.dragging?.disable();
       }
       pin.setZIndexOffset(s.id === picked ? 1000 : 0);
     }
@@ -214,7 +190,7 @@ export function SatelliteMap({
         rings.current.get(id)?.remove();
         rings.current.delete(id);
       }
-  }, [L, spots, picked, saving, canEdit]);
+  }, [L, spots, picked]);
 
   // This phone, while "Show me" is on: a dot, and a ring for how sure the GPS is. The first fix
   // brings it into view.

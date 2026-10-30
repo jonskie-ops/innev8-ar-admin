@@ -1164,20 +1164,9 @@ input:disabled {
     gap: 8px;
     margin-left: 0;
   }
+  /* (no profile picture here: Account is the gear's first option) */
   .me__link {
-    padding: 0;
-  }
-  .me__link:hover,
-  .me__link[aria-current="page"] {
-    background: none;
-  }
-  .me__text {
     display: none;
-  }
-  .me__link .avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 15px;
   }
   .main {
     padding: 22px 16px calc(156px + env(safe-area-inset-bottom)); /* (clear of the tabs and the prize desk button) */
@@ -1922,7 +1911,8 @@ a.more:hover .ico {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.badge--test {
+.badge--test,
+.badge--gold {
   background: var(--grad-gold);
   box-shadow: 0 6px 18px -6px rgba(214, 181, 109, 0.85);
   color: var(--navy-950);
@@ -3289,6 +3279,353 @@ button.vpin:focus-visible .vpin__head {
 .edit__side {
   display: grid;
   gap: 18px;
+}
+/* A new QR code, step by step: across the whole page, the steps along the top (each a button to it,
+   joined by lines that fill as they're done), one step's panels at a time under them (sliding in),
+   and a bar at the foot with how far along it is, Back and Next */
+.edit--steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+.edit--steps > fieldset {
+  min-width: 0;
+}
+.edit--steps .edit__main,
+.edit--steps .edit__side {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  align-items: start;
+}
+.edit--steps .edit__main:not(:has(> [data-step]:not([hidden]))),
+.edit--steps .edit__side:not(:has(> [data-step]:not([hidden]))) {
+  display: none;
+}
+.edit--steps [data-step][hidden] {
+  display: none;
+}
+.edit--steps [data-step]:not([hidden]) {
+  animation: step-in 0.4s var(--ease-out);
+}
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+/* (the map no taller than the screen) */
+.edit--steps .vmap {
+  width: min(100%, calc(60vh * 308 / 226));
+  margin-inline: auto;
+}
+
+/* (no box: the steps sit on the page, joined by their lines) */
+.steps {
+  position: relative;
+  padding: 6px 2px 4px;
+}
+.steps ol {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.steps li {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-start;
+  min-width: 0;
+}
+.steps li:last-child {
+  flex: 0 0 auto;
+}
+.steps__btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  text-align: left;
+  cursor: pointer;
+}
+.steps__num {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--line-strong);
+  border-radius: 14px;
+  background: rgba(3, 8, 23, 0.7);
+  color: var(--muted);
+  font: 800 16px/1 var(--font-h);
+  transition:
+    background 0.3s,
+    border-color 0.3s,
+    box-shadow 0.3s,
+    transform 0.3s var(--ease-out);
+}
+.steps__num .ico {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.6;
+}
+.steps__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.steps__text small {
+  font: 700 10px/1.2 var(--font-m);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.steps__label {
+  font: 700 14.5px/1.25 var(--font-h);
+  white-space: nowrap;
+}
+.steps__text em {
+  overflow: hidden;
+  font: 400 12px/1.35 var(--font-b);
+  font-style: normal;
+  color: var(--faint);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.steps__btn:hover .steps__num {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+}
+.steps__btn:hover .steps__label {
+  color: var(--text);
+}
+.steps__line {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 16px;
+  height: 3px;
+  margin: 21px 14px 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--line-strong);
+}
+.steps__line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--turq));
+  box-shadow: 0 0 10px rgba(18, 191, 234, 0.7);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+.steps li.is-past .steps__line::after {
+  transform: scaleX(1);
+}
+.steps li.is-past .steps__btn {
+  color: var(--muted);
+}
+.steps li.is-past .steps__num {
+  border-color: rgba(32, 201, 188, 0.7);
+  background: rgba(32, 201, 188, 0.14);
+  color: var(--turq);
+}
+.steps li.is-now .steps__btn {
+  color: var(--text);
+  cursor: default;
+}
+.steps li.is-now .steps__text small {
+  color: var(--cyan);
+}
+.steps li.is-now .steps__text em {
+  color: var(--muted);
+}
+.steps li.is-now .steps__num {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--royal), var(--cyan));
+  color: #fff;
+  box-shadow: 0 8px 22px -6px rgba(18, 191, 234, 0.9);
+  transform: none;
+}
+/* (the step you're on: a line from its number down to its form, drawn in as it's reached) */
+.steps li.is-now .steps__btn {
+  position: relative;
+}
+.steps li.is-now .steps__btn::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 21px;
+  width: 2px;
+  height: 25px;
+  border-radius: 2px;
+  background: linear-gradient(var(--cyan), rgba(18, 191, 234, 0.35));
+  box-shadow: 0 0 8px rgba(18, 191, 234, 0.6);
+  transform-origin: top;
+  animation: step-drop 0.45s var(--ease-out);
+  pointer-events: none;
+}
+@keyframes step-drop {
+  from {
+    transform: scaleY(0);
+  }
+}
+/* (the step you're on: a ring that keeps rippling out from it) */
+.steps li.is-now .steps__num::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--cyan);
+  border-radius: 14px;
+  animation: step-ring 2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes step-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+/* The foot: how far along (and a bar filling up), what went wrong, Back and Next */
+.savebar--steps {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  justify-content: space-between;
+  margin: 0;
+  padding: 14px 16px 14px 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
+  background: rgba(8, 20, 50, 0.86);
+  box-shadow: 0 20px 50px -18px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.savebar__where {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 180px;
+  margin-right: auto;
+}
+.savebar__where small {
+  font: 700 10.5px/1 var(--font-m);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.savebar__where b {
+  font: 700 15px/1.2 var(--font-h);
+}
+.savebar__meter {
+  grid-column: 1 / -1;
+  height: 4px;
+  margin-top: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--line);
+}
+.savebar__meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--royal), var(--cyan), var(--turq));
+  transition: width 0.5s var(--ease-out);
+}
+.savebar--steps .btn {
+  padding: 14px 22px;
+  font-size: 12.5px;
+  border-radius: 14px;
+}
+.savebar--steps .btn .ico {
+  width: 17px;
+  height: 17px;
+}
+
+/* Narrower: the hints go, then (phones) each step's number over its name */
+@media (max-width: 1500px) {
+  .steps__text em {
+    display: none;
+  }
+}
+@media (max-width: 1020px) {
+  .steps__btn {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+  .steps__text {
+    justify-items: center;
+  }
+  .steps li.is-now .steps__btn::after {
+    left: calc(50% - 1px);
+  }
+  .steps__text small {
+    display: none;
+  }
+  .steps__label {
+    font-size: 12px;
+  }
+  .steps__line {
+    margin: 21px 6px 0;
+  }
+}
+@media (max-width: 959px) {
+  /* (phones: the foot stays where the form ends, clear of the tabs and the scan button) */
+  .savebar--steps {
+    position: static;
+    padding: 14px;
+  }
+  .savebar__where {
+    flex: 1 1 100%;
+  }
+  .savebar--steps .savebar__btns {
+    flex: 1 1 100%;
+  }
+  .savebar--steps .savebar__btns .btn {
+    flex: 1;
+  }
+}
+@media (max-width: 600px) {
+  .steps__num {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 13.5px;
+  }
+  .steps__num .ico {
+    width: 16px;
+    height: 16px;
+  }
+  .steps li.is-now .steps__num::after {
+    border-radius: 11px;
+  }
+  .steps__label {
+    font-size: 10.5px;
+  }
+  .steps__line {
+    min-width: 6px;
+    margin: 16px 3px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit--steps [data-step]:not([hidden]),
+  .steps li.is-now .steps__btn::after,
+  .steps li.is-now .steps__num::after {
+    animation: none;
+  }
 }
 .rarity {
   display: grid;
@@ -5499,9 +5836,6 @@ button.person__who:focus-visible {
 .mpin--legendary {
   --rc: 214, 181, 109;
 }
-.mpin.can-move {
-  cursor: grab;
-}
 .mpin.is-off {
   background: rgba(6, 16, 38, 0.8);
   box-shadow:
@@ -5515,21 +5849,6 @@ button.person__who:focus-visible {
     0 0 0 3px #fff,
     0 0 0 6px rgb(var(--rc)),
     0 0 26px rgba(var(--rc), 1);
-}
-.leaflet-dragging .mpin,
-.leaflet-drag-target .mpin {
-  cursor: grabbing;
-  transform: scale(1.3);
-}
-.mpin.is-saving::after {
-  content: "";
-  position: absolute;
-  inset: -7px;
-  border: 2.5px solid transparent;
-  border-top-color: #fff;
-  border-right-color: rgba(255, 255, 255, 0.45);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
 }
 /* Full screen, Show me and the "i": one bar down the map's right, top, like its zoom on the left */
 .gmap__ctls {

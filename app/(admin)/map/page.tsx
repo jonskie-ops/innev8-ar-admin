@@ -11,13 +11,11 @@ import { planOf, spotOf } from "@/lib/venue";
 export const metadata: Metadata = { title: "Map" };
 
 /**
- * A location on a real map, where each of its QR codes is on the ground, and (for admins) moving
- * them. With more than one location, tabs switch between them (?at=, else the code asked for's, else the first
- * that's on and has codes).
+ * A location on a real map, where each of its QR codes is on the ground. With more than one location,
+ * tabs switch between them (?at=, else the code asked for's, else the first that's on and has codes).
  */
 export default async function MapPage({ searchParams }: { searchParams: Promise<{ code?: string | string[]; at?: string | string[] }> }) {
-  const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  await requireTeammate();
   const [codes, zones, { locations }, { code, at }] = await Promise.all([listCodes(), listZones(), listLocations(), searchParams]);
   const asked = codes.find((c) => c.id === code);
   const place = firstPlace(locations, codes, typeof at === "string" ? at : asked && locationOf(asked));
@@ -51,7 +49,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       <Head
         eyebrow="Where they are"
         title="Map"
-        lead={`${place.name}${place.address ? `, ${place.address}` : ""}. Where each QR code is on the ground, and how close players must be to see it${canEdit ? ": drag a pin to move it" : ""}.`}
+        lead={`${place.name}${place.address ? `, ${place.address}` : ""}. Where each QR code is on the ground, and how close players must be to see it.`}
       />
       <PlaceTabs
         places={locations.map((l) => ({ id: l.id, name: l.name, live: l.live, codes: codes.filter((c) => locationOf(c) === l.id).length }))}
@@ -62,7 +60,6 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         key={place.id}
         spots={spots}
         place={{ id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng, width: place.width, outlines: plan.hand ? null : "osm" }}
-        canEdit={canEdit}
         initial={typeof code === "string" ? code : null}
       />
     </>

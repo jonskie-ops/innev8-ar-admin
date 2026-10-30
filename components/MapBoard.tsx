@@ -1,19 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { moveCode } from "@/lib/actions/codes";
 import { areaOf, embedUrl, mapsLinks, metresBetween, planOf, PLACE, spotUrl, type Where } from "@/lib/venue";
 import { pad } from "./bits";
 import { useHydrated } from "./form";
 import { useHere } from "./here";
-import { AlertIcon, CheckIcon, ExpandIcon, ExternalIcon, GlobeIcon, InfoIcon, LocateIcon, MapIcon, PinIcon, SatelliteIcon, ShrinkIcon } from "./icons";
+import { AlertIcon, ExpandIcon, ExternalIcon, GlobeIcon, InfoIcon, LocateIcon, MapIcon, PinIcon, SatelliteIcon, ShrinkIcon } from "./icons";
 import { SatelliteMap, type Spot } from "./SatelliteMap";
 
 /** "8 m", "120 m", "2.4 km" */
 const howFar = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`);
-
-/** A note over the map: what happened, stamped so the same note twice still shows. */
-const noteOf = (text: string, error: boolean) => ({ text, error, at: Date.now() });
 
 type View = "air" | "map" | "google";
 /** (shown as their icons) */
@@ -26,21 +22,18 @@ const VIEWS: [View, string, (p: { className?: string }) => React.ReactNode][] = 
 
 /**
  * The venue on a real map beside the QR codes: pick one to go to it. On the satellite or street map
- * each code's ring shows how close players must be to see it, and an admin drags a code's pin to
- * move it (it saves at once, and the venue map follows); Google's map is there to look at, as Google
- * shows it. "Show me" puts this phone on the map with each code's distance, for walking the venue to
+ * each code's ring shows how close players must be to see it (its pin stays put: a code moves on its own
+ * page); Google's map is there to look at, as Google shows it. "Show me" puts this phone on the map with each code's distance, for walking the venue to
  * check the spots before the summit.
  */
 export function MapBoard({
   spots,
   place,
-  canEdit,
   initial = null,
 }: {
   spots: Spot[];
   /** The location shown, and its codes in `spots` */
   place: Where & { name: string; address: string };
-  canEdit: boolean;
   initial?: string | null;
 }) {
   const ready = useHydrated();
@@ -53,8 +46,6 @@ export function MapBoard({
   const [picked, setPicked] = useState<string | null>(() => (spots.some((s) => s.id === initial) ? initial : null));
   const [view, setView] = useState<View>("air");
   const [loaded, setLoaded] = useState("");
-  const [saving, setSaving] = useState<string | null>(null);
-  const [note, setNote] = useState<{ text: string; error: boolean; at: number } | null>(null);
   const mapBox = useRef<HTMLElement>(null);
   // Full screen: the browser's own where it can; where it can't (iPhone), the map fills the window
   const [real, setReal] = useState(false);
@@ -121,34 +112,10 @@ export function MapBoard({
     if (top < 0) mapBox.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // A pin dropped: inside the game's map area, it's saved; otherwise (or if saving fails) it goes back
-  const drop = async (id: string, lat: number, lng: number) => {
-    const s = spots.find((x) => x.id === id);
-    if (!s) return false;
-    const { x, y } = plan.toPlan(lat, lng);
-    const a = plan.pinArea;
-    if (x < a.x0 || x > a.x1 || y < a.y0 || y > a.y1) {
-      setNote(noteOf(`Put #${pad(s.num)} inside the dashed outline: that's the area the game's map shows.`, true));
-      return false;
-    }
-    setSaving(id);
-    setPicked(id);
-    const r = await moveCode(id, lat, lng);
-    setSaving(null);
-    if (r?.error) {
-      setNote(noteOf(r.error, true));
-      return false;
-    }
-    setNote(noteOf(`Moved #${pad(s.num)} ${s.name}.`, false));
-    return true;
-  };
-
   const howTo =
     view === "google"
-      ? "Google's map is for looking. To move a QR code, drag its pin on Satellite or Map."
-      : canEdit
-        ? "Drag a pin to move its QR code: it saves at once, and its pin on the game's map moves too. Pins stay inside the dashed outline, the area the game's map shows. Each ring is how close players must be to see that code: change it on the code's page, where you can also set the spot from your phone's GPS while standing on it."
-        : "Each QR code is at its pin; its ring is how close players must be to see it. Only admins can move pins.";
+      ? "Google's map is for looking. Satellite and Map show each QR code's pin."
+      : "Each QR code is at its pin; its ring is how close players must be to see it. The dashed outline is the area the game's map shows. To move a code, or change its ring, open its page: there you can also set its spot from your phone's GPS while standing on it.";
 
   // "Show me": on the map under Full screen, as an icon
   const meButton = (
@@ -229,27 +196,14 @@ export function MapBoard({
               area={areaOf(plan)}
               view={view}
               picked={picked}
-              saving={saving}
-              canEdit={canEdit}
               me={showMe ? here : null}
               onPick={pick}
-              onDrop={drop}
             />
           )}
           {showMe && problem && (
             <p className="gmap__toast is-error" role="alert">
               <AlertIcon />
               {problem}
-            </p>
-          )}
-          {note && (
-            <p
-              key={note.at}
-              className={note.error ? "gmap__toast is-error" : "gmap__toast status--fade"}
-              role={note.error ? "alert" : "status"}
-            >
-              {note.error ? <AlertIcon /> : <CheckIcon />}
-              {note.text}
             </p>
           )}
           {/* Full screen, Show me and how it works: one bar down the map's right, like its zoom */}
@@ -316,7 +270,7 @@ export function MapBoard({
             <li key={s.id} className={`${picked === s.id ? "spot is-picked" : "spot"}${s.live ? "" : " is-off"}`}>
               <button type="button" className="spot__main" aria-pressed={picked === s.id} onClick={() => pick(s.id)}>
                 <span className={`gmap__num gmap__num--${s.rarity}`}>
-                  {saving === s.id ? <span className="spin" aria-label="Saving" /> : pad(s.num)}
+                  {pad(s.num)}
                 </span>
                 <span className="spot__text">
                   <b>

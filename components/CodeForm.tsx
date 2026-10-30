@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- the sponsors' small round badges */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { FormState } from "@/lib/form";
 import {
   firstSponsor,
@@ -24,7 +24,7 @@ import { DEFAULT_LOCATION, intoPinArea, latLngText, metresBetween, parseLatLng, 
 import { pad } from "./bits";
 import { AutoSaveToast, BackField, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
-import { ExternalIcon, LocateIcon, PinIcon, PlusIcon, TrashIcon } from "./icons";
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ExternalIcon, LocateIcon, PinIcon, PlusIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 import { VenueMap, type Pin } from "./VenueMap";
 
@@ -39,11 +39,21 @@ function geoLabel(g: Geo) {
   return g.accuracy === null ? "Saved spot" : `Set on site${acc}`;
 }
 
+/** A new code is added step by step: these, in order (each `data-step` below is its place here). */
+const STEPS = [
+  { label: "Details", hint: "Name, clue and description" },
+  { label: "Place", hint: "Zone, spot and map pin" },
+  { label: "GPS spot", hint: "Where players find it" },
+  { label: "Sponsor", hint: "The logo on the code" },
+  { label: "Task", hint: "Something to do first" },
+  { label: "Points", hint: "Rarity, points and live" },
+];
+
 /**
  * A QR code: what players read (name, clue, description), where it is (zone, spot, map pin), and
  * what it's worth. Changing the rarity moves the points to that rarity's usual value, unless
  * they'd been set by hand. An existing code saves by itself as it's edited (the map pin too); a new
- * one is added with Add QR code.
+ * one is added step by step (the steps along the top, Back and Next at the foot), then Add QR code.
  */
 export function CodeForm({
   code,
@@ -131,10 +141,67 @@ export function CodeForm({
   };
   const me: Pin = { id: code.id, num: Number(num) || code.num, name: code.name, rarity, x: pos.x, y: pos.y, live: true };
 
+  // A new code, step by step: one step's panels at a time. On to a later step only once the steps
+  // before it are filled in right (or back to the first that isn't, with what's wrong)
+  const stepped = !remove && canEdit;
+  const [step, setStep] = useState(0);
+  const navRef = useRef<HTMLElement>(null);
+  const last = STEPS.length - 1;
+  const show = (n: number) => (stepped && step !== n ? { "data-step": n, hidden: true } : { "data-step": n });
+  const wrongIn = (n: number) =>
+    Array.from(formRef.current?.querySelectorAll<HTMLInputElement>(`[data-step="${n}"] :is(input, select, textarea)`) ?? []).find((el) => !el.validity.valid);
+  const goTo = (n: number, wrong?: HTMLInputElement) => {
+    setStep(n);
+    navRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    if (wrong) window.setTimeout(() => wrong.reportValidity(), 60);
+  };
+  const go = (to: number) => {
+    for (let n = step; n < to; n++) {
+      const wrong = wrongIn(n);
+      if (wrong) return goTo(n, wrong);
+    }
+    goTo(to);
+  };
+  // (Enter in a field before the last step: on to the next)
+  const onEnter = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (!stepped || step === last || e.key !== "Enter" || !(e.target instanceof HTMLInputElement)) return;
+    e.preventDefault();
+    go(step + 1);
+  };
+  // (Add with something wrong in another step: to that step, with what's wrong)
+  const jumped = useRef(false);
+  const onInvalid = (e: FormEvent<HTMLFormElement>) => {
+    const n = Number((e.target as HTMLElement).closest("[data-step]")?.getAttribute("data-step"));
+    if (!stepped || jumped.current || Number.isNaN(n) || n === step) return;
+    jumped.current = true;
+    window.setTimeout(() => (jumped.current = false));
+    goTo(n, e.target as HTMLInputElement);
+  };
+
   return (
-    <form ref={formRef} className="edit" method="post" onSubmit={onSubmit} onChange={onChange}>
+    <form ref={formRef} className={stepped ? "edit edit--steps" : "edit"} method="post" onSubmit={onSubmit} onChange={onChange} onKeyDown={onEnter} onInvalidCapture={onInvalid}>
+      {stepped && (
+        <nav ref={navRef} className="steps" aria-label="Steps">
+          <ol>
+            {STEPS.map((s, i) => (
+              <li key={s.label} className={i === step ? "is-now" : i < step ? "is-past" : undefined}>
+                <button type="button" className="steps__btn" aria-current={i === step ? "step" : undefined} onClick={() => i !== step && go(i)}>
+                  <span className="steps__num">{i < step ? <CheckIcon /> : i + 1}</span>
+                  <span className="steps__text">
+                    <small>Step {i + 1}</small>
+                    <span className="steps__label">{s.label}</span>
+                    <em>{s.hint}</em>
+                  </span>
+                </button>
+                {/* (the line on to the next step, filled once this one's done) */}
+                {i < last && <i className="steps__line" aria-hidden="true" />}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <fieldset className="edit__main" disabled={!canEdit}>
-        <section className="panel">
+        <section className="panel" {...show(0)}>
           <h2 className="panel__title">What players see</h2>
           <div className="row2 row2--num">
             <label className="field">
@@ -175,7 +242,7 @@ export function CodeForm({
           </label>
         </section>
 
-        <section className="panel">
+        <section className="panel" {...show(3)}>
           <h2 className="panel__title">Sponsor</h2>
           <p className="field__hint">
             Their logo shows in a circle on the QR code&apos;s top-right corner: on the map, in the collection and in the
@@ -212,7 +279,7 @@ export function CodeForm({
           )}
         </section>
 
-        <section className="panel">
+        <section className="panel" {...show(4)}>
           <h2 className="panel__title">Extra task</h2>
           <p className="field__hint">
             Networking: something players do after reading the clue. The code stays locked until it&apos;s done, and
@@ -237,7 +304,7 @@ export function CodeForm({
           )}
         </section>
 
-        <section className="panel">
+        <section className="panel" {...show(5)}>
           <h2 className="panel__title">Rarity and points</h2>
           <div className="rarity" role="radiogroup" aria-label="Rarity">
             {RARITIES.map((r) => (
@@ -256,7 +323,7 @@ export function CodeForm({
           </label>
         </section>
 
-        <section className="panel">
+        <section className="panel" {...show(5)}>
           <h2 className="panel__title">In the game</h2>
           <Toggle name="live" defaultChecked={code.live} hint="Off: hidden from players until you turn it on.">
             Live
@@ -278,7 +345,7 @@ export function CodeForm({
       </fieldset>
 
       <fieldset className="edit__side" disabled={!canEdit}>
-        <section className="panel">
+        <section className="panel" {...show(1)}>
           <h2 className="panel__title">
             <PinIcon />
             Where it is
@@ -338,7 +405,7 @@ export function CodeForm({
           <input type="hidden" name="y" value={pos.y} />
         </section>
 
-        <section className="panel">
+        <section className="panel" {...show(2)}>
           <h2 className="panel__title">
             <LocateIcon />
             On the ground
@@ -445,7 +512,18 @@ export function CodeForm({
       </fieldset>
 
       {canEdit && (
-        <div className="savebar">
+        <div className={stepped ? "savebar savebar--steps" : "savebar"}>
+          {stepped && (
+            <span className="savebar__where" aria-live="polite">
+              <small>
+                Step {step + 1} of {STEPS.length}
+              </small>
+              <b>{STEPS[step].label}</b>
+              <span className="savebar__meter" aria-hidden="true">
+                <i style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+              </span>
+            </span>
+          )}
           {remove ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
             {remove ? (
@@ -456,7 +534,20 @@ export function CodeForm({
             ) : (
               <>
                 <BackField />
-                <SaveButton pending={pending}>Add QR code</SaveButton>
+                {step > 0 && (
+                  <button type="button" className="btn btn--ghost" onClick={() => go(step - 1)} disabled={pending}>
+                    <ArrowLeftIcon />
+                    Back
+                  </button>
+                )}
+                {step < last ? (
+                  <button type="button" className="btn btn--primary" onClick={() => go(step + 1)}>
+                    Next: {STEPS[step + 1].label}
+                    <ArrowRightIcon />
+                  </button>
+                ) : (
+                  <SaveButton pending={pending}>Add QR code</SaveButton>
+                )}
               </>
             )}
           </span>

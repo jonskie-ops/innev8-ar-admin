@@ -8,7 +8,7 @@ import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, N
 import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
-import { DEFAULT_LOCATION, metresBetween, planOf, toLatLng, type Where } from "../venue";
+import { DEFAULT_LOCATION, metresBetween, toLatLng, type Where } from "../venue";
 
 /** The code's GPS spot (sent with every save: the form keeps it and the map pin together). */
 function readSpot(fd: FormData) {
@@ -160,34 +160,4 @@ export async function setLive(kind: "codes" | "prizes" | "locations", id: string
   }
   revalidatePath("/", "layout");
   return done(live ? "On" : "Off");
-}
-
-/**
- * A QR code's pin, dropped on the Map page's real map: its GPS spot is where it was dropped (set on a
- * map, so no accuracy), and its venue map pin follows. Only where the game's venue map can show it.
- */
-export async function moveCode(id: string, lat: number, lng: number): Promise<FormState> {
-  if (!(await adminOnly())) return failed(NOT_ADMIN);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return failed("That isn't a place on the map.");
-  // On its location's map
-  const sb = await supabase();
-  const { data: code } = await sb.from("codes").select("*").eq("id", String(id)).maybeSingle();
-  if (!code) return failed("This QR code was removed by someone else.");
-  const places = await locations();
-  const plan = planOf(places?.all.find((l) => l.id === (code.location_id ?? DEFAULT_LOCATION)));
-  const { x, y } = plan.toPlan(lat, lng);
-  const a = plan.pinArea;
-  const inside = x >= a.x0 && x <= a.x1 && y >= a.y0 && y <= a.y1;
-  if (!inside) return failed("That's outside the area the game's map shows.");
-  const half = (v: number) => Math.round(v * 2) / 2;
-  const spot = (await has("radius")) && { lat: Math.round(lat * 1e7) / 1e7, lng: Math.round(lng * 1e7) / 1e7, accuracy: null };
-  const { data, error } = await sb
-    .from("codes")
-    .update({ x: half(x), y: half(y), ...spot })
-    .eq("id", String(id))
-    .select("id");
-  if (error) return failed(dbError(error));
-  if (!data?.length) return failed("This QR code was removed by someone else.");
-  revalidatePath("/", "layout");
-  return done("Moved");
 }
