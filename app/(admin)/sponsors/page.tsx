@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Head, pad } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
+import { SponsorCoins } from "@/components/SponsorCoins";
 import { AlertIcon, CheckIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { deleteSponsor } from "@/lib/actions/sponsors";
 import { requireTeammate } from "@/lib/dal";
@@ -43,12 +44,22 @@ export default async function SponsorsPage() {
       )}
 
       {sponsors.length ? (
-        <ul className="spcards" role="list">
+        <SponsorCoins>
           {sponsors.map((s) => {
             const on = onCodes(s.id);
             const body = (
               <>
-                <img src={s.badge} alt="" width={84} height={84} className="spcard__badge" />
+                {/* A coin: the logo on both faces, turning while the card is hovered (SponsorCoins) */}
+                <span className="spcard__coin">
+                  <span className="spcard__spin">
+                    <span className="spcard__ring">
+                      <img src={s.badge} alt="" width={84} height={84} className="spcard__badge" />
+                    </span>
+                    <span className="spcard__ring spcard__ring--back">
+                      <img src={s.badge} alt="" width={84} height={84} className="spcard__badge" />
+                    </span>
+                  </span>
+                </span>
                 <b>{s.name}</b>
               </>
             );
@@ -85,7 +96,7 @@ export default async function SponsorsPage() {
               </li>
             );
           })}
-        </ul>
+        </SponsorCoins>
       ) : (
         <section className="empty-text">
           <h2>No sponsors yet</h2>

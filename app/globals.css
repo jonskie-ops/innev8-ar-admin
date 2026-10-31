@@ -6591,43 +6591,132 @@ html[data-full-map] .navbar {
   padding: 0;
   list-style: none;
 }
+/* Each card: a lit stage at the top (sonar rings and a glow round the logo, like the scanner
+   finding a code), a gradient edge, and a thin light along its top */
 .spcard {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
   grid-template-rows: 1fr auto;
-  border: 1px solid var(--line);
-  border-radius: 18px;
+  border: 1px solid transparent;
+  border-radius: 20px;
   background:
-    radial-gradient(80% 60% at 50% 30%, rgba(32, 201, 188, 0.12), transparent 70%),
-    rgba(var(--deep-rgb), 0.5);
+    linear-gradient(180deg, rgba(var(--deep-rgb), 0.95), rgba(var(--shade-rgb), 0.98)) padding-box,
+    linear-gradient(
+        160deg,
+        rgba(18, 191, 234, 0.55),
+        rgba(140, 190, 255, 0.1) 40%,
+        rgba(140, 190, 255, 0.06) 60%,
+        rgba(32, 201, 188, 0.45)
+      )
+      border-box;
+  box-shadow: 0 16px 34px -26px rgba(0, 0, 0, 0.9);
   transition:
-    border-color 0.25s,
-    box-shadow 0.25s;
+    transform 0.35s var(--ease-out),
+    box-shadow 0.35s;
+}
+.spcard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 168px;
+  z-index: -1;
+  background:
+    radial-gradient(closest-side at 50% 72px, rgba(18, 191, 234, 0.34), rgba(8, 123, 232, 0.12) 60%, transparent),
+    repeating-radial-gradient(circle at 50% 72px, rgba(140, 190, 255, 0.16) 0 1px, transparent 1.5px 17px);
+  -webkit-mask-image: radial-gradient(75% 100% at 50% 0%, #000 35%, transparent 100%);
+  mask-image: radial-gradient(75% 100% at 50% 0%, #000 35%, transparent 100%);
+  opacity: 0.8;
+  transition: opacity 0.35s;
+}
+.spcard::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(18, 191, 234, 0.9), transparent);
 }
 .spcard:hover {
-  border-color: rgba(32, 201, 188, 0.5);
-  box-shadow: 0 18px 40px -26px rgba(32, 201, 188, 0.6);
+  transform: translateY(-3px);
+  box-shadow:
+    0 24px 46px -24px rgba(18, 191, 234, 0.55),
+    0 0 0 1px rgba(18, 191, 234, 0.25);
+}
+.spcard:hover::before {
+  opacity: 1;
 }
 .spcard__main {
   display: grid;
   align-content: start;
   justify-items: center;
   gap: 4px;
-  padding: 22px 14px 12px;
+  padding: 24px 14px 14px;
   text-align: center;
   text-decoration: none;
+}
+/* The logo as a coin: while its card is hovered it turns round and round on its upright middle
+   line, showing its edge (SponsorCoins). Both faces carry the logo, so it never reads backwards.
+   The glow stays still behind it */
+.spcard__coin {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  perspective: 600px;
+  box-shadow:
+    0 12px 30px -8px rgba(18, 191, 234, 0.55),
+    0 0 26px -6px rgba(32, 201, 188, 0.45);
+}
+.spcard__spin {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform-style: preserve-3d;
+}
+/* The coin's edge: a few gold-and-cyan discs between its faces */
+.spcard__spin,
+.spcard__spin::before,
+.spcard__spin::after {
+  background: linear-gradient(90deg, #087be8, #12bfea 30%, #d6b56d 70%, #a8823c);
+}
+.spcard__spin::before,
+.spcard__spin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  transform: translateZ(2px);
+}
+.spcard__spin::after {
+  transform: translateZ(-2px);
+}
+.spcard__ring {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(#12bfea, #087be8, #20c9bc, #d6b56d, #12bfea);
+  transform: translateZ(4px);
+  backface-visibility: hidden;
+}
+.spcard__ring--back {
+  transform: rotateY(180deg) translateZ(4px);
 }
 .spcard__badge {
   width: 84px;
   height: 84px;
-  margin-bottom: 8px;
   border-radius: 50%;
   background: #fff;
-  box-shadow:
-    0 0 0 1px var(--line),
-    0 12px 26px -12px rgba(32, 201, 188, 0.7);
+  box-shadow: 0 0 0 3px rgb(var(--shade-rgb));
 }
 .spcard__main b {
   font: 700 15px/1.3 var(--font-h);
+  letter-spacing: 0.01em;
   overflow-wrap: anywhere;
 }
 .spcard__main small {
@@ -6639,7 +6728,9 @@ html[data-full-map] .navbar {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 0 12px 12px;
+  margin: 0 12px;
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--line);
 }
 /* In use (on a QR code): a green check, left of the bin */
 .spcard__used {
@@ -6665,6 +6756,14 @@ html[data-full-map] .navbar {
 .spcard__foot .icon-btn .ico {
   width: 15px;
   height: 15px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spcard {
+    transition: none;
+  }
+  .spcard:hover {
+    transform: none;
+  }
 }
 
 /* A sponsor's page: their badge, and on a QR code as the game shows it */
