@@ -174,7 +174,8 @@ export const badgeUrl = (s: { id: string; badge_path: string | null }) =>
   s.badge_path ? `${supabaseUrl()}/storage/v1/object/public/sponsors/${s.badge_path}` : builtInBadge(s.id);
 
 /**
- * The sponsors, by name. `ready` false: the database hasn't got the sponsor logos update yet, so
+ * The sponsors, in the organisers' order (dragged on the Sponsors page; by name before the sponsor
+ * order update, and among any with the same place). `ready` false: the database hasn't got the sponsor logos update yet, so
  * these are the ones that came with the game, and they can't be changed.
  */
 export const listSponsors = cache(async (): Promise<{ sponsors: Sponsor[]; ready: boolean }> => {
@@ -186,6 +187,6 @@ export const listSponsors = cache(async (): Promise<{ sponsors: Sponsor[]; ready
   }
   const sponsors = (data as Omit<Sponsor, "badge">[])
     .map((s) => ({ ...s, badge: badgeUrl(s) }))
-    .sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
   return { sponsors, ready: true };
 });

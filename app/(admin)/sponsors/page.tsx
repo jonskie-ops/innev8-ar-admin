@@ -44,7 +44,8 @@ export default async function SponsorsPage() {
       )}
 
       {sponsors.length ? (
-        <SponsorCoins>
+        // Admins put them in order by dragging the cards
+        <SponsorCoins sortable={canEdit && ready}>
           {sponsors.map((s) => {
             const on = onCodes(s.id);
             const body = (
@@ -61,16 +62,21 @@ export default async function SponsorsPage() {
                   </span>
                 </span>
                 <b>{s.name}</b>
+                {s.description && (
+                  <small className="spcard__about" title={s.description}>
+                    {s.description}
+                  </small>
+                )}
               </>
             );
-            // In use (on a QR code): a green check beside the bin. Not in use: nothing
+            // In use (on a QR code): a green check in the card's top-left corner. Not in use: nothing
             const inUse = on.length > 0 && (
               <span className="spcard__used" role="img" aria-label={`In use: on ${on.join(", ")}`} title={`On ${on.join(", ")}`}>
                 <CheckIcon />
               </span>
             );
             return (
-              <li key={s.id} className="spcard">
+              <li key={s.id} className="spcard" data-id={s.id}>
                 {ready ? (
                   <Link href={`/sponsors/${s.id}`} className="spcard__main">
                     {body}
@@ -78,19 +84,17 @@ export default async function SponsorsPage() {
                 ) : (
                   <span className="spcard__main">{body}</span>
                 )}
-                {((canEdit && ready) || inUse) && (
+                {inUse}
+                {canEdit && ready && (
                   <span className="spcard__foot">
-                    {inUse}
-                    {canEdit && ready && (
-                      <ConfirmButton
-                        action={deleteSponsor.bind(null, s.id)}
-                        question={on.length ? `Take ${s.name} off? ${on.join(", ")} will have no sponsor.` : `Take ${s.name} off?`}
-                        className="icon-btn icon-btn--danger"
-                        label={`Delete ${s.name}`}
-                      >
-                        <TrashIcon />
-                      </ConfirmButton>
-                    )}
+                    <ConfirmButton
+                      action={deleteSponsor.bind(null, s.id)}
+                      question={on.length ? `Take ${s.name} off? ${on.join(", ")} will have no sponsor.` : `Take ${s.name} off?`}
+                      className="icon-btn icon-btn--danger"
+                      label={`Delete ${s.name}`}
+                    >
+                      <TrashIcon />
+                    </ConfirmButton>
                   </span>
                 )}
               </li>

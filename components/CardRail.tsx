@@ -1,13 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 import { ArrowLeftIcon, ArrowRightIcon } from "./icons";
 
 /**
  * A row of cards that scrolls sideways: swipe it, or use the arrows at its ends (shown only while
- * there's more that way).
+ * there's more that way). `className` goes on its box (e.g. the Sponsors page's own card sizes), and
+ * `listProps` on the list itself (the Sponsors page's coins and dragging).
  */
-export function CardRail({ label, children }: { label: string; children: ReactNode }) {
+export function CardRail({
+  label,
+  className = "",
+  listProps,
+  children,
+}: {
+  label: string;
+  className?: string;
+  listProps?: HTMLAttributes<HTMLUListElement>;
+  children: ReactNode;
+}) {
   const list = useRef<HTMLUListElement>(null);
   const [more, setMore] = useState({ back: false, on: false });
 
@@ -29,8 +40,8 @@ export function CardRail({ label, children }: { label: string; children: ReactNo
   const page = (dir: 1 | -1) => list.current?.scrollBy({ left: dir * list.current.clientWidth * 0.9, behavior: "smooth" });
 
   return (
-    <div className="crail-box">
-      <ul ref={list} className="crail" role="list" aria-label={label}>
+    <div className={`crail-box ${className}`.trim()}>
+      <ul {...listProps} ref={list} className="crail" role="list" aria-label={label}>
         {children}
       </ul>
       <button

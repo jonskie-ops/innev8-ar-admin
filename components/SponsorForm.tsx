@@ -7,7 +7,7 @@ import type { FormState } from "@/lib/form";
 import type { Rarity } from "@/lib/hunt";
 import { LOGO_TYPES, makeBadge, type Background } from "./badge";
 import { pad } from "./bits";
-import { AutoSaveToast, BackField, ConfirmButton, SaveButton, Status, useAutoSave } from "./form";
+import { AutoSaveToast, BackField, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { ImageIcon, TrashIcon } from "./icons";
 import { QrGlyph } from "./QrGlyph";
 
@@ -26,7 +26,7 @@ export function SponsorForm({
   remove,
   canEdit,
 }: {
-  sponsor: { id: string; name: string; badge: string | null };
+  sponsor: { id: string; name: string; description: string; badge: string | null };
   codes: SponsoredCode[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
@@ -34,6 +34,7 @@ export function SponsorForm({
 }) {
   const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
   const [name, setName] = useState(sponsor.name);
+  const [desc, setDesc] = useState(sponsor.description.length);
   // The logo chosen and the badge made from it (sent with the next save), or what's wrong with it
   const [logo, setLogo] = useState<{ file: File; badge: string; background: Background; cut: boolean } | null>(null);
   const [problem, setProblem] = useState("");
@@ -78,6 +79,20 @@ export function SponsorForm({
               autoFocus={!remove}
             />
             <span className="field__hint">How it&apos;s written here and in the game (“Sponsored by {name.trim() || "…"}” on the logo).</span>
+          </label>
+          <label className="field">
+            <span className="field__label">
+              Description <Counter n={desc} max={300} />
+            </span>
+            <textarea
+              name="description"
+              rows={4}
+              defaultValue={sponsor.description}
+              maxLength={300}
+              onChange={(e) => setDesc(e.target.value.length)}
+              placeholder="What their logo stands for…"
+            />
+            <span className="field__hint">Under their name on the Sponsors page.</span>
           </label>
         </section>
 

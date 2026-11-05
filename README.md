@@ -107,6 +107,16 @@ map, in the collection and on the 3D code in the camera). On the **Sponsors** pa
   never the file itself.
 - **Change** the name or logo on the sponsor's page: it saves by itself, like the other pages, and
   the old badge is deleted.
+- **Description:** what their logo stands for (up to 300 characters), set on their page and shown
+  under their name on the Sponsors page.
+- **Order:** the cards sit in one row (slide it with the arrows at its ends, or swipe). Admins move a
+  card to another place: the cursor shows a hand over it; press it and drag (on a phone, hold it a
+  moment first; a quick swipe still slides the row). A click still opens the sponsor; the order saves
+  by itself, as one line in Recent changes, and the sponsor lists on the QR codes' pages follow it. A
+  new sponsor goes last. Needs the update `supabase/migrations/20261105010000_sponsor_order.sql`;
+  until then they're by name, and moving one says what to run. Needs the update
+  `supabase/migrations/20261105000000_sponsor_descriptions.sql` (run it in the SQL Editor), which also
+  gives the 8 sponsors the game came with theirs; until then the rest saves, without one.
 - **Delete** (on the list or the sponsor's page) asks first and names the codes they're on: those
   codes then have no sponsor.
 

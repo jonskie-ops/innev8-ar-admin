@@ -5,9 +5,9 @@ import { addTeammate, removeTeammate, resetPassword, setRole } from "@/lib/actio
 import type { FormState } from "@/lib/form";
 import type { Member } from "@/lib/hunt";
 import { day } from "@/lib/format";
-import { Avatar } from "./bits";
+import { CardRail } from "./CardRail";
 import { ConfirmButton, OneTimePassword, SaveButton, Status, useForm } from "./form";
-import { ChevronRightIcon, CloseIcon, KeyIcon, PlusIcon, ShieldIcon, TrashIcon } from "./icons";
+import { CloseIcon, KeyIcon, PlusIcon, TrashIcon } from "./icons";
 import { Spinner } from "./Progress";
 import { RoleList } from "./Roles";
 
@@ -16,155 +16,125 @@ const ROLE_HINT = {
   staff: "Can look at everything, but not change it.",
 };
 
+const nameOf = (m: Member) => m.name || m.email;
+const roleName = (r: Member["role"]) => (r === "admin" ? "Admin" : "Staff");
+/** "Ana Reyes" is AR, "jondie@example.com" is J */
+function initials(name: string) {
+  const w = name.trim().split(/[\s@._-]+/).filter(Boolean);
+  return ((w[0]?.[0] ?? "") + (w.length > 1 && !name.includes("@") ? w[w.length - 1][0] : "")).toUpperCase() || "?";
+}
+
 /**
- * The organisers: who's on the team and each one's role, each opening to what they can do. Adding
- * one (`AddTeammate`) is a pop-up from the page's head.
+ * The organisers, a card each in one row that slides sideways (CardRail: arrows once there are more
+ * than fit), you first: their email, role, what they can do and, for an admin on someone else's card,
+ * the role switch, a new password and Remove. Adding one (`AddTeammate`) is a pop-up from the page's head.
  */
 export function TeamPanel({ members, me, canEdit }: { members: Member[]; me: string; canEdit: boolean }) {
-  const admins = members.filter((m) => m.role === "admin").length;
-  const waiting = members.filter((m) => m.must_change_password).length;
+  const team = [...members.filter((m) => m.user_id === me), ...members.filter((m) => m.user_id !== me)];
   return (
-    <section className="panel panel--flush team">
-      <div className="team__head">
-        <h2 className="panel__title">Who can sign in</h2>
-        <p className="team__counts">
-          <span className="count count--admin">
-            <b>{admins}</b> admin{admins === 1 ? "" : "s"}
-          </span>
-          <span className="count">
-            <b>{members.length - admins}</b> staff
-          </span>
-          {waiting > 0 && (
-            <span className="count count--wait">
-              <b>{waiting}</b> yet to sign in
-            </span>
-          )}
-        </p>
-      </div>
-      <ul className="people" role="list">
-        {members.map((m) => (
-          <Person key={m.user_id} m={m} you={m.user_id === me} canEdit={canEdit && m.user_id !== me} />
+    <section className="crew" aria-label="Who can sign in">
+      <CardRail label="The team" className="crew__rail">
+        {team.map((m) => (
+          <li key={m.user_id} className="crew__item">
+            <Spotlight m={m} you={m.user_id === me} canEdit={canEdit && m.user_id !== me} />
+          </li>
         ))}
-      </ul>
-      <p className="team__foot">
-        <ShieldIcon />
-        <span>
-          Open someone to see what they can do.{" "}
-          {canEdit
-            ? "Nobody can sign up: only an admin can add someone. The team always keeps at least one admin."
-            : "Need to change something? Ask an admin, or ask to be made one."}
-        </span>
-      </p>
+      </CardRail>
     </section>
   );
 }
 
-/** A teammate: their role (changed right here by an admin), and, opened, what that role can do. */
-function Person({ m, you, canEdit }: { m: Member; you: boolean; canEdit: boolean }) {
+/** A teammate's card: who they are, what they can do, and (an admin, someone else) changing it. */
+function Spotlight({ m, you, canEdit }: { m: Member; you: boolean; canEdit: boolean }) {
   const [answer, setAnswer] = useState<FormState>(null);
   const [pending, start] = useTransition();
-  const [open, setOpen] = useState(false);
   const [role, setRoleNow] = useState(m.role);
-  const canId = useId();
-  const name = m.name || m.email;
-  const toggle = () => setOpen((o) => !o);
+  const name = nameOf(m);
+  const change = (to: Member["role"]) => {
+    if (to === role || pending) return;
+    start(async () => {
+      const r = await setRole(m.user_id, to);
+      setAnswer(r);
+      if (!r?.error) setRoleNow(to);
+    });
+  };
   return (
-    <li className={open ? "person is-open" : "person"}>
-      <Avatar name={name} />
-      <button type="button" className="person__who" aria-expanded={open} aria-controls={canId} onClick={toggle}>
-        <b>
-          {name}
-          {you && <span className="tag">You</span>}
-          {m.must_change_password && <span className="tag tag--wait">Hasn&apos;t signed in yet</span>}
-          {/* (phones: a role that can't be changed here sits by the name) */}
-          {!canEdit && <span className={`role role--${role} person__role-in`}>{role === "admin" ? "Admin" : "Staff"}</span>}
-        </b>
-        <small>
-          {m.email}
-          <span className="person__added">
-            <span className="person__sep"> · </span>added {day(m.created_at)}
-          </span>
-        </small>
-      </button>
-      <span className={canEdit ? "person__role" : "person__role is-fixed"}>
-        {canEdit ? (
-          <select
-            aria-label={`Role for ${name}`}
-            defaultValue={m.role}
-            disabled={pending}
-            onChange={(e) => {
-              const to = e.target.value as Member["role"];
-              start(async () => {
-                const r = await setRole(m.user_id, to);
-                setAnswer(r);
-                if (!r?.error) setRoleNow(to);
-              });
-            }}
-          >
-            <option value="admin">Admin</option>
-            <option value="staff">Staff</option>
-          </select>
-        ) : (
-          <span className={`role role--${role}`}>{role === "admin" ? "Admin" : "Staff"}</span>
-        )}
-        {pending && <Spinner />}
-      </span>
-      <span className="person__acts">
-        {canEdit && (
-          <>
-          <ConfirmButton
-            action={async () => {
-              const r = await resetPassword(m.user_id);
-              setAnswer(r);
-              return r;
-            }}
-            question={`Give ${name} a new temporary password? Their current one stops working.`}
-            confirm="Reset"
-            className="icon-btn person__key"
-            label={`Reset ${name}'s password`}
-          >
-            <KeyIcon />
-          </ConfirmButton>
-          <ConfirmButton
-            action={() => removeTeammate(m.user_id)}
-            question={`Remove ${name} from the team? They can't sign in any more.`}
-            confirm="Remove"
-            className="icon-btn icon-btn--danger person__bin"
-            label={`Remove ${name}`}
-          >
-            <TrashIcon />
-          </ConfirmButton>
-          </>
-        )}
-        <button
-          type="button"
-          className="icon-btn person__more"
-          aria-expanded={open}
-          aria-controls={canId}
-          aria-label={`What ${name} can do`}
-          onClick={toggle}
-        >
-          <ChevronRightIcon />
-        </button>
-      </span>
-      <div className="person__can" id={canId} hidden={!open}>
-        <p className="person__can-title">
-          What {you ? "you" : name.split(" ")[0]} can do as {role === "admin" ? "an admin" : "staff"}
-        </p>
-        <RoleList role={role} />
+    <article className="crew__spot" aria-label={`${name}, ${roleName(role)}`}>
+      {/* Their role, in the top-right corner */}
+      <span className="crew__badge crew__spot-role">{roleName(role)}</span>
+      <div className="crew__spot-head">
+        <span className="crew__spot-mono" aria-hidden="true">
+          {initials(name)}
+        </span>
+        <div className="crew__spot-who">
+          <h3>
+            {name}
+            {you && <span className="crew__chip">You</span>}
+          </h3>
+          <p>
+            {roleName(role)} · added {day(m.created_at)}
+          </p>
+        </div>
       </div>
+      <a className="crew__mail" href={`mailto:${m.email}`}>
+        {m.email}
+      </a>
+      {m.must_change_password && <p className="crew__note">Hasn&apos;t signed in yet: their temporary password still works.</p>}
+
       {answer?.password ? (
-        <div className="person__otp">
+        <div className="crew__otp">
           <OneTimePassword who={name} password={answer.password} />
         </div>
       ) : (
-        answer?.error && (
-          <div className="person__otp">
-            <Status state={answer} />
-          </div>
-        )
+        <div className="crew__can">
+          <p>What {you ? "you" : name.split(" ")[0]} can do</p>
+          <RoleList role={role} />
+        </div>
       )}
-    </li>
+      {answer?.error && (
+        <div className="crew__error">
+          <Status state={answer} />
+        </div>
+      )}
+
+      {/* An admin, someone else: their role switch, a new password and Remove */}
+      {canEdit && (
+        <div className="crew__spot-foot">
+          <div className="crew__seg" role="group" aria-label={`Role for ${name}`}>
+            {(["admin", "staff"] as const).map((r) => (
+              <button key={r} type="button" aria-pressed={role === r} disabled={pending} onClick={() => change(r)}>
+                {roleName(r)}
+              </button>
+            ))}
+            {pending && <Spinner />}
+          </div>
+          <span className="crew__acts">
+            <ConfirmButton
+              action={async () => {
+                const r = await resetPassword(m.user_id);
+                setAnswer(r);
+                return r;
+              }}
+              question={`Give ${name} a new temporary password? Their current one stops working.`}
+              confirm="Reset"
+              className="icon-btn crew__act"
+              label={`Reset ${name}'s password`}
+            >
+              <KeyIcon />
+            </ConfirmButton>
+            <ConfirmButton
+              action={() => removeTeammate(m.user_id)}
+              question={`Remove ${name} from the team? They can't sign in any more.`}
+              confirm="Remove"
+              className="icon-btn crew__act crew__act--danger"
+              label={`Remove ${name}`}
+            >
+              <TrashIcon />
+            </ConfirmButton>
+          </span>
+        </div>
+      )}
+    </article>
   );
 }
 

@@ -5,7 +5,7 @@ import { areaOf, embedUrl, mapsLinks, metresBetween, planOf, PLACE, spotUrl, typ
 import { pad } from "./bits";
 import { useHydrated } from "./form";
 import { useHere } from "./here";
-import { AlertIcon, ExpandIcon, ExternalIcon, GlobeIcon, InfoIcon, LocateIcon, MapIcon, PinIcon, SatelliteIcon, ShrinkIcon } from "./icons";
+import { AlertIcon, ChevronRightIcon, ExpandIcon, ExternalIcon, GlobeIcon, InfoIcon, LocateIcon, MapIcon, PinIcon, SatelliteIcon, ShrinkIcon } from "./icons";
 import { SatelliteMap, type Spot } from "./SatelliteMap";
 
 /** "8 m", "120 m", "2.4 km" */
@@ -102,10 +102,18 @@ export function MapBoard({
     }
     setFilled(true);
   };
+  // "Show on the map", on the map's bottom-right corner: open on a computer, folded on a phone (until
+  // it's opened or folded), and folded for Google's map, whose own buttons are in that corner
+  const [listChoice, setListChoice] = useState<boolean | null>(null);
+  const listOpen = listChoice ?? !(ready && matchMedia("(max-width: 760px)").matches);
+  const show = (v: View) => {
+    setView(v);
+    if (v === "google") setListChoice(false);
+  };
   const spot = spots.find((s) => s.id === picked) ?? null;
   const src = spot ? embedUrl(`${spot.lat},${spot.lng}`, "air", 19) : embedUrl(query, "air", plan.hand ? 18 : 17);
 
-  // On a phone the list is under the map: bring the map back into view to show the pick
+  // Picking one brings the map back into view, if the page was scrolled past it
   const pick = (id: string | null) => {
     setPicked(id);
     const top = mapBox.current?.getBoundingClientRect().top ?? 0;
@@ -159,7 +167,7 @@ export function MapBoard({
           <div className="gmap__tools">
             <div className="seg gmap__views" role="group" aria-label="Show as">
               {VIEWS.map(([v, label, Icon]) => (
-                <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} aria-label={label} title={label}>
+                <button key={v} type="button" aria-pressed={view === v} onClick={() => show(v)} aria-label={label} title={label}>
                   <Icon className="gmap__view-ico" />
                   <span className="gmap__view-label">{label}</span>
                 </button>
@@ -236,74 +244,85 @@ export function MapBoard({
               </p>
             </div>
           </div>
-        </div>
 
-      </section>
-
-      <aside className="panel gmap__list" aria-label="Show on the map">
-        <h2 className="panel__title">Show on the map</h2>
-        <ul className="spots" role="list">
-          <li className={picked === null ? "spot is-picked" : "spot"}>
-            <button type="button" className="spot__main" aria-pressed={picked === null} onClick={() => pick(null)}>
-              <span className="gmap__num gmap__num--venue">
-                <PinIcon />
-              </span>
-              <span className="spot__text">
-                <b>The whole location</b>
-                <small>{place.name}</small>
-              </span>
-            </button>
-            <a
-              href={links.link}
-              target="_blank"
-              rel="noopener"
-              className="icon-btn"
-              aria-label={`Open ${place.name} in Google Maps (new tab)`}
-              title="Open in Google Maps"
+          {/* Show on the map: the location and its codes, on the map's bottom-right corner; its
+              heading folds it away */}
+          <aside className={listOpen ? "gmap__list is-open" : "gmap__list"} aria-label="Show on the map">
+            <button
+              type="button"
+              className="gmap__list-head"
+              aria-expanded={listOpen}
+              aria-controls="gmap-spots"
+              onClick={() => setListChoice(!listOpen)}
             >
-              <ExternalIcon />
-            </a>
-          </li>
-          {spots.map((s) => {
-            const away = showMe && here ? metresBetween(here, s) : null;
-            return (
-            <li key={s.id} className={`${picked === s.id ? "spot is-picked" : "spot"}${s.live ? "" : " is-off"}`}>
-              <button type="button" className="spot__main" aria-pressed={picked === s.id} onClick={() => pick(s.id)}>
-                <span className={`gmap__num gmap__num--${s.rarity}`}>
-                  {pad(s.num)}
-                </span>
-                <span className="spot__text">
-                  <b>
-                    {s.name}
-                    {!s.live && <span className="tag tag--off">Off</span>}
-                  </b>
-                  <small>
-                    {s.where}
-                    {s.where && " · "}
-                    within {s.radius} m{s.own ? "" : " · from the venue map pin"}
-                  </small>
-                  {away !== null && (
-                    <small className={away <= s.radius ? "spot__away is-in" : "spot__away"}>
-                      {away <= s.radius ? `You're in range: ${howFar(away)} away` : `${howFar(away)} away`}
-                    </small>
-                  )}
-                </span>
-              </button>
-              <a
-                href={spotUrl(s.lat, s.lng)}
-                target="_blank"
-                rel="noopener"
-                className="icon-btn"
-                aria-label={`Open #${s.num} ${s.name} in Google Maps (new tab)`}
-                title="Open in Google Maps"
-              >
-                <ExternalIcon />
-              </a>
-            </li>
-            );
-          })}
-        </ul>
-      </aside>
+              <span className="gmap__list-title">Show on the map</span>
+              <small>{spots.length === 1 ? "1 QR code" : `${spots.length} QR codes`}</small>
+              <ChevronRightIcon className="gmap__list-fold" />
+            </button>
+            <ul id="gmap-spots" className="spots" role="list" hidden={!listOpen}>
+              <li className={picked === null ? "spot is-picked" : "spot"}>
+                <button type="button" className="spot__main" aria-pressed={picked === null} onClick={() => pick(null)}>
+                  <span className="gmap__num gmap__num--venue">
+                    <PinIcon />
+                  </span>
+                  <span className="spot__text">
+                    <b>The whole location</b>
+                    <small>{place.name}</small>
+                  </span>
+                </button>
+                <a
+                  href={links.link}
+                  target="_blank"
+                  rel="noopener"
+                  className="icon-btn"
+                  aria-label={`Open ${place.name} in Google Maps (new tab)`}
+                  title="Open in Google Maps"
+                >
+                  <ExternalIcon />
+                </a>
+              </li>
+              {spots.map((s) => {
+                const away = showMe && here ? metresBetween(here, s) : null;
+                return (
+                <li key={s.id} className={`${picked === s.id ? "spot is-picked" : "spot"}${s.live ? "" : " is-off"}`}>
+                  <button type="button" className="spot__main" aria-pressed={picked === s.id} onClick={() => pick(s.id)}>
+                    <span className={`gmap__num gmap__num--${s.rarity}`}>
+                      {pad(s.num)}
+                    </span>
+                    <span className="spot__text">
+                      <b>
+                        {s.name}
+                        {!s.live && <span className="tag tag--off">Off</span>}
+                      </b>
+                      <small>
+                        {s.where}
+                        {s.where && " · "}
+                        within {s.radius} m{s.own ? "" : " · from the venue map pin"}
+                      </small>
+                      {away !== null && (
+                        <small className={away <= s.radius ? "spot__away is-in" : "spot__away"}>
+                          {away <= s.radius ? `You're in range: ${howFar(away)} away` : `${howFar(away)} away`}
+                        </small>
+                      )}
+                    </span>
+                  </button>
+                  <a
+                    href={spotUrl(s.lat, s.lng)}
+                    target="_blank"
+                    rel="noopener"
+                    className="icon-btn"
+                    aria-label={`Open #${s.num} ${s.name} in Google Maps (new tab)`}
+                    title="Open in Google Maps"
+                  >
+                    <ExternalIcon />
+                  </a>
+                </li>
+                );
+              })}
+            </ul>
+          </aside>
+        </div>
+      </section>
     </div>
   );
 }

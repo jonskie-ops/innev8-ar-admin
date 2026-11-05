@@ -5520,6 +5520,250 @@ button.person__who:focus-visible {
   margin-top: 2px;
   color: var(--cyan);
 }
+
+/* ---------------------------------------------------------------- the Team page: cards
+   A card each (deep navy, a cyan light from its top-right corner: who they are, what they can do, the
+   admin's buttons), all in one row (CardRail) that slides sideways: 3 across a computer, 4 on a wide
+   one, 2 on a narrower window, 1 (and a peek of the next) on a phone */
+.crew__rail .crail {
+  grid-auto-columns: calc((100% - 2 * 16px) / 3);
+  gap: 16px;
+}
+@container (min-width: 1500px) {
+  .crew__rail .crail {
+    grid-auto-columns: calc((100% - 3 * 16px) / 4);
+  }
+}
+@container (max-width: 1000px) {
+  .crew__rail .crail {
+    grid-auto-columns: calc((100% - 16px) / 2);
+  }
+}
+@container (max-width: 640px) {
+  .crew__rail .crail {
+    grid-auto-columns: 88%;
+    gap: 12px;
+  }
+}
+/* The arrows over the middle of the cards */
+.crew__rail .crail__arrow {
+  top: calc(50% - 28px);
+}
+/* (each card as tall as the row's tallest) */
+.crew__item {
+  display: grid;
+  min-width: 0;
+}
+.crew__chip {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font: 600 11px/1.2 var(--font-h);
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+/* A card */
+.crew__spot {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: 22px;
+  /* A deep navy blue, a soft cyan light from its top-right corner (bright, but easy on the eyes) */
+  background:
+    radial-gradient(90% 60% at 100% 0%, rgba(18, 191, 234, 0.28), transparent 70%),
+    radial-gradient(80% 50% at 0% 100%, rgba(32, 201, 188, 0.12), transparent 70%),
+    linear-gradient(165deg, #0e3c8c 0%, #0a2a68 48%, #071a45 100%);
+  box-shadow:
+    0 26px 54px -26px rgba(8, 123, 232, 0.6),
+    inset 0 0 0 1px rgba(18, 191, 234, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  color: #fff;
+  animation: crew-in 0.45s var(--ease-out);
+}
+/* Their role, in the top-right corner */
+.crew__spot-role {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+.crew__spot::before {
+  content: "";
+  position: absolute;
+  inset: -40% -40% auto auto;
+  width: 280px;
+  height: 280px;
+  z-index: -1;
+  background: repeating-radial-gradient(circle, rgba(255, 255, 255, 0.16) 0 1px, transparent 1.5px 20px);
+  -webkit-mask-image: radial-gradient(closest-side, #000, transparent);
+  mask-image: radial-gradient(closest-side, #000, transparent);
+}
+@keyframes crew-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+/* Their monogram on top, the name and role under it (the card's full width for a long name) */
+.crew__spot-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+.crew__spot-mono {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  font: 800 20px/1 var(--font-h);
+}
+.crew__spot-who {
+  width: 100%;
+  min-width: 0;
+}
+.crew__spot-who h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 700 18px/1.25 var(--font-h);
+  overflow-wrap: anywhere;
+}
+.crew__spot-who p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.82);
+}
+.crew__mail {
+  font-size: 13px;
+  color: #fff;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  opacity: 0.92;
+}
+.crew__mail:hover {
+  text-decoration: underline;
+}
+.crew__note {
+  margin: 0;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: rgba(3, 8, 23, 0.26);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.crew__can > p {
+  margin: 0 0 8px;
+  font: 600 10.5px/1 var(--font-m);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+.crew__spot .canlist {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.crew__spot .canlist li {
+  font-size: 13px;
+  color: #fff;
+}
+.crew__spot .canlist li.is-no {
+  color: rgba(255, 255, 255, 0.5);
+}
+.crew__spot .canlist .ico {
+  color: #fff;
+}
+.crew__otp,
+.crew__error {
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(3, 8, 23, 0.55);
+}
+.crew__spot-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+.crew__seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(3, 8, 23, 0.3);
+}
+.crew__seg button {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font: 700 12px/1 var(--font-h);
+  color: rgba(255, 255, 255, 0.8);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.crew__seg button[aria-pressed="true"] {
+  background: #fff;
+  color: #0a46b8;
+}
+.crew__seg button:not([aria-pressed="true"]):hover {
+  color: #fff;
+}
+.crew__seg .spin {
+  margin: 0 6px;
+}
+.crew__badge {
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(18, 191, 234, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(18, 191, 234, 0.5);
+  font: 700 12px/1 var(--font-h);
+  letter-spacing: 0.02em;
+  color: #8fe6ff;
+}
+.crew__acts {
+  display: flex;
+  gap: 8px;
+}
+.crew__spot .crew__act {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+  color: #fff;
+}
+.crew__spot .crew__act:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.crew__spot .crew__act--danger:hover {
+  background: rgba(255, 107, 107, 0.45);
+}
+@media (prefers-reduced-motion: reduce) {
+  .crew__spot {
+    animation: none;
+  }
+}
 @media (max-width: 600px) {
   .person__can {
     grid-column: 1 / -1;
@@ -5671,11 +5915,10 @@ button.person__who:focus-visible {
 
 /* ---------------------------------------------------------------- map (Google Maps) */
 /* The map and the list beside it, always the same height: the taller sets it, the map takes any extra */
+/* The map, the page's full width ("Show on the map" floats on its bottom-right corner) */
 .gmap {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
-  gap: 18px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1fr);
 }
 .gmap__map {
   display: flex;
@@ -5835,7 +6078,8 @@ button.person__who:focus-visible {
   position: relative;
   isolation: isolate; /* keeps the map's own layers under the search and the bell's lists */
   flex: 1;
-  min-height: clamp(380px, calc(100dvh - 290px), 820px);
+  /* Tall: nearly the window's height, never under 620px (phones: 60vh, below) */
+  min-height: clamp(620px, calc(100dvh - 160px), 980px);
   overflow: hidden;
   border-radius: 14px;
   background: #0b1530;
@@ -6114,15 +6358,74 @@ html[data-full-map] .navbar {
   width: 16px;
   height: 16px;
 }
-/* The list beside it: the venue, then each QR code */
+/* Show on the map: the venue, then each QR code, as a glass panel on the map's bottom-right corner
+   (above the map's credits, under its buttons along the top), like the buttons; its heading folds it
+   down to just that */
 .gmap__list {
-  gap: 10px;
-  max-height: calc(100dvh - 40px);
-  overflow: auto;
-  padding: 16px 12px;
+  position: absolute;
+  right: 10px;
+  bottom: 28px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  width: min(330px, calc(100% - 20px));
+  max-height: calc(100% - 92px);
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(10, 22, 51, 0.9);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    0 18px 40px -16px rgba(0, 0, 0, 0.95);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
-.gmap__list .panel__title {
-  padding: 0 8px;
+.gmap__list-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 12px 12px 16px;
+  text-align: left;
+}
+.gmap__list.is-open .gmap__list-head {
+  border-bottom: 1px solid var(--line);
+}
+.gmap__list-title {
+  font: 700 14px/1.2 var(--font-h);
+}
+.gmap__list-head small {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+.gmap__list-fold {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  transform: rotate(-90deg);
+  transition: transform 0.25s var(--ease-out);
+}
+.gmap__list.is-open .gmap__list-fold {
+  transform: rotate(90deg);
+}
+.gmap__list-head:hover .gmap__list-fold {
+  color: var(--cyan);
+}
+.gmap__list .spots {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  overscroll-behavior: contain;
+}
+.gmap__list .spots[hidden] {
+  display: none;
+}
+/* On a phone the map's buttons go down its right side: the list stays under them */
+@media (max-width: 600px) {
+  .gmap__list {
+    max-height: calc(100% - 172px);
+  }
 }
 .spots {
   display: grid;
@@ -6171,14 +6474,6 @@ html[data-full-map] .navbar {
   margin-left: 0;
   background: rgba(140, 190, 255, 0.14);
   color: var(--faint);
-}
-@media (max-width: 1100px) {
-  .gmap {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .gmap__list {
-    max-height: none;
-  }
 }
 @media (max-width: 760px) {
   .gmap__frame {
@@ -6582,14 +6877,30 @@ html[data-full-map] .navbar {
   margin-top: 14px;
 }
 
-/* The Sponsors page: a card each, their badge, name and codes; Delete at the foot */
-.spcards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+/* The Sponsors page: a card each, their badge, name and description, Delete at the foot; all in one
+   row (CardRail) that slides sideways: 5 cards across a computer, more on a wide one, 1¼ on a phone */
+.spcards .crail {
+  grid-auto-columns: calc((100% - 4 * 14px) / 5);
   gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+}
+@container (min-width: 1400px) {
+  .spcards .crail {
+    grid-auto-columns: calc((100% - 5 * 14px) / 6);
+  }
+}
+@container (max-width: 900px) {
+  .spcards .crail {
+    grid-auto-columns: calc((100% - 2 * 14px) / 3);
+  }
+}
+@container (max-width: 600px) {
+  .spcards .crail {
+    grid-auto-columns: 78%;
+  }
+}
+/* The arrows over the middle of the cards */
+.spcards .crail__arrow {
+  top: calc(50% - 28px);
 }
 /* Each card: a lit stage at the top (sonar rings and a glow round the logo, like the scanner
    finding a code), a gradient edge, and a thin light along its top */
@@ -6724,6 +7035,16 @@ html[data-full-map] .navbar {
   line-height: 1.4;
   color: var(--muted);
 }
+/* What their logo stands for: under the name, up to 8 lines (all of it on hover and on their page) */
+.spcard__main .spcard__about {
+  margin-top: 6px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+  line-clamp: 8;
+  overflow: hidden;
+  text-wrap: pretty;
+}
 .spcard__foot {
   display: flex;
   justify-content: flex-end;
@@ -6732,8 +7053,12 @@ html[data-full-map] .navbar {
   padding: 10px 0 12px;
   border-top: 1px solid var(--line);
 }
-/* In use (on a QR code): a green check, left of the bin */
+/* In use (on a QR code): a green check in the card's top-left corner */
 .spcard__used {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
   display: grid;
   place-items: center;
   width: 32px;
@@ -6756,6 +7081,36 @@ html[data-full-map] .navbar {
 .spcard__foot .icon-btn .ico {
   width: 15px;
   height: 15px;
+}
+/* Admins: each card can be picked up, so it shows an open hand (a click still opens the sponsor);
+   no text selection or phone long-press menu gets in the way of holding it */
+.spcards.can-sort .spcard {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.spcards.can-sort .spcard__main {
+  cursor: grab;
+}
+/* While one is dragged: it's lifted above the others and follows the pointer (SponsorCoins), the
+   hand closes, and the row doesn't snap */
+.spcards.is-sorting .crail,
+.spcards.is-sorting .spcard__main {
+  cursor: grabbing;
+}
+.spcards.is-sorting .crail {
+  scroll-snap-type: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grabbing;
+}
+.spcard.is-dragging {
+  z-index: 3;
+  transition: none;
+  cursor: grabbing;
+  box-shadow:
+    0 30px 50px -24px rgba(18, 191, 234, 0.7),
+    0 0 0 1px rgba(18, 191, 234, 0.55);
 }
 @media (prefers-reduced-motion: reduce) {
   .spcard {

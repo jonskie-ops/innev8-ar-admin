@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
 import { adminOnly } from "../dal";
-import { dbError, done, failed, Invalid, NEEDS_SPONSOR_LOGOS, NOT_ADMIN, text, type FormState } from "../form";
+import { dbError, done, failed, Invalid, NEEDS_SPONSOR_DESCRIPTIONS, NEEDS_SPONSOR_LOGOS, NEEDS_SPONSOR_ORDER, NOT_ADMIN, text, type FormState } from "../form";
 import { supabase } from "../supabase";
 
 /** The bucket's limit is 512 KB; a badge (256 px) is a few dozen. */
@@ -47,9 +47,10 @@ function newId(name: string, taken: Set<string>) {
 /** Saves a sponsor (`id` null: adds one, which needs a logo), with their badge: a new one replaces the old. */
 export async function saveSponsor(id: string | null, _: FormState, fd: FormData): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
-  let name, badge;
+  let name, description, badge;
   try {
     name = text(fd, "name", "Name", { max: 40, required: true });
+    description = text(fd, "description", "Description", { max: 300 });
     badge = readBadge(fd);
   } catch (e) {
     if (e instanceof Invalid) return failed(e.message);
@@ -64,6 +65,9 @@ export async function saveSponsor(id: string | null, _: FormState, fd: FormData)
   if (id && !old) return failed("This sponsor was taken off by someone else.");
   const same = all.find((s) => s.id !== id && s.name.toLowerCase() === name.toLowerCase());
   if (same) return failed(`There's already a sponsor called ${same.name}.`);
+  // A database without the sponsor descriptions update: the rest saves, as long as none was written
+  const described = !(await sb.from("sponsors").select("description").limit(1)).error;
+  if (!described && description) return failed(NEEDS_SPONSOR_DESCRIPTIONS);
 
   let path: string | undefined; // undefined: badge unchanged
   if (badge) {
@@ -73,12 +77,16 @@ export async function saveSponsor(id: string | null, _: FormState, fd: FormData)
       .upload(path, new Blob([new Uint8Array(badge.bytes)], { type: badge.type }), { contentType: badge.type, cacheControl: "31536000" });
     if (error) return failed("Couldn't upload the logo. Try again.");
   }
-  const row = path === undefined ? { name } : { name, badge_path: path };
+  const fields = described ? { name, description } : { name };
+  const row = path === undefined ? fields : { ...fields, badge_path: path };
   const cleanup = () => path && sb.storage.from("sponsors").remove([path]);
 
   if (!id) {
     const sponsorId = newId(name, new Set(all.map((s) => s.id)));
-    const { error } = await sb.from("sponsors").insert({ ...row, id: sponsorId });
+    // Last in the organisers' order (a database without the sponsor order update: by name, as before)
+    const { data: last, error: noSort } = await sb.from("sponsors").select("sort").order("sort", { ascending: false }).limit(1);
+    const place = noSort ? {} : { sort: ((last?.[0]?.sort as number | undefined) ?? 0) + 1 };
+    const { error } = await sb.from("sponsors").insert({ ...row, ...place, id: sponsorId });
     if (error) {
       await cleanup();
       return failed(dbError(error, "Someone added a sponsor with that name just now. Try again."));
@@ -94,6 +102,24 @@ export async function saveSponsor(id: string | null, _: FormState, fd: FormData)
   if (path && old?.badge_path) await sb.storage.from("sponsors").remove([old.badge_path]);
   revalidatePath("/", "layout");
   return done("Saved");
+}
+
+/**
+ * The sponsors in this order (their ids, first to last), as dragged on the Sponsors page: one line in
+ * Recent changes. Sponsors not in the list (added by someone else meanwhile) keep their place.
+ */
+export async function orderSponsors(ids: string[]): Promise<FormState> {
+  if (!(await adminOnly())) return failed(NOT_ADMIN);
+  const want = Array.isArray(ids) ? [...new Set(ids.map(String))].filter((id) => /^[a-z0-9-]{1,32}$/.test(id)).slice(0, 500) : [];
+  if (!want.length) return failed("Nothing to put in order.");
+  const { error } = await (await supabase()).rpc("order_sponsors", { p_ids: want });
+  if (error) {
+    // (no such function: the database hasn't got the update yet)
+    if (error.code === "PGRST202" || error.code === "42883") return failed(NEEDS_SPONSOR_ORDER);
+    return failed(dbError(error));
+  }
+  revalidatePath("/", "layout");
+  return done("Order saved");
 }
 
 /** Takes a sponsor off: the codes that had them have none (the database sees to that), and their badge goes. */

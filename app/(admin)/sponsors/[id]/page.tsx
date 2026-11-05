@@ -47,7 +47,11 @@ export default async function SponsorPage({
       {added === "1" && <AddedToast>Sponsor added</AddedToast>}
       <SponsorForm
         key={found?.id ?? "new"}
-        sponsor={found ? { id: found.id, name: found.name, badge: found.badge } : { id: "new", name: "", badge: null }}
+        sponsor={
+          found
+            ? { id: found.id, name: found.name, description: found.description ?? "", badge: found.badge }
+            : { id: "new", name: "", description: "", badge: null }
+        }
         codes={found ? codes.filter((c) => c.sponsor === found.id).map(({ id, num, name, rarity, live }) => ({ id, num, name, rarity, live })) : []}
         save={saveSponsor.bind(null, found ? found.id : null)}
         remove={found ? deleteSponsor.bind(null, found.id) : undefined}

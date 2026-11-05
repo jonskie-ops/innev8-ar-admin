@@ -139,6 +139,10 @@ export type Sponsor = {
   name: string;
   /** In the "sponsors" storage bucket; null: the badge that came with the game (public/sponsors) */
   badge_path: string | null;
+  /** What their logo stands for, under their name on the Sponsors page (none before the sponsor descriptions update) */
+  description?: string;
+  /** Their place on the Sponsors page, set by dragging (none before the sponsor order update: by name) */
+  sort?: number;
   created_at: string;
   updated_at: string;
   badge: string;

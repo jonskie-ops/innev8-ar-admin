@@ -36,6 +36,12 @@ export const NEEDS_CODE_NUMBERS =
 export const NEEDS_SPONSOR_LOGOS =
   "Adding and changing sponsors needs the sponsor logos update first: run supabase/migrations/20261021000000_sponsor_logos.sql in Supabase's SQL Editor.";
 
+export const NEEDS_SPONSOR_DESCRIPTIONS =
+  "A sponsor's description needs the sponsor descriptions update first: run supabase/migrations/20261105000000_sponsor_descriptions.sql in Supabase's SQL Editor.";
+
+export const NEEDS_SPONSOR_ORDER =
+  "Putting the sponsors in your own order needs the sponsor order update first: run supabase/migrations/20261105010000_sponsor_order.sql in Supabase's SQL Editor.";
+
 /** Thrown by the readers below; actions turn it into the form's message. */
 export class Invalid extends Error {}
 
