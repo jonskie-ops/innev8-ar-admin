@@ -14,6 +14,7 @@ will read from.
 | **Prize desk** | Where prizes are given out (below): type or scan the code on a player's prize card, check it, and give the prize, once. Admins and staff. On a phone it's on the Account page |
 | **Sponsors** | The sponsors whose logos go on the QR codes (below): add one with its name and logo, change either, or take one off. Each code's sponsor is chosen on the code's page |
 | **Hunters** | The players with a hunter ID (below): find one by name, province or tag, and see who they've met. Admins delete one, or tick several and delete them together. On a phone it's on the Account page |
+| **Leaderboard** | The hunters as the game ranks them (below): rank, name and tag, province, points, codes found and their last find, with a search, laid out as a big screen would show it (a trophy over **Top hunters**, large rows). It keeps up by itself (every 30 seconds). Admins and staff. On a phone it's in the gear's menu |
 | **Event** | When the hunt starts and ends (Philippine time), test mode, **random spots** (below), and where players claim prizes |
 | **Team** | Who can sign in, as **admin** (changes everything) or **staff** (looks, can't change): open someone to see what they can do. **Add teammate** (top right) opens a pop-up, which shows their temporary password once |
 | **Account** | Your password |
@@ -176,6 +177,17 @@ desk. The prize desk, sponsors, hunters, the team and the event settings work as
 
 Deleting a QR code (before or after the hunt) names any prize that's for finding it: nobody can win
 that prize until another code is chosen on its page.
+
+## Leaderboard
+
+The same board players see in the game (the trophy chip in its top bar), for the whole team: every
+hunter with a confirmed find, ranked by points, then codes found, then whoever got there first. Test
+mode as everywhere (once it's off, testers' finds don't count), and **Final results** once the hunt
+has ended (finds sent after the end don't change it). The page reads it again every 30 seconds while
+it's open. It's laid out for a big screen (a trophy over **Top hunters**, large rows, gold, silver and
+bronze for the first three), so for a projector at the summit, open it and use the browser's full
+screen (F11). The game reads it through the database function in
+`supabase/migrations/20261105030000_leaderboard.sql`; this page works it out the same way from the finds.
 
 ## Hunters
 

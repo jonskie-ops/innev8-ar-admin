@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type BoardEntry, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -111,6 +111,72 @@ export const listGiven = cache(async (testMode: boolean): Promise<Given[] | null
         };
       })
       .sort((a, b) => b.at.localeCompare(a.at));
+  } catch {
+    return null;
+  }
+});
+
+/**
+ * The leaderboard: every hunter with a confirmed find, ranked as the game ranks them (the database's
+ * leaderboard function, …_leaderboard.sql): points (each code once, at its points), then codes found,
+ * then whoever got there first. Test mode as everywhere (once it's off, test finds don't count), and
+ * `final` once the hunt has ended: finds sent after the end don't count. Null before the prize desk
+ * update (no finds yet).
+ */
+export const listBoard = cache(async (): Promise<{ entries: BoardEntry[]; final: boolean; testMode: boolean; started: boolean } | null> => {
+  const sb = await supabase();
+  try {
+    type Find = { hunter_id: string; code_id: string; test: boolean; points: number; at: string };
+    type Who = { id: string; tag: string; name: string; province: string; created_at: string };
+    const [settings, finds, hunters] = await Promise.all([
+      getSettings(),
+      readAll<Find>((from, to) =>
+        sb.from("finds").select("hunter_id, code_id, test, points, at").order("at").order("hunter_id").order("code_id").order("test").range(from, to),
+      ),
+      readAll<Who>((from, to) => sb.from("hunters").select("id, tag, name, province, created_at").order("created_at").order("id").range(from, to)),
+    ]);
+    const end = new Date(settings.ends_at).getTime();
+    const final = !settings.test_mode && Date.now() >= end;
+    // Each hunter's codes: each once, at its highest points, from when it was first found
+    const codesOf = new Map<string, Map<string, { points: number; at: number }>>();
+    for (const f of finds) {
+      const at = new Date(f.at).getTime();
+      if ((f.test && !settings.test_mode) || (final && at > end)) continue;
+      const mine = codesOf.get(f.hunter_id) ?? new Map();
+      codesOf.set(f.hunter_id, mine);
+      const was = mine.get(f.code_id);
+      mine.set(f.code_id, { points: Math.max(was?.points ?? 0, f.points), at: Math.min(was?.at ?? at, at) });
+    }
+    const who = new Map(hunters.map((h) => [h.id, h]));
+    const entries = [...codesOf]
+      .flatMap(([id, mine]) => {
+        const h = who.get(id);
+        if (!h) return [];
+        const list = [...mine.values()];
+        return [{
+          id,
+          tag: h.tag,
+          name: h.name,
+          province: h.province,
+          joined: h.created_at,
+          score: list.reduce((n, c) => n + c.points, 0),
+          codes: list.length,
+          // (when they reached their score: their latest code)
+          reached: Math.max(...list.map((c) => c.at)),
+        }];
+      })
+      .sort((a, b) => b.score - a.score || b.codes - a.codes || a.reached - b.reached || a.joined.localeCompare(b.joined))
+      .map((e, i) => ({
+        rank: i + 1,
+        id: e.id,
+        tag: e.tag,
+        name: e.name,
+        province: e.province,
+        score: e.score,
+        codes: e.codes,
+        last: new Date(e.reached).toISOString(),
+      }));
+    return { entries, final, testMode: settings.test_mode, started: Date.now() >= new Date(settings.starts_at).getTime() };
   } catch {
     return null;
   }

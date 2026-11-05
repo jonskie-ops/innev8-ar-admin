@@ -23,6 +23,7 @@ const PAGES: [href: string, title: string, sub: string, keys: string][] = [
   ["/desk", "Prize desk", "Check a player's prize code and give the prize", "claim claims give winners scan code redeem"],
   ["/sponsors", "Sponsors", "Their logos on the QR codes", "logos brands partners badges"],
   ["/hunters", "Hunters", "The players with a hunter ID", "players participants delete networking meetings"],
+  ["/leaderboard", "Leaderboard", "The top hunters, as the game ranks them", "ranks ranking scores top players points winners projector"],
   ["/account#event", "Event settings", "In Settings: dates, test mode, the prize desk", "event dates schedule summit test mode prize desk claim"],
   ["/team", "Team", "Who can sign in", "people organisers staff admins sign-ins"],
   ["/account", "Settings", "Your account and password, and the event", "your account password profile me"],

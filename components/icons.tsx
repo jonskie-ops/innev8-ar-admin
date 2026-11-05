@@ -191,6 +191,12 @@ export const HunterIcon = (p: P) => (
     <path d="M17 16h1.5v1.5H17z" />
   </Svg>
 );
+export const TrophyIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M8 4h8v5a4 4 0 0 1-8 0V4z" />
+    <path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6M10 17h4" />
+  </Svg>
+);
 export const ImageIcon = (p: P) => (
   <Svg {...p}>
     <rect x="3.5" y="4.5" width="17" height="15" rx="2" />

@@ -266,6 +266,12 @@ export type Member = {
   created_at: string;
 };
 
+/**
+ * A hunter's place on the leaderboard, ranked as the game ranks them (lib/data.ts listBoard, the same
+ * as the database's leaderboard function): their points, codes found, and when they found their last.
+ */
+export type BoardEntry = { rank: number; id: string; tag: string; name: string; province: string; score: number; codes: number; last: string };
+
 /** A player's hunter ID (made when they sign up in the game), and how many hunters they've met. */
 export type Hunter = {
   id: string;

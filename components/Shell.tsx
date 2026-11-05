@@ -26,6 +26,7 @@ import {
   ShieldIcon,
   SponsorIcon,
   TeamIcon,
+  TrophyIcon,
   UserIcon,
 } from "./icons";
 import { LinkPending, NavProgress, Spinner } from "./Progress";
@@ -39,6 +40,7 @@ const NAV = [
   { href: "/desk", label: "Prize desk", short: "Desk", Icon: DeskIcon },
   { href: "/sponsors", label: "Sponsors", short: "Sponsors", Icon: SponsorIcon },
   { href: "/hunters", label: "Hunters", short: "Hunters", Icon: HunterIcon },
+  { href: "/leaderboard", label: "Leaderboard", short: "Ranks", Icon: TrophyIcon },
   { href: "/team", label: "Team", short: "Team", Icon: TeamIcon },
 ] as const;
 /** When the newest hunter this browser has seen on the Hunters page joined (kept on the organiser's own device). */
@@ -66,8 +68,8 @@ const markSeenHunter = (at: string) => {
   seenListeners.forEach((fn) => fn());
 };
 
-/** On phones, the tab bar has room for all but the hunters and the team (found with search there) */
-const TABS = NAV.filter(({ href }) => href !== "/hunters" && href !== "/team");
+/** On phones, the tab bar has room for all but the hunters, the leaderboard and the team (the gear's menu, or search) */
+const TABS = NAV.filter(({ href }) => href !== "/hunters" && href !== "/leaderboard" && href !== "/team");
 
 /**
  * The admin's frame: a rail of icons down the side, with your account and sign out at its foot (on
@@ -174,7 +176,7 @@ export function Shell({
                     </small>
                   </span>
                 </Link>
-                <PhoneMenu current={current("/account")} teamPage={current("/team")} />
+                <PhoneMenu current={current("/account")} teamPage={current("/team")} boardPage={current("/leaderboard")} />
               </div>
             </header>
           )}
@@ -202,10 +204,10 @@ export function Shell({
 
 /**
  * On phones (and tablets), the top bar's gear (in place of the profile picture): a little menu with your
- * account, the team, the live site (the summit page), the app's settings, and sign out under them. (On
+ * account, the team, the leaderboard, the live site (the summit page), the app's settings, and sign out under them. (On
  * computers, these are in the rail and the top bar.)
  */
-function PhoneMenu({ current, teamPage }: { current?: "page"; teamPage?: "page" }) {
+function PhoneMenu({ current, teamPage, boardPage }: { current?: "page"; teamPage?: "page"; boardPage?: "page" }) {
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -253,6 +255,10 @@ function PhoneMenu({ current, teamPage }: { current?: "page"; teamPage?: "page" 
           <Link href="/team" className="setmenu__item" aria-current={teamPage} onClick={() => setOpen(false)}>
             <TeamIcon />
             Team
+          </Link>
+          <Link href="/leaderboard" className="setmenu__item" aria-current={boardPage} onClick={() => setOpen(false)}>
+            <TrophyIcon />
+            Leaderboard
           </Link>
           {/* (the top bar's globe, which phones have no room for) */}
           <a href={SUMMIT_URL} target="_blank" rel="noopener" className="setmenu__item" aria-label="Live site: the summit page, innev8.org (new tab)" onClick={() => setOpen(false)}>
