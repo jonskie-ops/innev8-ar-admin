@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AreasPanel } from "@/components/AreasPanel";
-import { Head } from "@/components/bits";
+import { Head, HuntLocked } from "@/components/bits";
 import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { LocationForm } from "@/components/LocationForm";
 import { deleteLocation, redrawMap, saveLocation } from "@/lib/actions/locations";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { listCodes, listLocations, listZones, locationOf } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Location } from "@/lib/hunt";
@@ -21,7 +21,9 @@ export default async function LocationPage({
   searchParams: Promise<{ added?: string }>;
 }) {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const { id } = await params;
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/locations");
@@ -55,6 +57,7 @@ export default async function LocationPage({
         title={found ? found.name : "New location"}
         lead={found ? `Last changed ${stamp(found.updated_at)}` : "Where it is, and how wide its map is. Its map for the game is drawn from OpenStreetMap."}
       />
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
       {added && (
         <p className="banner banner--ok">
           <CheckIcon />

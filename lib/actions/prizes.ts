@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
-import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_PRIZE_CODE, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { adminOnly, huntLock } from "../dal";
+import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_PRIZE_CODE, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { PHOTO_ZOOM, type PhotoFit, type PrizeRule } from "../hunt";
 import { supabase } from "../supabase";
 
@@ -45,6 +45,7 @@ const noCodeRule = (e: { code?: string }) => ["PGRST204", "42703", "23514"].incl
 /** Saves a prize (`id` null: adds one), with its photo: a new one replaces the old. */
 export async function savePrize(id: string | null, _: FormState, fd: FormData): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   let v;
   try {
     v = readPrize(fd);
@@ -110,6 +111,7 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
 
 export async function deletePrize(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const sb = await supabase();
   const { data, error } = await sb.from("prizes").delete().eq("id", id).select("photo_path");
   if (error) return failed(dbError(error));

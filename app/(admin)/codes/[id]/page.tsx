@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head, pad } from "@/components/bits";
+import { Head, HuntLocked, pad } from "@/components/bits";
 import { CodeForm } from "@/components/CodeForm";
 import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
-import { requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listSponsors, listZones, locationOf } from "@/lib/data";
+import { huntLock, requireTeammate } from "@/lib/dal";
+import { listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Code } from "@/lib/hunt";
 import { DEFAULT_LOCATION, planOf } from "@/lib/venue";
@@ -21,15 +21,18 @@ export default async function CodePage({
   searchParams: Promise<{ added?: string; at?: string }>;
 }) {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const { id } = await params;
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/codes");
-  const [codes, zones, { sponsors, ready }, { locations }, { added, at }] = await Promise.all([
+  const [codes, zones, { sponsors, ready }, { locations }, prizes, { added, at }] = await Promise.all([
     listCodes(),
     listZones(),
     listSponsors(),
     listLocations(),
+    listPrizes(),
     searchParams,
   ]);
   const found = codes.find((c) => c.id === id);
@@ -70,6 +73,7 @@ export default async function CodePage({
         title={isNew ? "New QR code" : `#${pad(code.num)} ${code.name}`}
         lead={isNew ? "Where it hides, the clue that leads to it, and what it's worth." : `Last changed ${stamp(code.updated_at)}`}
       />
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
       {added && (
         <p className="banner banner--ok">
           <CheckIcon />
@@ -87,6 +91,7 @@ export default async function CodePage({
         others={codes.filter((c) => c.id !== code.id)}
         save={saveCode.bind(null, isNew ? null : code.id)}
         remove={isNew ? undefined : deleteCode.bind(null, code.id)}
+        prizes={prizes.filter((p) => p.rule === "code" && p.rule_code === code.id).map((p) => p.name)}
         canEdit={canEdit}
       />
     </>

@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- prize photos come from Supabase storage, already sized */
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head } from "@/components/bits";
+import { Head, HuntLocked } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
 import { GiftIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { deletePrize } from "@/lib/actions/prizes";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listPrizes, photoUrl } from "@/lib/data";
 import { photoStyle, ruleText } from "@/lib/hunt";
 
@@ -14,7 +14,9 @@ export const metadata: Metadata = { title: "Prizes" };
 
 export default async function PrizesPage() {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const [prizes, codes, { locations }] = await Promise.all([listPrizes(), listCodes(), listLocations()]);
   const total = codes.filter(inGame(locations)).length;
 
@@ -29,6 +31,7 @@ export default async function PrizesPage() {
           </Link>
         )}
       </Head>
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
 
       {prizes.length ? (
         <ul className="prizes" role="list">

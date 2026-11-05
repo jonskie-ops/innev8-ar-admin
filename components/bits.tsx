@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { day, time } from "@/lib/format";
 import type { SponsorView } from "@/lib/hunt";
-import { ArrowLeftIcon } from "./icons";
+import { ArrowLeftIcon, LockIcon } from "./icons";
 
 /** A page's title block, with its main button on the right. */
 export function Head({
@@ -32,6 +33,22 @@ export function Head({
       </div>
       {children && <div className="head__acts">{children}</div>}
     </header>
+  );
+}
+
+/**
+ * For an admin while the hunt is on (lib/dal.ts huntLock): why the QR codes, prizes and locations
+ * can only be looked at, and until when.
+ */
+export function HuntLocked({ until }: { until: string }) {
+  return (
+    <p className="banner">
+      <LockIcon />
+      <span>
+        The hunt is on, so QR codes, prizes and locations can&apos;t be changed until it ends ({time(until)}, {day(until)}).
+        The prize desk works as usual.
+      </span>
+    </p>
   );
 }
 

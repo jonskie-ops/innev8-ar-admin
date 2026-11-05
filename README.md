@@ -165,6 +165,18 @@ This needs the update `supabase/migrations/20261024000000_prize_desk.sql` (run i
 Editor). Until it's run, the Prize desk page says what to run, and the game's prize cards say they
 need a signal.
 
+## While the hunt is on
+
+From the hunt's start to its end (Event settings), with test mode off, **QR codes, prizes and
+locations can't be changed**: their pages show them as staff see them, with a note saying until
+when, and their Add, Delete and on/off switches are gone (the actions refuse too, `lib/dal.ts`
+`huntLock`). That way nobody's progress changes under them: a code switched on would take the All
+codes prize away from players who had them all, and a prize switched off could still be given at the
+desk. The prize desk, sponsors, hunters, the team and the event settings work as usual.
+
+Deleting a QR code (before or after the hunt) names any prize that's for finding it: nobody can win
+that prize until another code is chosen on its page.
+
 ## Hunters
 
 Each player gets a hunter ID when they sign up in the game: a 5-letter tag and their hunter QR, for
@@ -172,9 +184,14 @@ the "meet a hunter" tasks. The Hunters page lists them, newest first, with each 
 they joined and how many hunters they've met.
 
 - **Delete** a test player or a duplicate with its bin, or tick several (**Tick all** ticks the ones
-  showing) and **Delete ticked**. It asks first. Their hunter QR stops working and their meetings go
-  (for the hunters they met too); the codes they found and the tasks they've done stay on their
-  phone, which gets a new hunter ID the next time the game opens.
+  showing) and **Delete ticked**. It asks first. Their hunter QR stops working, and their meetings
+  (for the hunters they met too), finds and prize cards go. The game on their phone still shows the
+  codes it found, but they no longer count for prizes; it gets a new hunter ID the next time it opens.
+- A hunter who was **given a prize** at the desk (not in test mode) **can't be deleted**: the record
+  of the prize would go with them, while the stock stayed lowered and the desk's same-name check
+  could no longer see it. Deleting one of them says who; with several ticked, nobody is deleted
+  until they're unticked. The database refuses it too, with the update
+  `supabase/migrations/20261105020000_hunter_prizes_and_sessions.sql`.
 - **Recent changes** has one line for each delete: "removed the hunter Ana", or "removed 12 hunters".
 
 Deleting needs the update `supabase/migrations/20261023000000_hunters.sql` (run it in the SQL
@@ -187,7 +204,10 @@ the game used for that.
 ## Security
 
 There's no sign-up: an admin adds each organiser, who gets a temporary password and chooses their
-own at first sign-in. Every check happens at several levels, so one missed check doesn't open
+own at first sign-in. A new temporary password (an admin's **reset** on the Team page) signs them out
+everywhere they were signed in, so a browser left signed in (a lost laptop) can't carry on or choose
+the new password itself; that needs the update
+`supabase/migrations/20261105020000_hunter_prizes_and_sessions.sql`. Every check happens at several levels, so one missed check doesn't open
 anything:
 
 1. **The database decides last** (`supabase/migrations`). Row level security is on for every table.

@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head } from "@/components/bits";
+import { Head, HuntLocked } from "@/components/bits";
 import { ConfirmButton } from "@/components/form";
 import { AlertIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { LiveSwitch } from "@/components/LiveSwitch";
 import { VenueMap } from "@/components/VenueMap";
 import { deleteLocation } from "@/lib/actions/locations";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { listCodes, listLocations, listZones, locationOf } from "@/lib/data";
 import { deleteQuestion, turnOnQuestion } from "@/lib/format";
 
@@ -15,7 +15,9 @@ export const metadata: Metadata = { title: "Locations" };
 /** Where the hunt can be played: each location with its map, its QR codes and its switch. */
 export default async function LocationsPage() {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const [{ locations, ready }, codes, zones] = await Promise.all([listLocations(), listCodes(), listZones()]);
 
   return (
@@ -33,6 +35,7 @@ export default async function LocationsPage() {
           </Link>
         )}
       </Head>
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
       {!ready && (
         <p className="banner">
           <AlertIcon />

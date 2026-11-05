@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
-import { adminOnly } from "../dal";
-import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { adminOnly, huntLock } from "../dal";
+import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
@@ -84,6 +84,7 @@ async function has(column: "task" | "sponsor" | "radius") {
 /** Saves a QR code (`id` null: adds one, with a new code value for its 3D pattern). */
 export async function saveCode(id: string | null, _: FormState, fd: FormData): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   let v;
   try {
     v = readCode(fd);
@@ -134,6 +135,7 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
 
 export async function deleteCode(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const { error } = await (await supabase()).from("codes").delete().eq("id", id);
   if (error) return failed(dbError(error));
   revalidatePath("/", "layout");
@@ -146,6 +148,7 @@ export async function deleteCode(id: string): Promise<FormState> {
  */
 export async function setLive(kind: "codes" | "prizes" | "locations", id: string, live: boolean): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   if (kind !== "codes" && kind !== "prizes" && kind !== "locations") return failed("Unknown item.");
   const { data, error } = await (await supabase())
     .from(kind)

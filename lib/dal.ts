@@ -59,3 +59,17 @@ export async function adminOnly(): Promise<Teammate | null> {
   const me = (await currentUser())?.teammate;
   return me && me.role === "admin" && !me.mustChangePassword ? me : null;
 }
+
+/**
+ * The hunt is on (between its start and end, test mode off): QR codes, prizes and locations stay as
+ * they are until it ends (`until`), so nobody's progress or prize changes under them (a code switched
+ * on would "un-win" the All codes prize; a prize switched off would still be given at the desk). The
+ * prize desk works as usual. Null when they can be changed. Their pages show them read-only, and
+ * their actions check it too.
+ */
+export const huntLock = cache(async (): Promise<{ until: string } | null> => {
+  const { data } = await (await supabase()).from("settings").select("starts_at, ends_at, test_mode").maybeSingle();
+  if (!data || data.test_mode) return null;
+  const now = Date.now();
+  return now >= new Date(data.starts_at).getTime() && now < new Date(data.ends_at).getTime() ? { until: data.ends_at } : null;
+});

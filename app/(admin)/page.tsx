@@ -8,7 +8,7 @@ import { ArrowRightIcon, ChevronRightIcon, GiftIcon, PlusIcon } from "@/componen
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { PlaceMaps } from "@/components/PlaceMaps";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { getSettings, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { firstSponsor, photoStyle, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
@@ -22,7 +22,9 @@ const BADGE = {
 
 export default async function OverviewPage() {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const [codes, zones, prizes, settings, activity, { sponsors }, { locations }] = await Promise.all([
     listCodes(),
     listZones(),

@@ -1,7 +1,7 @@
 import type { Change } from "@/components/Changes";
 import type { Findable } from "@/components/Find";
 import { Shell } from "@/components/Shell";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, placeOn, recentActivity } from "@/lib/data";
 import { didWhat } from "@/lib/format";
 import { ruleText } from "@/lib/hunt";
@@ -40,7 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </Shell>
     );
 
-  const [codes, zones, prizes, { sponsors, ready }, { locations, ready: placesReady }, activity, joined] = await Promise.all([
+  const [codes, zones, prizes, { sponsors, ready }, { locations, ready: placesReady }, activity, joined, lock] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
@@ -48,6 +48,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     listLocations(),
     recentActivity(8),
     newestHunter(),
+    huntLock(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter(inGame(locations)).length;
@@ -103,10 +104,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ...PAGES.map(([href, title, sub, keys]) => page(href, title, sub, keys)),
     ...(me.role === "admin"
       ? [
-          page("/codes/new", "Add a QR code", "A new code, its clue and its pin", "new qr code"),
-          page("/prizes/new", "Add a prize", "A new prize and who wins it", "new prize"),
+          // (not while the hunt is on: lib/dal.ts huntLock)
+          ...(lock ? [] : [page("/codes/new", "Add a QR code", "A new code, its clue and its pin", "new qr code")]),
+          ...(lock ? [] : [page("/prizes/new", "Add a prize", "A new prize and who wins it", "new prize")]),
           ...(ready ? [page("/sponsors/new", "Add a sponsor", "Their name and logo", "new sponsor logo")] : []),
-          ...(placesReady ? [page("/locations/new", "Add a location", "Somewhere else to play, with its map", "new location place venue")] : []),
+          ...(placesReady && !lock ? [page("/locations/new", "Add a location", "Somewhere else to play, with its map", "new location place venue")] : []),
         ]
       : []),
   ];

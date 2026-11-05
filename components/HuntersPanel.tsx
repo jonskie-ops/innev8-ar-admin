@@ -84,7 +84,7 @@ export function HuntersPanel({ hunters, canEdit }: { hunters: Hunter[]; canEdit:
                 if (!r?.error) setTicked(new Set());
                 return r;
               }}
-              question={`Delete ${chosen.length === 1 ? chosen[0].name : `these ${chosen.length} hunters`}? Their hunter QR stops working and their meetings are removed.`}
+              question={`Delete ${chosen.length === 1 ? chosen[0].name : `these ${chosen.length} hunters`}? Their hunter QR stops working, and their meetings, finds and prize cards are removed.`}
               confirm="Delete"
               className="btn btn--ghost btn--sm btn--quiet-danger"
             >
@@ -125,7 +125,7 @@ export function HuntersPanel({ hunters, canEdit }: { hunters: Hunter[]; canEdit:
                 <span className="person__acts">
                   <ConfirmButton
                     action={() => deleteHunters([h.id])}
-                    question={`Delete ${h.name} (${h.province})? Their hunter QR stops working and their meetings are removed.`}
+                    question={`Delete ${h.name} (${h.province})? Their hunter QR stops working, and their meetings, finds and prize cards are removed.`}
                     confirm="Delete"
                     className="icon-btn icon-btn--danger"
                     label={`Delete ${h.name}`}

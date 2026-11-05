@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
 import { after } from "next/server";
-import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_LOCATIONS, NOT_ADMIN, text, whole, type FormState } from "../form";
+import { adminOnly, huntLock } from "../dal";
+import { checked, dbError, done, failed, Invalid, NEEDS_LOCATIONS, HUNT_LOCKED, NOT_ADMIN, text, whole, type FormState } from "../form";
 import { MAP_WIDTH, mapState, type MapDrawing } from "../hunt";
 import { fetchOutlines, searchPlaces, type Found } from "../osm";
 import { supabase } from "../supabase";
@@ -90,6 +90,7 @@ function readPlace(fd: FormData) {
  */
 export async function saveLocation(id: string | null, _: FormState, fd: FormData): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   let v;
   try {
     v = {
@@ -147,6 +148,7 @@ export async function saveLocation(id: string | null, _: FormState, fd: FormData
  */
 export async function redrawMap(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const sb = await supabase();
   const { data: l } = await sb.from("locations").select("id, lat, lng, width, outlines").eq("id", id).maybeSingle();
   if (!l) return failed("This location was removed by someone else.");
@@ -165,6 +167,7 @@ export async function redrawMap(id: string): Promise<FormState> {
  */
 export async function deleteLocation(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const sb = await supabase();
   const { data: all, error: notYet } = await sb.from("locations").select("id");
   if (notYet) return failed(NEEDS_LOCATIONS);
@@ -180,6 +183,7 @@ export async function deleteLocation(id: string): Promise<FormState> {
 /** An area of a location (`zoneId` null: a new one): its name, as players read it ("Somewhere in the Main hall"). */
 export async function saveZone(locationId: string, zoneId: string | null, name: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const clean = String(name ?? "").trim().replace(/\s+/g, " ");
   if (!clean) return failed("Give the area a name.");
   if (clean.length > 40) return failed("That name is too long (40 characters at most).");
@@ -204,6 +208,7 @@ export async function saveZone(locationId: string, zoneId: string | null, name: 
 /** Removes an area: only when no QR code is in it, and not a location's last one. */
 export async function deleteZone(zoneId: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
+  if (await huntLock()) return failed(HUNT_LOCKED);
   const sb = await supabase();
   const { data: zone } = await sb.from("zones").select("id, location_id").eq("id", zoneId).maybeSingle();
   if (!zone) return failed("This area was removed by someone else.");

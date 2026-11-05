@@ -5694,6 +5694,12 @@ button.person__who:focus-visible {
   border-radius: 14px;
   background: rgba(3, 8, 23, 0.55);
 }
+.crew__otp-out {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.85);
+}
 .crew__spot-foot {
   display: flex;
   flex-wrap: wrap;

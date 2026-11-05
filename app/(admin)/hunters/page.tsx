@@ -15,7 +15,7 @@ export default async function HuntersPage() {
       <Head
         eyebrow="Players"
         title="Hunters"
-        lead={`Each player gets a hunter ID when they sign up in the game: their hunter QR, for meeting other hunters.${canEdit ? " Delete a test player or a duplicate: the codes they found stay on their phone." : ""}`}
+        lead={`Each player gets a hunter ID when they sign up in the game: their hunter QR, for meeting other hunters.${canEdit ? " Delete a test player or a duplicate (not one who was given a prize at the desk)." : ""}`}
       />
       {hunters?.length === 0 ? (
         <section className="empty-text">

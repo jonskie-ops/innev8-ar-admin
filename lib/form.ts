@@ -18,6 +18,9 @@ export const failed = (error: string): FormState => ({ error, at: Date.now() });
 
 export const NOT_ADMIN = "Only admins can change this. Ask an admin on your team.";
 
+/** (lib/dal.ts huntLock) */
+export const HUNT_LOCKED = "The hunt is on: QR codes, prizes and locations can't be changed until it ends.";
+
 export const NEEDS_GPS =
   "GPS spots need the GPS update first: run supabase/migrations/20261020000000_gps.sql in Supabase's SQL Editor.";
 
@@ -41,6 +44,8 @@ export const NEEDS_SPONSOR_DESCRIPTIONS =
 
 export const NEEDS_SPONSOR_ORDER =
   "Putting the sponsors in your own order needs the sponsor order update first: run supabase/migrations/20261105010000_sponsor_order.sql in Supabase's SQL Editor.";
+
+export const NEEDS_HUNT_FIXES = "supabase/migrations/20261105020000_hunter_prizes_and_sessions.sql";
 
 /** Thrown by the readers below; actions turn it into the form's message. */
 export class Invalid extends Error {}

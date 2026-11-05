@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
-import { dbError, done, failed, Invalid, NOT_ADMIN, oneOf, text, type FormState } from "../form";
+import { dbError, done, failed, Invalid, NEEDS_HUNT_FIXES, NOT_ADMIN, oneOf, text, type FormState } from "../form";
 import { tempPassword } from "../random";
 import { supabase, supabaseAdmin } from "../supabase";
 
@@ -55,17 +55,25 @@ export async function setRole(userId: string, role: string): Promise<FormState> 
   return done("Saved");
 }
 
-/** A new temporary password, for a teammate who forgot theirs. */
+/**
+ * A new temporary password, for a teammate who forgot theirs (or whose laptop went missing): they're
+ * signed out everywhere, so a browser still signed in can't go on, or choose the new password itself.
+ */
 export async function resetPassword(userId: string): Promise<FormState> {
   const me = await adminOnly();
   if (!me) return failed(NOT_ADMIN);
   if (userId === me.id) return failed("Change your own password on your Account page.");
   const password = tempPassword();
-  const { error } = await supabaseAdmin().auth.admin.updateUserById(userId, { password });
+  const admin = supabaseAdmin();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
   if (error) return failed("Couldn't reset it. Try again.");
   await (await supabase()).from("team").update({ must_change_password: true }).eq("user_id", userId);
+  const { error: still } = await admin.rpc("end_sessions", { p_user: userId });
   revalidatePath("/", "layout");
-  return done("New temporary password", { password });
+  // (no such function: the database hasn't got the update yet, so they stay signed in where they are)
+  if (still)
+    return done(`They're still signed in where they already were: run ${NEEDS_HUNT_FIXES} in Supabase's SQL Editor to sign them out too.`, { password });
+  return done("They're signed out everywhere they were signed in.", { password });
 }
 
 export async function removeTeammate(userId: string): Promise<FormState> {

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Head } from "@/components/bits";
+import { Head, HuntLocked } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon } from "@/components/icons";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { inGame, listCodes, listLocations, listSponsors, listZones, locationOf, placeOn } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
 import { firstSponsor, sponsorIn } from "@/lib/hunt";
@@ -12,7 +12,9 @@ export const metadata: Metadata = { title: "QR codes" };
 
 export default async function CodesPage({ searchParams }: { searchParams: Promise<{ code?: string | string[] }> }) {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const [codes, zones, { sponsors }, { locations }, { code }] = await Promise.all([
     listCodes(),
     listZones(),
@@ -64,6 +66,7 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
           </Link>
         )}
       </Head>
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
 
       {items.length ? (
         <CodeBrowser

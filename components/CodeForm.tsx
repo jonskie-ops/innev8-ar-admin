@@ -64,6 +64,7 @@ export function CodeForm({
   others,
   save,
   remove,
+  prizes = [],
   canEdit,
 }: {
   code: Code;
@@ -78,6 +79,8 @@ export function CodeForm({
   others: (Pin & { sponsor?: string; location_id?: string })[];
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   remove?: () => Promise<FormState>;
+  /** The prizes for finding this code ("Get the Symphonics QR"): named when it's deleted, as nobody can win them then */
+  prizes?: string[];
   canEdit: boolean;
 }) {
   const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
@@ -527,7 +530,7 @@ export function CodeForm({
           {remove ? <AutoSaveToast state={state} pending={pending} waiting={waiting} /> : <Status state={state} />}
           <span className="savebar__btns">
             {remove ? (
-              <ConfirmButton action={remove} question={`Delete #${code.num} ${code.name}? It's gone from the game for everyone. (Turning it off can be undone.)`}>
+              <ConfirmButton action={remove} question={deleteQuestion(code, prizes)}>
                 <TrashIcon />
                 Delete
               </ConfirmButton>
@@ -555,4 +558,18 @@ export function CodeForm({
       )}
     </form>
   );
+}
+
+/**
+ * "Delete #03 Lobby? It's gone from the game for everyone." and, when a prize is for finding it, that
+ * nobody can win that prize until another code is chosen on its page.
+ */
+function deleteQuestion(code: Pick<Code, "num" | "name">, prizes: string[]) {
+  const names = prizes.map((p) => `"${p}"`);
+  const many = names.length > 1;
+  const list = many ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+  const tied = names.length
+    ? ` The prize${many ? "s" : ""} ${list} ${many ? "are" : "is"} for finding it: nobody can win ${many ? "them" : "it"} until another QR code is chosen on ${many ? "their" : "its"} page.`
+    : "";
+  return `Delete #${code.num} ${code.name}? It's gone from the game for everyone.${tied} (Turning it off can be undone.)`;
 }

@@ -84,6 +84,8 @@ function Spotlight({ m, you, canEdit }: { m: Member; you: boolean; canEdit: bool
       {answer?.password ? (
         <div className="crew__otp">
           <OneTimePassword who={name} password={answer.password} />
+          {/* Signed out everywhere (or why not yet) */}
+          {answer.ok && <p className="crew__otp-out">{answer.ok}</p>}
         </div>
       ) : (
         <div className="crew__can">

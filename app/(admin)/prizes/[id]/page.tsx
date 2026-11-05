@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { Head, pad } from "@/components/bits";
+import { Head, HuntLocked, pad } from "@/components/bits";
 import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { PrizeForm } from "@/components/PrizeForm";
 import { deletePrize, savePrize } from "@/lib/actions/prizes";
-import { requireTeammate } from "@/lib/dal";
+import { huntLock, requireTeammate } from "@/lib/dal";
 import { getPrize, inGame, listCodes, listLocations, locationOf, photoUrl } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Prize } from "@/lib/hunt";
@@ -22,7 +22,9 @@ export default async function PrizePage({
   searchParams: Promise<{ added?: string }>;
 }) {
   const me = await requireTeammate();
-  const canEdit = me.role === "admin";
+  // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
+  const lock = await huntLock();
+  const canEdit = me.role === "admin" && !lock;
   const { id } = await params;
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/prizes");
@@ -58,6 +60,7 @@ export default async function PrizePage({
         title={isNew ? "New prize" : prize.name}
         lead={isNew ? "What it is, who wins it, and how many you have." : `Last changed ${stamp(prize.updated_at)}`}
       />
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
       {added && (
         <p className="banner banner--ok">
           <CheckIcon />
