@@ -55,29 +55,34 @@ export function LeaderboardPanel({
   return (
     <section className="lbview" aria-labelledby="lb-title">
       <header className="lbview__head">
-        <span className="lbview__icon" aria-hidden="true">
-          <TrophyIcon />
-        </span>
-        <p>INNEV8 QR Hunt · {state}</p>
-        <h1 id="lb-title">Top hunters</h1>
+        <div className="lbview__title">
+          <p>INNEV8 QR Hunt · {state}</p>
+          <h1 id="lb-title">Top hunters</h1>
+        </div>
+        <div className="lbview__side">
+          {entries[0] && (
+            <p className="team__counts">
+              <span className="count">
+                <b>{entries[0].score.toLocaleString("en-PH")}</b> top score
+              </span>
+              {latest && (
+                <span className="count">
+                  last find <b>{when(latest)}</b>
+                </span>
+              )}
+            </p>
+          )}
+          {/* The trophy carries how many hunters are on the board, like a notification count */}
+          <span className="lbview__icon" title={`${entries.length.toLocaleString("en-PH")} on the board`}>
+            <TrophyIcon />
+            <b className="lbview__badge" aria-label={`${entries.length.toLocaleString("en-PH")} on the board`}>
+              {entries.length > 999 ? "999+" : entries.length.toLocaleString("en-PH")}
+            </b>
+          </span>
+        </div>
       </header>
 
       <div className="lbview__bar">
-        <p className="team__counts">
-          <span className="count count--admin">
-            <b>{entries.length.toLocaleString("en-PH")}</b> on the board
-          </span>
-          {entries[0] && (
-            <span className="count">
-              <b>{entries[0].score.toLocaleString("en-PH")}</b> top score
-            </span>
-          )}
-          {latest && (
-            <span className="count">
-              last find <b>{when(latest)}</b>
-            </span>
-          )}
-        </p>
         {entries.length > 0 && (
           <label className="hunters__find">
             <SearchIcon />
@@ -134,7 +139,6 @@ export function LeaderboardPanel({
           </button>
         </div>
       )}
-      {!final && <p className="lbview__foot">Updates by itself every 30 seconds</p>}
     </section>
   );
 }

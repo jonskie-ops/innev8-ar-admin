@@ -8293,20 +8293,36 @@ html[data-full-map] .navbar {
 }
 
 /* ---------------------------------------------------------------- the Leaderboard page
-   As a big screen would show it: a trophy over "Top hunters", the counts and a search, then every
-   hunter on the board in a large row (gold, silver and bronze for the first three) */
+   As a big screen would show it: "Top hunters" on the left, the counts and the trophy on the right,
+   a search, then every hunter on the board in a large row (gold, silver and bronze for the first
+   three) */
 .lbview {
   display: grid;
   gap: 18px;
-  width: min(1100px, 100%);
-  margin: 0 auto;
 }
 .lbview__head {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
   padding: 8px 0 4px;
-  text-align: center;
+}
+.lbview__title {
+  display: grid;
+  gap: 8px;
+}
+.lbview__side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 16px;
+  margin-left: auto;
+}
+.lbview__side .team__counts {
+  margin: 0;
+  justify-content: flex-end;
 }
 .lbview__icon {
   display: grid;
@@ -8322,14 +8338,34 @@ html[data-full-map] .navbar {
   width: 32px;
   height: 32px;
 }
-.lbview__head p {
+/* How many are on the board, as a notification count on the trophy's top right */
+.lbview__icon {
+  position: relative;
+}
+.lbview__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--gold);
+  box-shadow: 0 0 0 2px var(--bg);
+  font: 800 10.5px/1 var(--font-h);
+  color: var(--navy-950);
+  font-variant-numeric: tabular-nums;
+}
+.lbview__title p {
   margin: 4px 0 0;
   font: 800 12px/1 var(--font-h);
   letter-spacing: 0.3em;
   text-transform: uppercase;
   color: var(--gold);
 }
-.lbview__head h1 {
+.lbview__title h1 {
   margin: 0;
   font: 800 clamp(32px, 4.4vw, 52px)/1.1 var(--font-h);
 }
@@ -8337,8 +8373,11 @@ html[data-full-map] .navbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px 16px;
+}
+.lbview__bar:empty {
+  display: none;
 }
 .lbview__list {
   display: grid;
@@ -8437,24 +8476,45 @@ html[data-full-map] .navbar {
   display: flex;
   justify-content: center;
 }
-.lbview__foot {
-  margin: 0;
-  font-size: 12.5px;
-  text-align: center;
-  color: var(--faint);
-}
 /* A phone: smaller rows, the search the full width */
 @media (max-width: 600px) {
   .lbview {
     gap: 14px;
   }
+  /* The trophy beside the title, the counts on the line under them */
+  .lbview__head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .lbview__side {
+    display: contents;
+  }
   .lbview__icon {
+    grid-column: 2;
+    grid-row: 1;
     width: 52px;
     height: 52px;
+  }
+  .lbview__side .team__counts {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+  /* "INNEV8 QR Hunt · Test mode" on one line beside the trophy */
+  .lbview__title p {
+    letter-spacing: 0.18em;
   }
   .lbview__icon .ico {
     width: 26px;
     height: 26px;
+  }
+  .lbview__badge {
+    top: 4px;
+    right: 3px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    font-size: 9.5px;
   }
   .lbview__bar .hunters__find {
     max-width: none;
