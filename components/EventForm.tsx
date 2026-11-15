@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/form";
 import { day, fromLocalInput, time } from "@/lib/format";
 import { useNow } from "./Clock";
 import { AutoSaveToast, useAutoSave } from "./form";
-import { ClockIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon } from "./icons";
+import { ClockIcon, EyeIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
 /** "1 day, 10 hours" between two moments. */
@@ -26,6 +26,9 @@ export function EventForm({
   endsAt,
   testMode,
   randomSpots,
+  seenFrom,
+  seenReady,
+  sided,
   claimPlace,
   save,
   canEdit,
@@ -35,6 +38,12 @@ export function EventForm({
   testMode: boolean;
   /** On: codes hide at random spots around each player, not at their GPS spots (for trying it anywhere) */
   randomSpots: boolean;
+  /** On: a code with a "Seen from" side shows only to players standing on that side */
+  seenFrom: boolean;
+  /** The database has the seen-from update (else the switch says to run it) */
+  seenReady: boolean;
+  /** How many QR codes have a "Seen from" side set */
+  sided: number;
   claimPlace: string;
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   canEdit: boolean;
@@ -44,6 +53,7 @@ export function EventForm({
   const [ends, setEnds] = useState(endsAt);
   const [test, setTest] = useState(testMode);
   const [random, setRandom] = useState(randomSpots);
+  const [sides, setSides] = useState(seenFrom);
   const [place, setPlace] = useState(claimPlace);
   const now = useNow();
 
@@ -55,7 +65,9 @@ export function EventForm({
   const phase = !valid || now === null ? null : now >= tb ? "ended" : now >= ta ? "live" : "soon";
   const where = random
     ? " Codes appear at random spots around each player, wherever they are."
-    : " Each code appears once a player is within its distance of its GPS spot.";
+    : ` Each code appears once a player is within its distance of its GPS spot${
+        sides && sided ? `, and ${sided === 1 ? "the code" : `the ${sided} codes`} with a "Seen from" side only from that side` : ""
+      }.`;
   const seen =
     phase === null || !a || !b
       ? null
@@ -181,6 +193,34 @@ export function EventForm({
               hint="On: codes appear at random spots around each player, wherever they are: for trying the scanner away from the venue. Off: each code is at its GPS spot, and shows within its distance."
             >
               Random spots
+            </Toggle>
+          </section>
+
+          <section className={sides ? "panel testcard is-on" : "panel testcard"}>
+            <h2 className="panel__title">
+              <EyeIcon />
+              Seen from one side
+              <span className={sides ? "pill-state is-on" : "pill-state"}>{sides ? "On" : "Off"}</span>
+            </h2>
+            <Toggle
+              name="seen_from"
+              defaultChecked={seenFrom}
+              onChange={setSides}
+              hint={
+                seenReady ? (
+                  <>
+                    On: a QR code with a &quot;Seen from&quot; side shows only to players standing on that side, so they walk
+                    around a wall or a building to find it. Off: every code shows from every side.{" "}
+                    {sided
+                      ? `${sided} QR code${sided === 1 ? " has" : "s have"} a side set.`
+                      : "No QR code has a side yet: set one on a code's page, under On the ground."}
+                  </>
+                ) : (
+                  "Needs its update first: run supabase/migrations/20261115000000_seen_from.sql in Supabase's SQL Editor."
+                )
+              }
+            >
+              Walls and obstacles
             </Toggle>
           </section>
 

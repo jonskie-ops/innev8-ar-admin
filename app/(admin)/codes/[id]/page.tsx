@@ -6,7 +6,7 @@ import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
 import { deleteCode, saveCode } from "@/lib/actions/codes";
 import { huntLock, requireTeammate } from "@/lib/dal";
-import { listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf } from "@/lib/data";
+import { getSettings, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf } from "@/lib/data";
 import { stamp } from "@/lib/format";
 import type { Code } from "@/lib/hunt";
 import { DEFAULT_LOCATION, planOf } from "@/lib/venue";
@@ -27,12 +27,13 @@ export default async function CodePage({
   const { id } = await params;
   const isNew = id === "new";
   if (isNew && !canEdit) redirect("/codes");
-  const [codes, zones, { sponsors, ready }, { locations }, prizes, { added, at }] = await Promise.all([
+  const [codes, zones, { sponsors, ready }, { locations }, prizes, settings, { added, at }] = await Promise.all([
     listCodes(),
     listZones(),
     listSponsors(),
     listLocations(),
     listPrizes(),
+    getSettings(),
     searchParams,
   ]);
   const found = codes.find((c) => c.id === id);
@@ -92,6 +93,8 @@ export default async function CodePage({
         save={saveCode.bind(null, isNew ? null : code.id)}
         remove={isNew ? undefined : deleteCode.bind(null, code.id)}
         prizes={prizes.filter((p) => p.rule === "code" && p.rule_code === code.id).map((p) => p.name)}
+        seenOn={settings.seen_from ?? false}
+        seenReady={settings.seen_from !== undefined}
         canEdit={canEdit}
       />
     </>

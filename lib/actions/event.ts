@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_GPS, NOT_ADMIN, text, type FormState } from "../form";
+import { checked, dbError, done, failed, Invalid, NEEDS_GPS, NEEDS_SEEN, NOT_ADMIN, text, type FormState } from "../form";
 import { fromLocalInput } from "../format";
 import { supabase } from "../supabase";
 
@@ -26,9 +26,20 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
   const random_spots = checked(fd, "random_spots");
   const gps = !(await sb.from("settings").select("random_spots").limit(1)).error;
   if (!gps && random_spots) return failed(NEEDS_GPS);
+  // Likewise "Seen from" (each code's side): off until its update is run
+  const seen_from = checked(fd, "seen_from");
+  const seen = !(await sb.from("settings").select("seen_from").limit(1)).error;
+  if (!seen && seen_from) return failed(NEEDS_SEEN);
   const { data, error } = await sb
     .from("settings")
-    .update({ starts_at: starts, ends_at: ends, test_mode: checked(fd, "test_mode"), claim_place, ...(gps && { random_spots }) })
+    .update({
+      starts_at: starts,
+      ends_at: ends,
+      test_mode: checked(fd, "test_mode"),
+      claim_place,
+      ...(gps && { random_spots }),
+      ...(seen && { seen_from }),
+    })
     .eq("id", 1)
     .select("id");
   if (error) return failed(dbError(error));

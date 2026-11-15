@@ -24,6 +24,9 @@ export const HUNT_LOCKED = "The hunt is on: QR codes, prizes and locations can't
 export const NEEDS_GPS =
   "GPS spots need the GPS update first: run supabase/migrations/20261020000000_gps.sql in Supabase's SQL Editor.";
 
+export const NEEDS_SEEN =
+  "\"Seen from\" needs its update first: run supabase/migrations/20261115000000_seen_from.sql in Supabase's SQL Editor.";
+
 export const NEEDS_LOCATIONS =
   "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
 

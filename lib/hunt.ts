@@ -85,8 +85,32 @@ export type Code = {
   accuracy?: number | null;
   /** The game shows it to players within this many metres of its spot (RADIUS.default before the update) */
   radius?: number;
+  /**
+   * Seen from one side only (while the event's "Seen from" switch is on): the middle of the side players
+   * must stand on, in compass degrees from north, and how wide it is in degrees. Null (or missing,
+   * before the seen-from update): seen from every side.
+   */
+  seen_dir?: number | null;
+  seen_width?: number | null;
   updated_at: string;
 };
+
+/** How wide a code's "Seen from" side can be, in degrees (as the database allows), and the usual choices. */
+export const SEEN = {
+  min: 30,
+  max: 300,
+  default: 120,
+  presets: [
+    { w: 180, label: "Half", hint: "One side of a wall" },
+    { w: 120, label: "Wide", hint: "Round a corner" },
+    { w: 90, label: "Narrow", hint: "Through a gap" },
+  ],
+} as const;
+
+/** "N", "NE", … for a compass direction in degrees. */
+export function compassPoint(deg: number) {
+  return ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+}
 
 /**
  * How close players must be to a code for the game to show it, in metres. Phone GPS is good to a
@@ -254,6 +278,8 @@ export type Settings = {
   claim_place: string;
   /** On: codes hide at random spots around each player instead of at their GPS spots (missing before the GPS update) */
   random_spots?: boolean;
+  /** On: a code with a "Seen from" side shows only to players on that side (missing before the seen-from update) */
+  seen_from?: boolean;
   updated_at: string;
 };
 

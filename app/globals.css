@@ -3849,6 +3849,63 @@ button.vpin:focus-visible .vpin__head {
 .radius__opt[aria-pressed="true"] small {
   color: var(--cyan);
 }
+.radius__opt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* "Seen from": the side players must stand on, a fan on a satellite map around the spot */
+.seenfrom {
+  margin-top: 6px;
+}
+.seenfrom__map {
+  position: relative;
+  height: 240px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.seenfrom__map .smap {
+  border-radius: inherit;
+  cursor: crosshair;
+}
+.seenfrom__handle-box {
+  background: none;
+  border: 0;
+}
+.seenfrom__handle {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #33d17a;
+  box-shadow:
+    0 0 0 3px #fff,
+    0 6px 16px -4px rgba(0, 0, 0, 0.8);
+  cursor: grab;
+}
+.seenfrom__handle:active {
+  cursor: grabbing;
+}
+.seenfrom__turn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+.seenfrom__dir {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.seenfrom__dir b {
+  color: #33d17a;
+}
+.seenfrom__btns {
+  display: flex;
+  gap: 6px;
+}
 .radius__own {
   display: flex;
   align-items: center;

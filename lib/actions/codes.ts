@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
 import { adminOnly, huntLock } from "../dal";
-import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
-import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, TASKS } from "../hunt";
+import { checked, dbError, decimal, done, failed, Invalid, NEEDS_CODE_NUMBERS, NEEDS_GPS, NEEDS_LOCATIONS, NEEDS_SEEN, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { BUILT_IN_SPONSORS, firstSponsor, RADIUS, RARITIES, SEEN, TASKS } from "../hunt";
 import { pick } from "../random";
 import { supabase } from "../supabase";
 import { DEFAULT_LOCATION, metresBetween, toLatLng, type Where } from "../venue";
@@ -26,6 +26,15 @@ function readSpot(fd: FormData) {
   };
 }
 
+/** Its "Seen from" side: the fan's middle and width in degrees, or none (seen from every side). */
+function readSeen(fd: FormData) {
+  if (!String(fd.get("seen_width") ?? "").trim()) return { seen_dir: null, seen_width: null };
+  return {
+    seen_dir: whole(fd, "seen_dir", "Seen from", 0, 359),
+    seen_width: whole(fd, "seen_width", "Seen from", SEEN.min, SEEN.max),
+  };
+}
+
 function readCode(fd: FormData) {
   return {
     num: whole(fd, "num", "Number", 1, 99),
@@ -43,6 +52,7 @@ function readCode(fd: FormData) {
     sponsor: text(fd, "sponsor", "Sponsor", { max: 32, required: true }),
     location_id: text(fd, "location_id", "Location", { max: 24 }) || DEFAULT_LOCATION,
     ...readSpot(fd),
+    ...readSeen(fd),
   };
 }
 
@@ -76,7 +86,7 @@ async function locations() {
  * Has the database got this column yet (codes.task: the networking update; codes.sponsor: sponsors;
  * codes.radius: GPS)?
  */
-async function has(column: "task" | "sponsor" | "radius") {
+async function has(column: "task" | "sponsor" | "radius" | "seen_dir") {
   const { error } = await (await supabase()).from("codes").select(column).limit(1);
   return !error;
 }
@@ -99,8 +109,15 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
     e.code === "23505" && e.message.includes("codes_num_key") ? NEEDS_CODE_NUMBERS : dbError(e, taken);
   // A database without the networking, sponsors or GPS update yet: save the rest (when none of
   // those was changed; a GPS spot that's just the map pin's place counts as unchanged)
-  const { task, sponsor, lat, lng, accuracy, radius, location_id, ...rest } = v;
-  const [tasks, sponsors, gps, ids, places] = await Promise.all([has("task"), has("sponsor"), has("radius"), sponsorIds(), locations()]);
+  const { task, sponsor, lat, lng, accuracy, radius, location_id, seen_dir, seen_width, ...rest } = v;
+  const [tasks, sponsors, gps, seen, ids, places] = await Promise.all([
+    has("task"),
+    has("sponsor"),
+    has("radius"),
+    has("seen_dir"),
+    sponsorIds(),
+    locations(),
+  ]);
   if (!ids.includes(sponsor)) return failed("That sponsor was taken off by someone else. Choose another.");
   // Its location, and an area of it (before the locations update: Leyte Academic Center, any zone)
   if (!places && location_id !== DEFAULT_LOCATION) return failed(NEEDS_LOCATIONS);
@@ -111,11 +128,13 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   if (!sponsors && sponsor !== firstSponsor(v.num)) return failed(NEEDS_SPONSORS);
   if (!gps && (accuracy !== null || radius !== RADIUS.default || metresBetween({ lat, lng }, toLatLng(v.x, v.y)) > 1))
     return failed(NEEDS_GPS);
+  if (!seen && seen_width !== null) return failed(NEEDS_SEEN);
   const row = {
     ...rest,
     ...(tasks && { task }),
     ...(sponsors && { sponsor }),
     ...(gps && { lat, lng, accuracy, radius }),
+    ...(seen && { seen_dir, seen_width }),
     ...(places && { location_id }),
   };
   if (!id) {

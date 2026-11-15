@@ -24,6 +24,7 @@ import { DEFAULT_LOCATION, intoPinArea, latLngText, metresBetween, parseLatLng, 
 import { pad } from "./bits";
 import { AutoSaveToast, BackField, ConfirmButton, Counter, SaveButton, Status, useAutoSave } from "./form";
 import { GpsFix } from "./GpsFix";
+import { SeenFrom } from "./SeenFrom";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ExternalIcon, LocateIcon, PinIcon, PlusIcon, TrashIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 import { VenueMap, type Pin } from "./VenueMap";
@@ -65,6 +66,8 @@ export function CodeForm({
   save,
   remove,
   prizes = [],
+  seenOn = false,
+  seenReady = false,
   canEdit,
 }: {
   code: Code;
@@ -81,6 +84,9 @@ export function CodeForm({
   remove?: () => Promise<FormState>;
   /** The prizes for finding this code ("Get the Symphonics QR"): named when it's deleted, as nobody can win them then */
   prizes?: string[];
+  /** The event's "Seen from one side" switch (Settings), and whether the database has its update */
+  seenOn?: boolean;
+  seenReady?: boolean;
   canEdit: boolean;
 }) {
   const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
@@ -106,6 +112,8 @@ export function CodeForm({
     return { lat: s.lat, lng: s.lng, accuracy: code.accuracy ?? null, from: s.own ? "saved" : "pin" };
   });
   const [radius, setRadius] = useState(String(code.radius ?? RADIUS.default));
+  // Seen from one side only (a fan out from the spot), or from every side
+  const [seen, setSeen] = useState({ dir: code.seen_dir ?? null, width: code.seen_width ?? null });
   const [typed, setTyped] = useState("");
   const putSpot = (g: Geo, on = plan) => {
     setGeo(g);
@@ -508,6 +516,19 @@ export function CodeForm({
               {RADIUS.min}–{RADIUS.max} m).
             </span>
           </div>
+          <SeenFrom
+            spot={{ lat: geo.lat, lng: geo.lng }}
+            radius={Number(radius) || RADIUS.default}
+            dir={seen.dir}
+            width={seen.width}
+            onChange={(dir, width) => {
+              setSeen({ dir, width });
+              changed(); // its hidden fields change without an event of their own
+            }}
+            on={seenOn}
+            ready={seenReady}
+            canEdit={canEdit}
+          />
           <input type="hidden" name="lat" value={geo.lat} />
           <input type="hidden" name="lng" value={geo.lng} />
           <input type="hidden" name="accuracy" value={geo.accuracy ?? ""} />

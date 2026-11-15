@@ -7,7 +7,7 @@ import { CalendarIcon, KeyIcon, LockIcon, ShieldIcon, UserIcon } from "@/compone
 import { RoleTable } from "@/components/Roles";
 import { saveEvent } from "@/lib/actions/event";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, listLocations, listTeam } from "@/lib/data";
+import { getSettings, listCodes, listLocations, listTeam } from "@/lib/data";
 import { day, stamp, toLocalInput } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -62,7 +62,7 @@ export default async function AccountPage() {
       </div>
     );
 
-  const [s, { locations }] = await Promise.all([getSettings(), listLocations()]);
+  const [s, { locations }, codes] = await Promise.all([getSettings(), listLocations(), listCodes()]);
   return (
     <>
       <Head
@@ -109,6 +109,9 @@ export default async function AccountPage() {
             endsAt={toLocalInput(s.ends_at)}
             testMode={s.test_mode}
             randomSpots={s.random_spots ?? false}
+            seenFrom={s.seen_from ?? false}
+            seenReady={s.seen_from !== undefined}
+            sided={codes.filter((c) => c.seen_width != null).length}
             claimPlace={s.claim_place}
             save={saveEvent}
             canEdit={me.role === "admin"}

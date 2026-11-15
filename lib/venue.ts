@@ -177,6 +177,23 @@ export function metresBetween(a: { lat: number; lng: number }, b: { lat: number;
   return Math.hypot(north, east);
 }
 
+/** Which way `b` is from `a`, in compass degrees from north (0–359; flat-earth, as metresBetween). */
+export function bearingTo(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const k = Math.PI / 180;
+  const north = (b.lat - a.lat) * k;
+  const east = (b.lng - a.lng) * k * Math.cos(((a.lat + b.lat) / 2) * k);
+  return ((Math.atan2(east, north) / k) % 360 + 360) % 360;
+}
+
+/** The place `metres` from `a` toward `deg` (compass degrees from north; flat-earth, as metresBetween). */
+export function offsetBy(a: { lat: number; lng: number }, deg: number, metres: number) {
+  const k = Math.PI / 180;
+  return {
+    lat: a.lat + ((metres * Math.cos(deg * k)) / EARTH) / k,
+    lng: a.lng + ((metres * Math.sin(deg * k)) / (EARTH * Math.cos(a.lat * k))) / k,
+  };
+}
+
 /** How far a place is from the venue (Annex A), in metres. */
 export const fromVenue = (p: { lat: number; lng: number }) => metresBetween(p, { lat: LAT0, lng: LON0 });
 
