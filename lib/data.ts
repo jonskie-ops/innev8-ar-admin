@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, type Activity, type BoardEntry, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, toPulse, type Activity, type BoardEntry, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Pulse, type Settings, type Sponsor, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -40,6 +40,15 @@ export const deskPoints = cache(async (): Promise<{ earned: number; spent: numbe
   if (error || !data || typeof data !== "object") return null;
   const d = data as Record<string, unknown>;
   return { earned: Number(d.earned) || 0, spent: Number(d.spent) || 0, unspent: Number(d.unspent) || 0 };
+});
+/**
+ * How the hunt is going, in numbers (the Overview's), and when they were read (ms). Null before the
+ * hunt pulse update.
+ */
+export const huntPulse = cache(async (): Promise<{ pulse: Pulse; at: number } | null> => {
+  const { data, error } = await (await supabase()).rpc("hunt_pulse");
+  const pulse = error ? null : toPulse(data);
+  return pulse && { pulse, at: Date.now() };
 });
 export const listZones = cache(async () =>
   read<Zone[]>((await supabase()).from("zones").select("*").order("sort").order("name")),

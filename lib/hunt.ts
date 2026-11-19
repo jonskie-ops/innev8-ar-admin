@@ -405,6 +405,41 @@ export type Activity = {
   changes: string[];
 };
 
+/**
+ * How the hunt is going, in numbers (the database's hunt_pulse; test mode as everywhere): players
+ * joined and how many have found a code, finds so far (each player's code once) and the latest,
+ * points earned and spent at the desk, prizes given and the stock left.
+ */
+export type Pulse = {
+  test: boolean;
+  joined: number;
+  hunting: number;
+  finds: number;
+  last: string | null;
+  earned: number;
+  spent: number;
+  given: number;
+  stock: number;
+};
+
+/** The database's answer as a Pulse (null: not one, e.g. before the update). */
+export function toPulse(data: unknown): Pulse | null {
+  if (!data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  const n = (k: string) => Number(d[k]) || 0;
+  return {
+    test: d.test === true,
+    joined: n("joined"),
+    hunting: n("hunting"),
+    finds: n("finds"),
+    last: typeof d.last === "string" ? d.last : null,
+    earned: n("earned"),
+    spent: n("spent"),
+    given: n("given"),
+    stock: n("stock"),
+  };
+}
+
 /** Where the game lives: a code opens straight ahead as `${GAME_URL}/?s=<code>`. */
 export const GAME_URL = "https://innev8-ar-js.vercel.app";
 /** The summit's own page on the INNEV8 site (the top bar's link). */

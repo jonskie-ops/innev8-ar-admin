@@ -4,12 +4,13 @@ import Link from "next/link";
 import { pad, SponsorBadge } from "@/components/bits";
 import { CardRail } from "@/components/CardRail";
 import { ChangeList } from "@/components/Changes";
+import { HuntPulse } from "@/components/HuntPulse";
 import { ArrowRightIcon, ChevronRightIcon, GiftIcon, PlusIcon } from "@/components/icons";
 import { PrizeCarousel } from "@/components/PrizeCarousel";
 import { QrGlyph } from "@/components/QrGlyph";
 import { PlaceMaps } from "@/components/PlaceMaps";
 import { huntLock, requireTeammate } from "@/lib/dal";
-import { getSettings, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
+import { getSettings, huntPulse, inGame, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf, photoUrl, placeOn, recentActivity } from "@/lib/data";
 import { ago, dateSpan, day, didWhat, summitPhase, time } from "@/lib/format";
 import { firstSponsor, photoStyle, POINTS, prizeNeeds, RARITIES, RARITY_LABEL, sponsorIn } from "@/lib/hunt";
 
@@ -25,7 +26,7 @@ export default async function OverviewPage() {
   // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
   const lock = await huntLock();
   const canEdit = me.role === "admin" && !lock;
-  const [codes, zones, prizes, settings, activity, { sponsors }, { locations }] = await Promise.all([
+  const [codes, zones, prizes, settings, activity, { sponsors }, { locations }, pulse] = await Promise.all([
     listCodes(),
     listZones(),
     listPrizes(),
@@ -33,6 +34,7 @@ export default async function OverviewPage() {
     recentActivity(8),
     listSponsors(),
     listLocations(),
+    huntPulse(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   // Only the map that's on in the game (its codes, on or off); in the game: on, at a location that's on
@@ -110,6 +112,13 @@ export default async function OverviewPage() {
             <span className="chip">{dateSpan(settings.starts_at, settings.ends_at)}</span>
           </p>
         </section>
+
+        {/* How the hunt is going, in numbers (read again every 30 s) */}
+        {pulse ? (
+          <HuntPulse key={pulse.at} pulse={pulse.pulse} at={pulse.at} shop={prizes.some((p) => p.rule === "cost")} />
+        ) : (
+          <p className="banner">The live numbers need the database update first: run 20261119030000_hunt_pulse.sql in the SQL Editor.</p>
+        )}
 
         {/* Each QR code, as the game shows it */}
         <section aria-labelledby="codes-title">
