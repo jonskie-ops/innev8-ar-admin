@@ -27,6 +27,9 @@ export const NEEDS_GPS =
 export const NEEDS_SEEN =
   "\"Seen from\" needs its update first: run supabase/migrations/20261115000000_seen_from.sql in Supabase's SQL Editor.";
 
+export const NEEDS_DROP =
+  "Dropping points need their update first: run supabase/migrations/20261119000000_points_drop.sql in Supabase's SQL Editor.";
+
 export const NEEDS_LOCATIONS =
   "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
 

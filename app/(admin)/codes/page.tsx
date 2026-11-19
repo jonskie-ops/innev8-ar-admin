@@ -4,7 +4,7 @@ import { Head, HuntLocked } from "@/components/bits";
 import { CodeBrowser, type CodeItem } from "@/components/CodeBrowser";
 import { PlusIcon } from "@/components/icons";
 import { huntLock, requireTeammate } from "@/lib/dal";
-import { inGame, listCodes, listLocations, listSponsors, listZones, locationOf, placeOn } from "@/lib/data";
+import { codeWorth, inGame, listCodes, listLocations, listSponsors, listZones, locationOf, placeOn } from "@/lib/data";
 import { ago, stamp } from "@/lib/format";
 import { firstSponsor, sponsorIn } from "@/lib/hunt";
 
@@ -15,12 +15,13 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
   // While the hunt is on, QR codes, prizes and locations are only looked at (lib/dal.ts huntLock)
   const lock = await huntLock();
   const canEdit = me.role === "admin" && !lock;
-  const [codes, zones, { sponsors }, { locations }, { code }] = await Promise.all([
+  const [codes, zones, { sponsors }, { locations }, { code }, worth] = await Promise.all([
     listCodes(),
     listZones(),
     listSponsors(),
     listLocations(),
     searchParams,
+    codeWorth(),
   ]);
   const zoneName = Object.fromEntries(zones.map((z) => [z.id, z.name]));
   const live = codes.filter(inGame(locations)).length;
@@ -32,6 +33,8 @@ export default async function CodesPage({ searchParams }: { searchParams: Promis
     code: c.code,
     rarity: c.rarity,
     points: c.points,
+    finders: worth[c.id]?.finders,
+    worth: worth[c.id]?.worth,
     live: c.live,
     zone: zoneName[c.zone_id] ?? c.zone_id,
     spot: c.spot,

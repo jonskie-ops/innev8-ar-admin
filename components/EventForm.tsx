@@ -4,9 +4,10 @@
 import { useState } from "react";
 import type { FormState } from "@/lib/form";
 import { day, fromLocalInput, time } from "@/lib/format";
+import { dropPoints, dropSteps, POINTS, RARITIES, RARITY_LABEL, type DropRule } from "@/lib/hunt";
 import { useNow } from "./Clock";
 import { AutoSaveToast, useAutoSave } from "./form";
-import { ClockIcon, EyeIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon } from "./icons";
+import { ClockIcon, EyeIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon, TrophyIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
 /** "1 day, 10 hours" between two moments. */
@@ -29,6 +30,9 @@ export function EventForm({
   seenFrom,
   seenReady,
   sided,
+  pointsDrop,
+  dropRule,
+  dropReady,
   claimPlace,
   save,
   canEdit,
@@ -44,6 +48,11 @@ export function EventForm({
   seenReady: boolean;
   /** How many QR codes have a "Seen from" side set */
   sided: number;
+  /** On: a code's points drop as more people find it */
+  pointsDrop: boolean;
+  dropRule: DropRule;
+  /** The database has the points drop update (else the switch says to run it) */
+  dropReady: boolean;
   claimPlace: string;
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   canEdit: boolean;
@@ -54,6 +63,13 @@ export function EventForm({
   const [test, setTest] = useState(testMode);
   const [random, setRandom] = useState(randomSpots);
   const [sides, setSides] = useState(seenFrom);
+  const [drop, setDrop] = useState(pointsDrop);
+  const [first, setFirst] = useState(String(dropRule.first));
+  const [every, setEvery] = useState(String(dropRule.every));
+  const [floor, setFloor] = useState(String(dropRule.floor));
+  const whole = (v: string, min: number, max: number) => (/^\d+$/.test(v.trim()) && +v >= min && +v <= max ? +v : null);
+  const rf = whole(first, 1, 1000), re = whole(every, 1, 1000), rl = whole(floor, 1, 100);
+  const rule: DropRule | null = rf !== null && re !== null && rl !== null ? { first: rf, every: re, floor: rl } : null;
   const [place, setPlace] = useState(claimPlace);
   const now = useNow();
 
@@ -222,6 +238,83 @@ export function EventForm({
             >
               Walls and obstacles
             </Toggle>
+          </section>
+
+          <section className={drop ? "panel testcard is-on" : "panel testcard"}>
+            <h2 className="panel__title">
+              <TrophyIcon />
+              Points drop as more find a code
+              <span className={drop ? "pill-state is-on" : "pill-state"}>{drop ? "On" : "Off"}</span>
+            </h2>
+            <Toggle
+              name="points_drop"
+              defaultChecked={pointsDrop}
+              onChange={setDrop}
+              hint={
+                dropReady
+                  ? "On: the first players to find each QR code get its full points, and later finders get less, so finding codes early pays. Points already earned stay. Off: every finder gets the code's full points."
+                  : "Needs its update first: run supabase/migrations/20261119000000_points_drop.sql in Supabase's SQL Editor."
+              }
+            >
+              Reward the first finders
+            </Toggle>
+            {dropReady && (
+              <>
+                <div className="dropnums">
+                  <label className="field">
+                    <span className="field__label">Full points for the first</span>
+                    <span className="dropnums__in">
+                      <input type="number" name="drop_full" min={1} max={1000} step={1} defaultValue={dropRule.first} required onChange={(e) => setFirst(e.target.value)} />
+                      <small>finders</small>
+                    </span>
+                  </label>
+                  <label className="field">
+                    <span className="field__label">Then 10% less every</span>
+                    <span className="dropnums__in">
+                      <input type="number" name="drop_every" min={1} max={1000} step={1} defaultValue={dropRule.every} required onChange={(e) => setEvery(e.target.value)} />
+                      <small>finders</small>
+                    </span>
+                  </label>
+                  <label className="field">
+                    <span className="field__label">Never below</span>
+                    <span className="dropnums__in">
+                      <input type="number" name="drop_floor" min={1} max={100} step={1} defaultValue={dropRule.floor} required onChange={(e) => setFloor(e.target.value)} />
+                      <small>% of the points</small>
+                    </span>
+                  </label>
+                </div>
+                {rule ? (
+                  <table className={drop ? "droptable" : "droptable is-off"} aria-label="Points by finder">
+                    <thead>
+                      <tr>
+                        <th scope="col">Finder</th>
+                        {RARITIES.map((r) => (
+                          <th key={r} scope="col">
+                            {RARITY_LABEL[r]}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dropSteps(rule).map((s) => (
+                        <tr key={s.from}>
+                          <th scope="row">{s.to === null ? `#${s.from} on` : s.to === s.from ? `#${s.from}` : `#${s.from}–${s.to}`}</th>
+                          {RARITIES.map((r) => (
+                            <td key={r}>{dropPoints(POINTS[r], s.from, rule).toLocaleString("en-PH")}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="status status--error">Use whole numbers: finders from 1 to 1,000, the lowest share from 1 to 100%.</p>
+                )}
+                <span className="field__hint">
+                  For codes worth the usual points; a code with its own points drops the same way. Test-mode finds are counted apart from
+                  real ones.
+                </span>
+              </>
+            )}
           </section>
 
           <section className="panel seen">

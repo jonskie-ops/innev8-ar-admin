@@ -29,6 +29,9 @@ export type CodeItem = {
   code: string;
   rarity: Rarity;
   points: number;
+  /** How many have found it so far, and what the next finder gets (missing before the points drop update) */
+  finders?: number;
+  worth?: number;
   live: boolean;
   zone: string;
   spot: string;
@@ -267,6 +270,17 @@ export function CodeBrowser({
             <span className={`rbadge rbadge--${c.rarity}`}>{RARITY_LABEL[c.rarity]}</span>
           </span>
         </div>
+
+        {c.finders !== undefined && (
+          <p className="qd__finds">
+            {c.finders === 0 ? "No one has found it yet." : <><b>{c.finders.toLocaleString("en-PH")}</b> found it so far.</>}
+            {c.worth !== undefined && c.worth < c.points && (
+              <>
+                {" "}The next finder gets <b>{c.worth.toLocaleString("en-PH")} pts</b>.
+              </>
+            )}
+          </p>
+        )}
 
         <div className="qd__live">
           <span>

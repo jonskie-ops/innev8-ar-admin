@@ -20,6 +20,17 @@ async function read<T>(query: Result<T>): Promise<T> {
 export const listCodes = cache(async () => read<Code[]>((await supabase()).from("codes").select("*").order("num")));
 export const getCode = async (id: string) =>
   read<Code | null>((await supabase()).from("codes").select("*").eq("id", id).maybeSingle());
+/**
+ * Each code's finders so far and what the next finder gets (the database's code_worth: real finds, or
+ * test finds while test mode is on), by code id. Empty before the points drop update.
+ */
+export const codeWorth = cache(async (): Promise<Record<string, { finders: number; worth: number }>> => {
+  const { data, error } = await (await supabase()).rpc("code_worth");
+  if (error || !Array.isArray(data)) return {};
+  return Object.fromEntries(
+    (data as { code_id: string; finders: number; worth: number }[]).map((r) => [r.code_id, { finders: Number(r.finders), worth: Number(r.worth) }]),
+  );
+});
 export const listZones = cache(async () =>
   read<Zone[]>((await supabase()).from("zones").select("*").order("sort").order("name")),
 );

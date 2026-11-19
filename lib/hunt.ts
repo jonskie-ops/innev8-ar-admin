@@ -280,8 +280,41 @@ export type Settings = {
   random_spots?: boolean;
   /** On: a code with a "Seen from" side shows only to players on that side (missing before the seen-from update) */
   seen_from?: boolean;
+  /**
+   * On: a code's points drop as more people find it (missing before the points drop update): the first
+   * `drop_full` finders get its full points, then every `drop_every` finders 10% less, never below
+   * `drop_floor`% (dropPoints, as the database's find_points).
+   */
+  points_drop?: boolean;
+  drop_full?: number;
+  drop_every?: number;
+  drop_floor?: number;
   updated_at: string;
 };
+
+/** The points drop rule: full points for the first `first` finders, then 10% less every `every`, never below `floor`%. */
+export type DropRule = { first: number; every: number; floor: number };
+export const DROP_DEFAULT: DropRule = { first: 10, every: 2, floor: 10 };
+/** What the `place`th finder (1, 2, …) of a code worth `full` gets with the rule on (the database's find_points). */
+export function dropPoints(full: number, place: number, r: DropRule) {
+  if (place <= r.first) return full;
+  const pct = Math.max(r.floor, 100 - 10 * Math.ceil((place - r.first) / Math.max(r.every, 1)));
+  return Math.max(1, Math.round((full * pct) / 100));
+}
+/**
+ * The rule as steps for a table: which finders get which share of the points ("#11–12": 90%), up to
+ * the lowest share, which every later finder gets ("#27 on").
+ */
+export function dropSteps(r: DropRule): { from: number; to: number | null; pct: number }[] {
+  const steps = [{ from: 1, to: r.first as number | null, pct: 100 }];
+  for (let pct = 90, from = r.first + 1; ; pct -= 10, from += r.every) {
+    if (pct <= r.floor) {
+      steps.push({ from, to: null, pct: r.floor });
+      return steps;
+    }
+    steps.push({ from, to: from + r.every - 1, pct });
+  }
+}
 
 export type Member = {
   user_id: string;

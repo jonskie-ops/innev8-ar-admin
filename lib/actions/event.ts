@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_GPS, NEEDS_SEEN, NOT_ADMIN, text, type FormState } from "../form";
+import { checked, dbError, done, failed, Invalid, NEEDS_DROP, NEEDS_GPS, NEEDS_SEEN, NOT_ADMIN, text, type FormState } from "../form";
 import { fromLocalInput } from "../format";
 import { supabase } from "../supabase";
 
@@ -30,6 +30,29 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
   const seen_from = checked(fd, "seen_from");
   const seen = !(await sb.from("settings").select("seen_from").limit(1)).error;
   if (!seen && seen_from) return failed(NEEDS_SEEN);
+  // Likewise points that drop as more people find a code
+  const points_drop = checked(fd, "points_drop");
+  const drops = !(await sb.from("settings").select("points_drop").limit(1)).error;
+  if (!drops && points_drop) return failed(NEEDS_DROP);
+  let drop = {};
+  if (drops) {
+    const whole = (name: string, label: string, min: number, max: number) => {
+      const v = Number(String(fd.get(name) ?? "").trim());
+      if (!Number.isInteger(v) || v < min || v > max) throw new Invalid(`${label}: a whole number from ${min} to ${max}.`);
+      return v;
+    };
+    try {
+      drop = {
+        points_drop,
+        drop_full: whole("drop_full", "Finders who get full points", 1, 1000),
+        drop_every: whole("drop_every", "Finders per drop", 1, 1000),
+        drop_floor: whole("drop_floor", "Lowest share", 1, 100),
+      };
+    } catch (e) {
+      if (e instanceof Invalid) return failed(e.message);
+      throw e;
+    }
+  }
   const { data, error } = await sb
     .from("settings")
     .update({
@@ -39,6 +62,7 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
       claim_place,
       ...(gps && { random_spots }),
       ...(seen && { seen_from }),
+      ...drop,
     })
     .eq("id", 1)
     .select("id");
