@@ -4554,8 +4554,19 @@ button.vpin:focus-visible .vpin__head {
 .auth-art__big > span:first-child {
   text-shadow: 0 6px 40px rgba(var(--shade0-rgb), 0.8);
 }
-/* Phones and small tablets: the map is the page's background, dimmed, behind everything; the
-   headline stays at the top, and the form sits on a glassy panel below it */
+/* Phones and small tablets: a still grid as the page's background instead of the moving map (the map
+   made phones lag); the headline stays at the top, and the form sits on a glassy panel below it */
+@media (max-width: 899px) {
+  .auth-art > :not(.auth-art__copy) {
+    display: none;
+  }
+  .auth-art {
+    background:
+      linear-gradient(rgba(18, 191, 234, 0.13) 1px, transparent 1px) 50% 0 / 36px 36px,
+      linear-gradient(90deg, rgba(18, 191, 234, 0.13) 1px, transparent 1px) 50% 0 / 36px 36px,
+      radial-gradient(120% 60% at 50% 100%, #08205e 0, #040b26 45%, var(--bg-deep) 75%);
+  }
+}
 @media (max-width: 899px) {
   .auth {
     position: relative;
