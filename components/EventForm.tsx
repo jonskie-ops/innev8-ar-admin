@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- Qufoo is a small, already sized sprite */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { FormState } from "@/lib/form";
 import { day, fromLocalInput, time } from "@/lib/format";
 import { dropPoints, dropSteps, POINTS, RARITIES, RARITY_LABEL, SEE, type DropRule } from "@/lib/hunt";
@@ -39,6 +39,7 @@ export function EventForm({
   claimPlace,
   save,
   canEdit,
+  extra,
 }: {
   startsAt: string;
   endsAt: string;
@@ -64,6 +65,8 @@ export function EventForm({
   claimPlace: string;
   save: (state: FormState, fd: FormData) => Promise<FormState>;
   canEdit: boolean;
+  /** More panels, in the columns after these (Settings: cleaning up test play) */
+  extra?: ReactNode;
 }) {
   const { formRef, state, pending, waiting, onSubmit, onChange } = useAutoSave(save, canEdit);
   const [starts, setStarts] = useState(startsAt);
@@ -118,8 +121,9 @@ export function EventForm({
 
   return (
     <form ref={formRef} className="evform" method="post" onSubmit={onSubmit} onChange={onChange}>
-      <fieldset className="cols" disabled={!canEdit}>
-        <div className="stack">
+      <fieldset className="evform__set" disabled={!canEdit}>
+        {/* The panels in two columns, balanced by the browser: no gap under the shorter one */}
+        <div className="evform__cols">
           <section className="panel">
             <h2 className="panel__title">
               <ClockIcon />
@@ -198,9 +202,7 @@ export function EventForm({
               </p>
             </div>
           </section>
-        </div>
 
-        <div className="stack">
           <section className={test ? "panel testcard is-on" : "panel testcard"}>
             <h2 className="panel__title">
               <FlaskIcon />
@@ -388,6 +390,7 @@ export function EventForm({
             </div>
             <span className="field__hint">With the settings on this page, as you change them. They save by themselves 3 seconds after your last change.</span>
           </section>
+          {extra}
         </div>
       </fieldset>
       {canEdit && <AutoSaveToast state={state} pending={pending} waiting={waiting} />}

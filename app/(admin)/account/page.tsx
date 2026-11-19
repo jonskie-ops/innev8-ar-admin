@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { PasswordForm, SignOutForm } from "@/components/AuthForms";
+import { PasswordForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
 import { EventBanner } from "@/components/EventBanner";
 import { EventForm } from "@/components/EventForm";
-import { CalendarIcon, KeyIcon, LockIcon, ShieldIcon, UserIcon } from "@/components/icons";
+import { CalendarIcon, KeyIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
 import { TestCleanup } from "@/components/TestCleanup";
 import { saveEvent } from "@/lib/actions/event";
@@ -15,7 +15,7 @@ import { DROP_DEFAULT, SEE } from "@/lib/hunt";
 export const metadata: Metadata = { title: "Settings" };
 
 /**
- * Settings: your account (your details, what your role can do, this device, and your password: choosing
+ * Settings: your account (your details, what your role can do, and your password: choosing
  * it, the first time) and the event's settings (when the hunt runs, test mode, and the prize desk).
  */
 export default async function AccountPage() {
@@ -84,7 +84,6 @@ export default async function AccountPage() {
           </div>
           <div className="stack">
             {password}
-            {device}
           </div>
         </div>
       </section>
@@ -127,12 +126,14 @@ export default async function AccountPage() {
             claimPlace={s.claim_place}
             save={saveEvent}
             canEdit={me.role === "admin"}
+            extra={
+              play ? (
+                <TestCleanup play={play} canEdit={me.role === "admin"} />
+              ) : (
+                <p className="banner">Cleaning up test play needs the database update first: run 20261119040000_test_cleanup.sql in the SQL Editor.</p>
+              )
+            }
           />
-          {play ? (
-            <TestCleanup play={play} canEdit={me.role === "admin"} />
-          ) : (
-            <p className="banner">Cleaning up test play needs the database update first: run 20261119040000_test_cleanup.sql in the SQL Editor.</p>
-          )}
         </div>
       </section>
     </>
@@ -149,16 +150,3 @@ const roles = (mine: "admin" | "staff") => (
   </section>
 );
 
-const device = (
-  <section className="panel device">
-    <h2 className="panel__title">
-      <LockIcon />
-      This device
-    </h2>
-    <p>
-      You&apos;re signed in here. You stay signed in for a week while you use the admin; after a week away, you sign in
-      again. On a shared computer, sign out when you&apos;re done.
-    </p>
-    <SignOutForm />
-  </section>
-);

@@ -2556,9 +2556,45 @@ a.more:hover .ico {
   white-space: nowrap;
 }
 
+/* Wide screens: Recent changes reaches down to the bottom of the page's main column, the latest
+   first, scrolling inside if there are more than fit (they don't make the page longer) */
+@media (min-width: 1280px) {
+  .dash__side {
+    align-self: stretch;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .dash__stack,
+  .dash__changes {
+    min-height: 0;
+  }
+  .dash__stack {
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .dash__changes {
+    display: flex;
+    flex-direction: column;
+  }
+  .dash__changes-list {
+    position: relative;
+    flex: 1;
+    min-height: 240px;
+  }
+  .dash__changes-list .who-list {
+    position: absolute;
+    inset: 0;
+    align-content: start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}
 @media (max-width: 1279px) {
   .dash {
     grid-template-columns: minmax(0, 1fr);
+  }
+  /* (below the page, beside the prizes: the latest few, as before) */
+  .dash__changes .who:nth-child(n + 5) {
+    display: none;
   }
   .dash__side {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -5191,6 +5227,24 @@ button.vpin:focus-visible .vpin__head {
 .evform {
   display: grid;
   gap: 18px;
+}
+/* Its panels in two columns that the browser balances (no gap under the shorter one); one on
+   narrower screens */
+.evform__set {
+  min-width: 0;
+}
+.evform__cols {
+  columns: 2 340px;
+  column-gap: 18px;
+}
+.evform__cols > * {
+  break-inside: avoid;
+  margin: 0 0 18px;
+}
+@media (max-width: 1100px) {
+  .evform__cols {
+    columns: 1;
+  }
 }
 /* Opens → closes, and how long between */
 .runs {

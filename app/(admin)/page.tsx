@@ -31,7 +31,7 @@ export default async function OverviewPage() {
     listZones(),
     listPrizes(),
     getSettings(),
-    recentActivity(8),
+    recentActivity(30),
     listSponsors(),
     listLocations(),
     huntPulse(),
@@ -71,7 +71,7 @@ export default async function OverviewPage() {
     updated: ago(p.updated_at),
   }));
 
-  const changes = activity.slice(0, 4).map((a) => ({
+  const changes = activity.map((a) => ({
     id: a.id,
     who: a.who,
     did: didWhat(a),
@@ -264,12 +264,14 @@ export default async function OverviewPage() {
         </section>
 
         <div className="dash__stack">
-          <section className="panel" aria-labelledby="changes-title">
+          <section className="panel dash__changes" aria-labelledby="changes-title">
             <div className="shead">
               <h2 id="changes-title">Recent changes</h2>
             </div>
             {changes.length ? (
-              <ChangeList changes={changes} />
+              <div className="dash__changes-list">
+                <ChangeList changes={changes} />
+              </div>
             ) : (
               <p className="empty">No changes yet. Each change made here shows up with who made it.</p>
             )}
