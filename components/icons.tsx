@@ -128,6 +128,20 @@ export const CopyIcon = (p: P) => (
     <path d="M15.5 8.5v-3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3" />
   </Svg>
 );
+/** Two links of a chain: a link to share */
+export const LinkIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1" />
+    <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1" />
+  </Svg>
+);
+/** A printer */
+export const PrintIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M7 9V3.5h10V9M7 17H4.5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h15a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H17" />
+    <path d="M7 14h10v6.5H7z" />
+  </Svg>
+);
 export const MenuIcon = (p: P) => (
   <Svg {...p}>
     <path d="M4 7h16M4 12h16M4 17h16" />
