@@ -3921,6 +3921,10 @@ button.vpin:focus-visible .vpin__head {
   display: grid;
   gap: 8px;
 }
+/* "Costs points": what it means */
+.rules__note {
+  margin-top: 12px;
+}
 /* "Find a chosen QR code": which code, and the sentence players read */
 .rules__code {
   align-items: start;
@@ -7771,6 +7775,34 @@ html[data-full-map] .navbar {
 .desk {
   display: grid;
   gap: 22px;
+}
+/* Prizes that cost points: what players still have to spend, spent here, and earned */
+.desk__points {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0 0 22px;
+}
+.desk__points div {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(var(--deep-rgb), 0.5);
+}
+.desk__points div:first-child {
+  border-color: rgba(214, 181, 109, 0.45);
+}
+.desk__points dt {
+  color: var(--muted);
+  font-size: 13px;
+}
+.desk__points dd {
+  margin: 4px 0 0;
+  font: 800 24px/1.1 var(--font-h);
+  font-variant-numeric: tabular-nums;
+}
+.desk__points div:first-child dd {
+  color: var(--gold-text);
 }
 /* Checking a card: a pop-up (opened by the floating button, or a USB scanner or typing on the page) */
 .confirm--desk {

@@ -31,6 +31,16 @@ export const codeWorth = cache(async (): Promise<Record<string, { finders: numbe
     (data as { code_id: string; finders: number; worth: number }[]).map((r) => [r.code_id, { finders: Number(r.finders), worth: Number(r.worth) }]),
   );
 });
+/**
+ * Points every player has earned, spent on points prizes at the desk, and still to spend (this mode's:
+ * test or not). Null before the points prizes update.
+ */
+export const deskPoints = cache(async (): Promise<{ earned: number; spent: number; unspent: number } | null> => {
+  const { data, error } = await (await supabase()).rpc("desk_points");
+  if (error || !data || typeof data !== "object") return null;
+  const d = data as Record<string, unknown>;
+  return { earned: Number(d.earned) || 0, spent: Number(d.spent) || 0, unspent: Number(d.unspent) || 0 };
+});
 export const listZones = cache(async () =>
   read<Zone[]>((await supabase()).from("zones").select("*").order("sort").order("name")),
 );

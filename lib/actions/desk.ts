@@ -38,6 +38,8 @@ function why(r: Refusal) {
       return "This code is from test mode: it doesn't count now that test mode is off.";
     case "notwon":
       return "They haven't won this prize: their confirmed finds don't add up to it.";
+    case "points":
+      return "They don't have enough points to spend on this prize.";
     case "nostock":
       return "None of this prize left. Add stock on its page first.";
     case "notgiven":
@@ -85,8 +87,9 @@ export async function giveClaim(code: string, person: string, again = false): Pr
     return said({ error: why(r) });
   }
   revalidatePath("/", "layout");
-  const left = (data as { left: number | null }).left;
-  const ok = left === null ? "Given (test mode: the stock stays)" : `Given · ${left.toLocaleString("en-PH")} left`;
+  const { left, cost } = data as { left: number | null; cost?: number | null };
+  const given = cost ? `Given · ${cost.toLocaleString("en-PH")} points taken` : "Given";
+  const ok = left === null ? `${given} (test mode: the stock stays)` : `${given} · ${left.toLocaleString("en-PH")} left`;
   return said({ ok: unnamed ? `${ok} (${NEEDS_NAMES})` : ok });
 }
 

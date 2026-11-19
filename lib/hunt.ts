@@ -194,13 +194,14 @@ export type SponsorView = { id: string; name: string; badge: string };
 export const sponsorIn = (sponsors: SponsorView[], id: string | undefined): SponsorView | null =>
   sponsors.find((s) => s.id === id) ?? null;
 
-export type PrizeRule = "all" | "count" | "legendary" | "points" | "code";
+export type PrizeRule = "all" | "count" | "legendary" | "points" | "code" | "cost";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "all", label: "Collect every QR code" },
   { id: "count", label: "Collect a number of QR codes", value: "QR codes" },
   { id: "legendary", label: "Find the legendary (gold) code" },
   { id: "points", label: "Reach a number of points", value: "points" },
   { id: "code", label: "Find a chosen QR code" },
+  { id: "cost", label: "Costs points (the desk takes them)", value: "points" },
 ];
 
 export type Prize = {
@@ -250,6 +251,8 @@ export function ruleText(p: Pick<Prize, "rule" | "rule_value" | "rule_text">, to
       return `Reach ${(p.rule_value ?? 0).toLocaleString("en-PH")} points`;
     case "code":
       return p.rule_text || "Find a chosen QR code";
+    case "cost":
+      return `Costs ${(p.rule_value ?? 0).toLocaleString("en-PH")} points`;
   }
 }
 
@@ -268,6 +271,8 @@ export function prizeNeeds(p: Pick<Prize, "rule" | "rule_value">, codes: number,
       return { needs: `${v.toLocaleString("en-PH")} of ${points.toLocaleString("en-PH")} pts`, share: of(v, points) };
     case "code":
       return { needs: "A chosen QR code", share: of(1, codes) };
+    case "cost":
+      return { needs: `Costs ${v.toLocaleString("en-PH")} pts`, share: of(v, points) };
   }
 }
 
@@ -350,7 +355,16 @@ export type Hunter = {
 };
 
 /** A player's standing, as the database works it out from their finds (the prize desk). */
-export type Standing = { count: number; total: number; finds: number; score: number; legendary: boolean };
+export type Standing = {
+  count: number;
+  total: number;
+  finds: number;
+  score: number;
+  legendary: boolean;
+  /** Points spent on points prizes at the desk, and still to spend (missing before the points prizes update) */
+  spent?: number;
+  balance?: number;
+};
 
 /** A claim code at the prize desk: whose it is, the prize, and how it stands. */
 export type DeskClaim = {

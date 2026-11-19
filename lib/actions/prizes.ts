@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { afterAdd } from "@/lib/back";
 import { adminOnly, huntLock } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_PRIZE_CODE, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
+import { checked, dbError, done, failed, Invalid, NEEDS_PHOTO_LOOK, NEEDS_POINT_PRIZES, NEEDS_PRIZE_CODE, HUNT_LOCKED, NOT_ADMIN, oneOf, text, whole, type FormState } from "../form";
 import { PHOTO_ZOOM, type PhotoFit, type PrizeRule } from "../hunt";
 import { supabase } from "../supabase";
 
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const PHOTO_MAX = 5 * 1024 * 1024;
-const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code"];
+const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code", "cost"];
 
 function readPrize(fd: FormData) {
   const rule = oneOf(fd, "rule", "Who wins", RULES);
@@ -21,7 +21,7 @@ function readPrize(fd: FormData) {
     rule_value:
       rule === "count"
         ? whole(fd, "rule_value", "The number of QR codes", 1, 99)
-        : rule === "points"
+        : rule === "points" || rule === "cost"
           ? whole(fd, "rule_value", "The points", 1, 100000)
           : null,
     // A chosen code: which, and the sentence players read (only sent then, so a database without
@@ -41,6 +41,9 @@ function readPrize(fd: FormData) {
 
 /** Saving a chosen-code prize to a database without the prize code update */
 const noCodeRule = (e: { code?: string }) => ["PGRST204", "42703", "23514"].includes(e.code ?? "");
+/** What a refused save says: a rule the database doesn't have yet names its update */
+const saveError = (rule: PrizeRule, e: { code?: string; message: string }) =>
+  rule === "code" && noCodeRule(e) ? NEEDS_PRIZE_CODE : rule === "cost" && e.code === "23514" ? NEEDS_POINT_PRIZES : dbError(e);
 
 /** Saves a prize (`id` null: adds one), with its photo: a new one replaces the old. */
 export async function savePrize(id: string | null, _: FormState, fd: FormData): Promise<FormState> {
@@ -94,7 +97,7 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
     const { data, error } = await sb.from("prizes").insert(row).select("id").single();
     if (error) {
       await cleanup();
-      return failed(v.rule === "code" && noCodeRule(error) ? NEEDS_PRIZE_CODE : dbError(error));
+      return failed(saveError(v.rule, error));
     }
     revalidatePath("/", "layout");
     redirect(afterAdd(fd, `/prizes/${data.id}`, "prize"));
@@ -102,7 +105,7 @@ export async function savePrize(id: string | null, _: FormState, fd: FormData): 
   const { data, error } = await sb.from("prizes").update(row).eq("id", id).select("id");
   if (error || !data?.length) {
     await cleanup();
-    return failed(error ? (v.rule === "code" && noCodeRule(error) ? NEEDS_PRIZE_CODE : dbError(error)) : "This prize was removed by someone else.");
+    return failed(error ? saveError(v.rule, error) : "This prize was removed by someone else.");
   }
   if (photo !== undefined && old) await sb.storage.from("prizes").remove([old]);
   revalidatePath("/", "layout");

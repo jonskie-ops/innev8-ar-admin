@@ -99,7 +99,7 @@ export function PrizeForm({
                     <input
                       name="rule_value"
                       inputMode="numeric"
-                      defaultValue={prize.rule === r.id ? (prize.rule_value ?? "") : r.id === "count" ? 4 : 1000}
+                      defaultValue={prize.rule === r.id ? (prize.rule_value ?? "") : r.id === "count" ? 4 : r.id === "cost" ? 100 : 1000}
                       aria-label={`How many ${r.value}`}
                       required
                     />
@@ -109,6 +109,13 @@ export function PrizeForm({
               </label>
             ))}
           </div>
+          {/* Costs points: what that means for players and the desk */}
+          {rule === "cost" && (
+            <p className="field__hint rules__note">
+              Players get it for points: once they have enough to spend, their prize card shows, and the desk takes the points as it
+              gives the prize. One each. Their score on the leaderboard stays the same.
+            </p>
+          )}
           {/* A chosen code: which one, and the sentence players read */}
           {rule === "code" && (
             <div className="row2 rules__code">

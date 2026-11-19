@@ -39,6 +39,8 @@ export const NEEDS_LOCATIONS =
 export const NEEDS_PHOTO_LOOK =
   "Fitting and sizing a prize's photo needs the photo look update first: run supabase/migrations/20261027000000_prize_photo_look.sql in Supabase's SQL Editor.";
 
+export const NEEDS_POINT_PRIZES =
+  "A prize that costs points needs the points prizes update first: run supabase/migrations/20261119020000_points_prizes.sql in Supabase's SQL Editor.";
 export const NEEDS_PRIZE_CODE =
   "A prize for finding a chosen QR code needs the prize code update first: run supabase/migrations/20261026000000_prize_code_rule.sql in Supabase's SQL Editor.";
 

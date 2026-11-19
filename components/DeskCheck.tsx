@@ -22,9 +22,23 @@ function standingOf(c: DeskClaim): { ready: boolean; note: string } {
   if (c.test && !c.testNow) return { ready: false, note: "Test code: it doesn't count now that test mode is off" };
   if (c.claimedAt)
     return { ready: false, note: `Already claimed${c.givenTo ? ` by ${c.givenTo}` : ""}, ${stamp(c.claimedAt)}${c.claimedBy ? ` (given by ${c.claimedBy})` : ""}` };
-  if (!c.won) return { ready: false, note: "Not won: their confirmed finds don't add up to this prize" };
+  // A points prize: what it costs, and what they have to spend
+  const cost = c.prize.rule === "cost" ? (c.prize.value ?? 0) : null;
+  const pts = (n: number) => `${n.toLocaleString("en-PH")} point${n === 1 ? "" : "s"}`;
+  if (!c.won)
+    return {
+      ready: false,
+      note:
+        cost !== null
+          ? `Not enough points: they have ${pts(c.standing.balance ?? 0)} to spend, and it costs ${pts(cost)}`
+          : "Not won: their confirmed finds don't add up to this prize",
+    };
   if (!c.test && c.prize.stock <= 0) return { ready: false, note: "None left: add stock on the prize's page first" };
-  return { ready: true, note: c.test ? "Ready to give (test mode: the stock stays)" : `Ready to give · ${c.prize.stock.toLocaleString("en-PH")} in stock` };
+  const takes = cost !== null ? ` · takes ${pts(cost)}` : "";
+  return {
+    ready: true,
+    note: c.test ? `Ready to give${takes} (test mode: the stock stays)` : `Ready to give${takes} · ${c.prize.stock.toLocaleString("en-PH")} in stock`,
+  };
 }
 
 /**
@@ -152,7 +166,9 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
           </b>
           <small>
             {claim.hunter.province} · {claim.standing.count} of {claim.standing.total} QR codes ·{" "}
-            {claim.standing.score.toLocaleString("en-PH")} points{claim.standing.legendary ? " · found the legendary code" : ""}
+            {claim.standing.score.toLocaleString("en-PH")} points
+            {claim.standing.spent ? ` (${claim.standing.balance?.toLocaleString("en-PH") ?? 0} left to spend)` : ""}
+            {claim.standing.legendary ? " · found the legendary code" : ""}
           </small>
         </span>
       </div>
