@@ -4,10 +4,10 @@
 import { useState } from "react";
 import type { FormState } from "@/lib/form";
 import { day, fromLocalInput, time } from "@/lib/format";
-import { dropPoints, dropSteps, POINTS, RARITIES, RARITY_LABEL, type DropRule } from "@/lib/hunt";
+import { dropPoints, dropSteps, POINTS, RARITIES, RARITY_LABEL, SEE, type DropRule } from "@/lib/hunt";
 import { useNow } from "./Clock";
 import { AutoSaveToast, useAutoSave } from "./form";
-import { ClockIcon, EyeIcon, FlaskIcon, GiftIcon, LockIcon, QrIcon, TrophyIcon } from "./icons";
+import { ClockIcon, EyeIcon, FlaskIcon, GiftIcon, LocateIcon, LockIcon, QrIcon, TrophyIcon } from "./icons";
 import { Toggle } from "./LiveSwitch";
 
 /** "1 day, 10 hours" between two moments. */
@@ -30,6 +30,9 @@ export function EventForm({
   seenFrom,
   seenReady,
   sided,
+  farView,
+  seeMetres,
+  farReady,
   pointsDrop,
   dropRule,
   dropReady,
@@ -48,6 +51,11 @@ export function EventForm({
   seenReady: boolean;
   /** How many QR codes have a "Seen from" side set */
   sided: number;
+  /** On: players see codes from `seeMetres` away, locked until they're within the code's own distance */
+  farView: boolean;
+  seeMetres: number;
+  /** The database has the see-from-afar update (else the switch says to run it) */
+  farReady: boolean;
   /** On: a code's points drop as more people find it */
   pointsDrop: boolean;
   dropRule: DropRule;
@@ -63,6 +71,8 @@ export function EventForm({
   const [test, setTest] = useState(testMode);
   const [random, setRandom] = useState(randomSpots);
   const [sides, setSides] = useState(seenFrom);
+  const [farOn, setFarOn] = useState(farView);
+  const [see, setSee] = useState(String(seeMetres));
   const [drop, setDrop] = useState(pointsDrop);
   const [first, setFirst] = useState(String(dropRule.first));
   const [every, setEvery] = useState(String(dropRule.every));
@@ -79,11 +89,14 @@ export function EventForm({
   const tb = b ? new Date(b).getTime() : NaN;
   const valid = Boolean(a && b && tb > ta);
   const phase = !valid || now === null ? null : now >= tb ? "ended" : now >= ta ? "live" : "soon";
+  const seeM = /^\d+$/.test(see.trim()) ? +see : null;
   const where = random
     ? " Codes appear at random spots around each player, wherever they are."
-    : ` Each code appears once a player is within its distance of its GPS spot${
-        sides && sided ? `, and ${sided === 1 ? "the code" : `the ${sided} codes`} with a "Seen from" side only from that side` : ""
-      }.`;
+    : ` ${
+        farOn && seeM
+          ? `Each code shows in the camera from ${seeM} m away and can be collected once a player is within its distance of its GPS spot`
+          : "Each code appears once a player is within its distance of its GPS spot"
+      }${sides && sided ? `, and ${sided === 1 ? "the code" : `the ${sided} codes`} with a "Seen from" side only from that side` : ""}.`;
   const seen =
     phase === null || !a || !b
       ? null
@@ -238,6 +251,40 @@ export function EventForm({
             >
               Walls and obstacles
             </Toggle>
+          </section>
+
+          <section className={farOn ? "panel testcard is-on" : "panel testcard"}>
+            <h2 className="panel__title">
+              <LocateIcon />
+              See codes from farther away
+              <span className={farOn ? "pill-state is-on" : "pill-state"}>{farOn ? "On" : "Off"}</span>
+            </h2>
+            <Toggle
+              name="far_view"
+              defaultChecked={farView}
+              onChange={setFarOn}
+              hint={
+                farReady
+                  ? "On: players see a QR code in the camera from farther away, locked, with how far to walk; they collect it once within its own distance (on the code's page, 10 m unless changed). Off: a code shows only within its own distance."
+                  : "Needs its update first: run supabase/migrations/20261119010000_see_from_afar.sql in Supabase's SQL Editor."
+              }
+            >
+              Show codes before players can collect them
+            </Toggle>
+            {farReady && (
+              <label className="field">
+                <span className="field__label">Players see codes from</span>
+                <span className="dropnums__in">
+                  <input type="number" name="see_metres" min={SEE.min} max={SEE.max} step={1} defaultValue={seeMetres} required onChange={(e) => setSee(e.target.value)} />
+                  <small>metres</small>
+                </span>
+                <span className="field__hint">
+                  {/^\d+$/.test(see.trim()) && +see >= SEE.min && +see <= SEE.max
+                    ? `From ${+see} m away a code shows in the camera, locked: "walk closer". A code whose own distance is ${+see} m or more shows only when it can be collected.`
+                    : `A whole number of metres from ${SEE.min} to ${SEE.max}.`}
+                </span>
+              </label>
+            )}
           </section>
 
           <section className={drop ? "panel testcard is-on" : "panel testcard"}>

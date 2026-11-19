@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
-import { checked, dbError, done, failed, Invalid, NEEDS_DROP, NEEDS_GPS, NEEDS_SEEN, NOT_ADMIN, text, type FormState } from "../form";
+import { checked, dbError, done, failed, Invalid, NEEDS_DROP, NEEDS_FAR, NEEDS_GPS, NEEDS_SEEN, NOT_ADMIN, text, type FormState } from "../form";
 import { fromLocalInput } from "../format";
+import { SEE } from "../hunt";
 import { supabase } from "../supabase";
 
 export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> {
@@ -53,6 +54,16 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
       throw e;
     }
   }
+  // And codes seen from farther away than they're collected
+  const far_view = checked(fd, "far_view");
+  const fars = !(await sb.from("settings").select("far_view").limit(1)).error;
+  if (!fars && far_view) return failed(NEEDS_FAR);
+  let far = {};
+  if (fars) {
+    const m = Number(String(fd.get("see_metres") ?? "").trim());
+    if (!Number.isInteger(m) || m < SEE.min || m > SEE.max) return failed(`Players see codes from: a whole number of metres from ${SEE.min} to ${SEE.max}.`);
+    far = { far_view, see_metres: m };
+  }
   const { data, error } = await sb
     .from("settings")
     .update({
@@ -63,6 +74,7 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
       ...(gps && { random_spots }),
       ...(seen && { seen_from }),
       ...drop,
+      ...far,
     })
     .eq("id", 1)
     .select("id");

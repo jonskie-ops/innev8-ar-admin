@@ -30,6 +30,9 @@ export const NEEDS_SEEN =
 export const NEEDS_DROP =
   "Dropping points need their update first: run supabase/migrations/20261119000000_points_drop.sql in Supabase's SQL Editor.";
 
+export const NEEDS_FAR =
+  "Seeing codes from farther away needs its update first: run supabase/migrations/20261119010000_see_from_afar.sql in Supabase's SQL Editor.";
+
 export const NEEDS_LOCATIONS =
   "Locations need the locations update first: run supabase/migrations/20261022000000_locations.sql in Supabase's SQL Editor.";
 

@@ -95,6 +95,7 @@ export default async function CodePage({
         prizes={prizes.filter((p) => p.rule === "code" && p.rule_code === code.id).map((p) => p.name)}
         seenOn={settings.seen_from ?? false}
         seenReady={settings.seen_from !== undefined}
+        seeFrom={settings.far_view ? settings.see_metres ?? null : null}
         canEdit={canEdit}
       />
     </>

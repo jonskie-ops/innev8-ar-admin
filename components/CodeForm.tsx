@@ -68,6 +68,7 @@ export function CodeForm({
   prizes = [],
   seenOn = false,
   seenReady = false,
+  seeFrom = null,
   canEdit,
 }: {
   code: Code;
@@ -87,6 +88,8 @@ export function CodeForm({
   /** The event's "Seen from one side" switch (Settings), and whether the database has its update */
   seenOn?: boolean;
   seenReady?: boolean;
+  /** Players see codes from this far (Settings, "See codes from farther away" on), else null */
+  seeFrom?: number | null;
   canEdit: boolean;
 }) {
   const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
@@ -422,8 +425,10 @@ export function CodeForm({
             On the ground
           </h2>
           <p className="field__hint">
-            Players see this code when their phone is within the distance below of its GPS spot. Best set on site: stand on
-            the spot with your phone and use your location.
+            {seeFrom
+              ? `Players see this code in the camera from ${seeFrom} m away (Settings) and collect it once their phone is within the distance below of its GPS spot.`
+              : "Players see and collect this code when their phone is within the distance below of its GPS spot."}{" "}
+            Best set on site: stand on the spot with your phone and use your location.
           </p>
           <p className="gpsspot">
             <span className="gpsspot__text">
@@ -482,8 +487,8 @@ export function CodeForm({
             </span>
           </label>
           <div className="field">
-            <span className="field__label">Show it within</span>
-            <div className="radius" role="group" aria-label="Show it within">
+            <span className="field__label">Collect it within</span>
+            <div className="radius" role="group" aria-label="Collect it within">
               {RADIUS.presets.map((p) => (
                 <button
                   key={p.m}

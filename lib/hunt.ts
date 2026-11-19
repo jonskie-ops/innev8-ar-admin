@@ -289,8 +289,16 @@ export type Settings = {
   drop_full?: number;
   drop_every?: number;
   drop_floor?: number;
+  /**
+   * On: players see a code in the camera from `see_metres` away (locked, "walk closer") and collect it
+   * within its own distance (missing before the see-from-afar update).
+   */
+  far_view?: boolean;
+  see_metres?: number;
   updated_at: string;
 };
+/** How far away players see codes with "see codes from farther away" on: 30 m to start. */
+export const SEE = { default: 30, min: 10, max: 200 };
 
 /** The points drop rule: full points for the first `first` finders, then 10% less every `every`, never below `floor`%. */
 export type DropRule = { first: number; every: number; floor: number };

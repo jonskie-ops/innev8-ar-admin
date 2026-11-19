@@ -107,6 +107,8 @@ const FIELD: Record<string, string> = {
   drop_full: "points drop",
   drop_every: "points drop",
   drop_floor: "points drop",
+  far_view: "seen from farther",
+  see_metres: "seen from farther",
   description: "description",
   photo_path: "photo",
   photo_fit: "photo",

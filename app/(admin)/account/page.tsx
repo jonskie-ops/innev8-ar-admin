@@ -9,7 +9,7 @@ import { saveEvent } from "@/lib/actions/event";
 import { requireTeammate } from "@/lib/dal";
 import { getSettings, listCodes, listLocations, listTeam } from "@/lib/data";
 import { day, stamp, toLocalInput } from "@/lib/format";
-import { DROP_DEFAULT } from "@/lib/hunt";
+import { DROP_DEFAULT, SEE } from "@/lib/hunt";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -113,6 +113,9 @@ export default async function AccountPage() {
             seenFrom={s.seen_from ?? false}
             seenReady={s.seen_from !== undefined}
             sided={codes.filter((c) => c.seen_width != null).length}
+            farView={s.far_view ?? false}
+            seeMetres={s.see_metres ?? SEE.default}
+            farReady={s.far_view !== undefined}
             pointsDrop={s.points_drop ?? false}
             dropRule={{
               first: s.drop_full ?? DROP_DEFAULT.first,

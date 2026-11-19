@@ -22,7 +22,7 @@ function readSpot(fd: FormData) {
     lat: Math.round(lat * 1e7) / 1e7,
     lng: Math.round(lng * 1e7) / 1e7,
     accuracy,
-    radius: whole(fd, "radius", "Show it within", RADIUS.min, RADIUS.max),
+    radius: whole(fd, "radius", "Collect it within", RADIUS.min, RADIUS.max),
   };
 }
 
