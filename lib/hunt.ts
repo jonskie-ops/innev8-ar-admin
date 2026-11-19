@@ -440,6 +440,19 @@ export function toPulse(data: unknown): Pulse | null {
   };
 }
 
+/** Test play to clean up (the database's test_play): test finds, test prize cards, test players. */
+export type TestPlay = { finds: number; cards: number; players: number };
+
+/** "38 finds, 12 prize cards and 9 players" (only what there is) */
+export function testPlayText(t: TestPlay) {
+  const parts = [
+    t.finds && `${t.finds.toLocaleString("en-PH")} find${t.finds === 1 ? "" : "s"}`,
+    t.cards && `${t.cards.toLocaleString("en-PH")} prize card${t.cards === 1 ? "" : "s"}`,
+    t.players && `${t.players.toLocaleString("en-PH")} player${t.players === 1 ? "" : "s"}`,
+  ].filter((x): x is string => Boolean(x));
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}` : (parts[0] ?? "");
+}
+
 /** Where the game lives: a code opens straight ahead as `${GAME_URL}/?s=<code>`. */
 export const GAME_URL = "https://innev8-ar-js.vercel.app";
 /** The summit's own page on the INNEV8 site (the top bar's link). */

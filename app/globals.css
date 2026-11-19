@@ -7838,6 +7838,22 @@ html[data-full-map] .navbar {
   display: grid;
   gap: 22px;
 }
+/* Settings: cleaning up test play after a rehearsal */
+.cleanup {
+  display: grid;
+  gap: 12px;
+}
+.cleanup__done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--turq);
+  font-size: 13.5px;
+}
+.cleanup__done .ico {
+  width: 16px;
+  height: 16px;
+}
 /* Prizes that cost points: what players still have to spend, spent here, and earned */
 .desk__points {
   display: grid;

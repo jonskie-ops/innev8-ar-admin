@@ -152,6 +152,7 @@ export function didWhat(a: Activity) {
   const kind = KIND[a.what] ?? a.what;
   if (a.what === "hunters" && /^\d+ hunters$/.test(a.label)) return "removed"; // ("removed 12 hunters": deleted together)
   if (a.what === "claims") return a.action === "removed" ? "took back" : "gave"; // ("gave Tote bag to Ana", at the prize desk)
+  if (a.what === "test") return "cleaned up test play:"; // ("cleaned up test play: 38 finds, 12 prize cards and 9 players")
   if (a.action === "added") return `added the ${kind}`;
   if (a.action === "removed") return `removed the ${kind}`;
   const live = a.changes.find((c) => c.startsWith("live:"));

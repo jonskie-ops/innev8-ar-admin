@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { supabaseUrl } from "./config";
-import { BUILT_IN_SPONSORS, builtInBadge, toPulse, type Activity, type BoardEntry, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Pulse, type Settings, type Sponsor, type Zone } from "./hunt";
+import { BUILT_IN_SPONSORS, builtInBadge, toPulse, type Activity, type BoardEntry, type Code, type Given, type Hunter, type Location, type Member, type Prize, type Pulse, type Settings, type Sponsor, type TestPlay, type Zone } from "./hunt";
 import { supabase } from "./supabase";
 
 /**
@@ -49,6 +49,13 @@ export const huntPulse = cache(async (): Promise<{ pulse: Pulse; at: number } | 
   const { data, error } = await (await supabase()).rpc("hunt_pulse");
   const pulse = error ? null : toPulse(data);
   return pulse && { pulse, at: Date.now() };
+});
+/** The test play there is to clean up (Settings). Null before the test clean-up update. */
+export const testPlay = cache(async (): Promise<TestPlay | null> => {
+  const { data, error } = await (await supabase()).rpc("test_play", { p_remove: false });
+  const d = (error ? null : data) as Record<string, unknown> | null;
+  if (!d || typeof d !== "object" || d.error) return null;
+  return { finds: Number(d.finds) || 0, cards: Number(d.cards) || 0, players: Number(d.players) || 0 };
 });
 export const listZones = cache(async () =>
   read<Zone[]>((await supabase()).from("zones").select("*").order("sort").order("name")),

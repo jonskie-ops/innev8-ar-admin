@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { adminOnly } from "../dal";
 import { dbError, done, failed, NOT_ADMIN, type FormState } from "../form";
+import { testPlayText } from "../hunt";
 import { supabase } from "../supabase";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -51,6 +52,26 @@ export async function deleteHunters(ids: string[]): Promise<FormState> {
   if (!gone) return failed("They were already deleted.");
   revalidatePath("/", "layout");
   return done(gone === 1 ? "Deleted" : `Deleted ${gone} hunters`);
+}
+
+/**
+ * Cleans up test play (Settings): every test find, every test prize card, and the test players (who
+ * joined before the start and have nothing real). Real finds and prizes given stay. The database does
+ * it in one go (…_test_cleanup.sql), with one line in Recent changes.
+ */
+export async function cleanUpTestPlay(): Promise<FormState> {
+  if (!(await adminOnly())) return failed(NOT_ADMIN);
+  const { data, error } = await (await supabase()).rpc("test_play", { p_remove: true });
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883")
+      return failed("Not cleaned up: the database needs the update first (20261119040000_test_cleanup.sql, in the SQL Editor).");
+    return failed(dbError(error));
+  }
+  const d = (data ?? {}) as { error?: string; finds?: number; cards?: number; players?: number };
+  if (d.error) return failed(NOT_ADMIN);
+  const what = testPlayText({ finds: Number(d.finds) || 0, cards: Number(d.cards) || 0, players: Number(d.players) || 0 });
+  revalidatePath("/", "layout");
+  return done(what ? `Removed ${what}` : "There was no test play to clean up");
 }
 
 /** Why they weren't deleted: who was given a prize, and (with others ticked) what to do */

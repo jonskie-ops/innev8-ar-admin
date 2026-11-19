@@ -5,9 +5,10 @@ import { EventBanner } from "@/components/EventBanner";
 import { EventForm } from "@/components/EventForm";
 import { CalendarIcon, KeyIcon, LockIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
+import { TestCleanup } from "@/components/TestCleanup";
 import { saveEvent } from "@/lib/actions/event";
 import { requireTeammate } from "@/lib/dal";
-import { getSettings, listCodes, listLocations, listTeam } from "@/lib/data";
+import { getSettings, listCodes, listLocations, listTeam, testPlay } from "@/lib/data";
 import { day, stamp, toLocalInput } from "@/lib/format";
 import { DROP_DEFAULT, SEE } from "@/lib/hunt";
 
@@ -63,7 +64,7 @@ export default async function AccountPage() {
       </div>
     );
 
-  const [s, { locations }, codes] = await Promise.all([getSettings(), listLocations(), listCodes()]);
+  const [s, { locations }, codes, play] = await Promise.all([getSettings(), listLocations(), listCodes(), testPlay()]);
   return (
     <>
       <Head
@@ -127,6 +128,11 @@ export default async function AccountPage() {
             save={saveEvent}
             canEdit={me.role === "admin"}
           />
+          {play ? (
+            <TestCleanup play={play} canEdit={me.role === "admin"} />
+          ) : (
+            <p className="banner">Cleaning up test play needs the database update first: run 20261119040000_test_cleanup.sql in the SQL Editor.</p>
+          )}
         </div>
       </section>
     </>
