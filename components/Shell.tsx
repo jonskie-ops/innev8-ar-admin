@@ -176,7 +176,12 @@ export function Shell({
                     </small>
                   </span>
                 </Link>
-                <PhoneMenu current={current("/account")} teamPage={current("/team")} boardPage={current("/leaderboard")} />
+                <PhoneMenu
+                  current={current("/account")}
+                  huntersPage={current("/hunters")}
+                  teamPage={current("/team")}
+                  boardPage={current("/leaderboard")}
+                />
               </div>
             </header>
           )}
@@ -207,7 +212,17 @@ export function Shell({
  * account, the team, the leaderboard, the live site (the summit page), the app's settings, and sign out under them. (On
  * computers, these are in the rail and the top bar.)
  */
-function PhoneMenu({ current, teamPage, boardPage }: { current?: "page"; teamPage?: "page"; boardPage?: "page" }) {
+function PhoneMenu({
+  current,
+  huntersPage,
+  teamPage,
+  boardPage,
+}: {
+  current?: "page";
+  huntersPage?: "page";
+  teamPage?: "page";
+  boardPage?: "page";
+}) {
   const id = useId();
   const box = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -251,7 +266,11 @@ function PhoneMenu({ current, teamPage, boardPage }: { current?: "page"; teamPag
             <UserIcon />
             Account
           </Link>
-          {/* (the tab bar has no room for it) */}
+          {/* (the tab bar has no room for these) */}
+          <Link href="/hunters" className="setmenu__item" aria-current={huntersPage} onClick={() => setOpen(false)}>
+            <HunterIcon />
+            Hunters
+          </Link>
           <Link href="/team" className="setmenu__item" aria-current={teamPage} onClick={() => setOpen(false)}>
             <TeamIcon />
             Team
