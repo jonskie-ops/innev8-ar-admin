@@ -194,7 +194,8 @@ export type SponsorView = { id: string; name: string; badge: string };
 export const sponsorIn = (sponsors: SponsorView[], id: string | undefined): SponsorView | null =>
   sponsors.find((s) => s.id === id) ?? null;
 
-export type PrizeRule = "all" | "count" | "legendary" | "points" | "code" | "cost";
+/** …and "board": no rule of its own, the top hunters on the final leaderboard (the organisers give it). */
+export type PrizeRule = "all" | "count" | "legendary" | "points" | "code" | "cost" | "board";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "all", label: "Collect every QR code" },
   { id: "count", label: "Collect a number of QR codes", value: "QR codes" },
@@ -202,6 +203,7 @@ export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "points", label: "Reach a number of points", value: "points" },
   { id: "code", label: "Find a chosen QR code" },
   { id: "cost", label: "Costs points (the desk takes them)", value: "points" },
+  { id: "board", label: "Nothing: the leaderboard decides, after the hunt" },
 ];
 
 export type Prize = {
@@ -253,6 +255,8 @@ export function ruleText(p: Pick<Prize, "rule" | "rule_value" | "rule_text">, to
       return p.rule_text || "Find a chosen QR code";
     case "cost":
       return `Costs ${(p.rule_value ?? 0).toLocaleString("en-PH")} points`;
+    case "board":
+      return "Top hunters on the leaderboard, after the hunt";
   }
 }
 
@@ -273,6 +277,8 @@ export function prizeNeeds(p: Pick<Prize, "rule" | "rule_value">, codes: number,
       return { needs: "A chosen QR code", share: of(1, codes) };
     case "cost":
       return { needs: `Costs ${v.toLocaleString("en-PH")} pts`, share: of(v, points) };
+    case "board":
+      return { needs: "The leaderboard, after the hunt", share: 100 };
   }
 }
 

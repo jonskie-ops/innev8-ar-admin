@@ -10,7 +10,7 @@ import { supabase } from "../supabase";
 
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const PHOTO_MAX = 5 * 1024 * 1024;
-const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code", "cost"];
+const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code", "cost", "board"];
 
 function readPrize(fd: FormData) {
   const rule = oneOf(fd, "rule", "Who wins", RULES);

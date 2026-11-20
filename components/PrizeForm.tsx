@@ -116,6 +116,13 @@ export function PrizeForm({
               gives the prize. One each. Their score on the leaderboard stays the same.
             </p>
           )}
+          {/* The leaderboard decides: what that means for players and the desk */}
+          {rule === "board" && (
+            <p className="field__hint rules__note">
+              Players see it in the game as a prize for the top hunters, but the game doesn&apos;t give it: no prize card and no
+              claim code. Once the hunt is over, give it to the winners on the final leaderboard yourselves.
+            </p>
+          )}
           {/* A chosen code: which one, and the sentence players read */}
           {rule === "code" && (
             <div className="row2 rules__code">
