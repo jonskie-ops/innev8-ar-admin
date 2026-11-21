@@ -3,6 +3,7 @@ import { PasswordForm } from "@/components/AuthForms";
 import { Avatar, Head } from "@/components/bits";
 import { EventBanner } from "@/components/EventBanner";
 import { EventForm } from "@/components/EventForm";
+import { HuntControl } from "@/components/HuntControl";
 import { CalendarIcon, KeyIcon, ShieldIcon, UserIcon } from "@/components/icons";
 import { RoleTable } from "@/components/Roles";
 import { TestCleanup } from "@/components/TestCleanup";
@@ -105,7 +106,11 @@ export default async function AccountPage() {
             testMode={s.test_mode}
             place={locations.filter((l) => l.live).map((l) => l.name).join(" · ") || "No location on"}
           />
+          {/* Start or end the hunt now */}
+          <HuntControl startsAt={s.starts_at} endsAt={s.ends_at} canEdit={me.role === "admin"} />
+          {/* (a fresh form after a change, e.g. Start: its times are the saved ones, not the old ones) */}
           <EventForm
+            key={s.updated_at}
             startsAt={toLocalInput(s.starts_at)}
             endsAt={toLocalInput(s.ends_at)}
             testMode={s.test_mode}

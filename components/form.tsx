@@ -284,6 +284,7 @@ export function ConfirmButton({
   className = "btn btn--ghost btn--sm btn--quiet-danger",
   children,
   label,
+  tone,
 }: {
   action: () => Promise<FormState>;
   question: string;
@@ -291,6 +292,8 @@ export function ConfirmButton({
   className?: string;
   children: ReactNode;
   label?: string;
+  /** The question's confirm button: red (the default: deleting), or the main colour */
+  tone?: "danger" | "primary";
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   return (
@@ -304,7 +307,7 @@ export function ConfirmButton({
       >
         {children}
       </button>
-      <AskDialog ref={dialog} question={question} confirm={confirm} action={action} />
+      <AskDialog ref={dialog} question={question} confirm={confirm} action={action} tone={tone} />
     </>
   );
 }

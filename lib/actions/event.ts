@@ -83,3 +83,45 @@ export async function saveEvent(_: FormState, fd: FormData): Promise<FormState> 
   revalidatePath("/", "layout");
   return done("Saved");
 }
+
+/** When a hunt started (or started again) after its end time runs until, unless the times say otherwise. */
+const RESTART_HOURS = 6;
+
+/**
+ * Starts the hunt now (Settings' Start button): its start is this minute and test mode goes off, so
+ * players can find codes from now on. An end time already past moves RESTART_HOURS on (changeable in
+ * the times, as ever).
+ */
+export async function startHuntNow(): Promise<FormState> {
+  if (!(await adminOnly())) return failed(NOT_ADMIN);
+  const sb = await supabase();
+  const { data: s, error: readError } = await sb.from("settings").select("ends_at").eq("id", 1).single();
+  if (readError || !s) return failed(readError ? dbError(readError) : NOT_ADMIN);
+  const now = new Date();
+  const ends = new Date(s.ends_at as string).getTime() > now.getTime() + 60_000 ? (s.ends_at as string) : new Date(now.getTime() + RESTART_HOURS * 3_600_000).toISOString();
+  const { data, error } = await sb
+    .from("settings")
+    .update({ starts_at: now.toISOString(), ends_at: ends, test_mode: false })
+    .eq("id", 1)
+    .select("id");
+  if (error) return failed(dbError(error));
+  if (!data?.length) return failed(NOT_ADMIN);
+  revalidatePath("/", "layout");
+  return done("The hunt has started");
+}
+
+/** Ends the hunt now (Settings' End button): its end is this minute; the leaderboard is final from now. */
+export async function endHuntNow(): Promise<FormState> {
+  if (!(await adminOnly())) return failed(NOT_ADMIN);
+  const sb = await supabase();
+  const { data: s, error: readError } = await sb.from("settings").select("starts_at, ends_at").eq("id", 1).single();
+  if (readError || !s) return failed(readError ? dbError(readError) : NOT_ADMIN);
+  const now = Date.now();
+  if (new Date(s.starts_at as string).getTime() > now) return failed("The hunt hasn't started yet.");
+  if (new Date(s.ends_at as string).getTime() <= now) return failed("The hunt has already ended.");
+  const { data, error } = await sb.from("settings").update({ ends_at: new Date(now).toISOString() }).eq("id", 1).select("id");
+  if (error) return failed(dbError(error));
+  if (!data?.length) return failed(NOT_ADMIN);
+  revalidatePath("/", "layout");
+  return done("The hunt has ended");
+}
