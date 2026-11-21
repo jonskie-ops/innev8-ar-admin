@@ -4,7 +4,7 @@ import { Head, HuntLocked, pad } from "@/components/bits";
 import { CodeForm } from "@/components/CodeForm";
 import { AddedToast } from "@/components/form";
 import { CheckIcon } from "@/components/icons";
-import { deleteCode, saveCode } from "@/lib/actions/codes";
+import { deleteCode, moveCode, saveCode } from "@/lib/actions/codes";
 import { huntLock, requireTeammate } from "@/lib/dal";
 import { getSettings, listCodes, listLocations, listPrizes, listSponsors, listZones, locationOf } from "@/lib/data";
 import { stamp } from "@/lib/format";
@@ -26,6 +26,8 @@ export default async function CodePage({
   const canEdit = me.role === "admin" && !lock;
   const { id } = await params;
   const isNew = id === "new";
+  // The hunt is on: an admin can still move a code (Where it is), nothing else
+  const moveOnly = me.role === "admin" && Boolean(lock) && !isNew;
   if (isNew && !canEdit) redirect("/codes");
   const [codes, zones, { sponsors, ready }, { locations }, prizes, settings, { added, at }] = await Promise.all([
     listCodes(),
@@ -74,7 +76,7 @@ export default async function CodePage({
         title={isNew ? "New QR code" : `#${pad(code.num)} ${code.name}`}
         lead={isNew ? "Where it hides, the clue that leads to it, and what it's worth." : `Last changed ${stamp(code.updated_at)}`}
       />
-      {me.role === "admin" && lock && <HuntLocked until={lock.until} />}
+      {me.role === "admin" && lock && <HuntLocked until={lock.until} move={moveOnly} />}
       {added && (
         <p className="banner banner--ok">
           <CheckIcon />
@@ -90,13 +92,14 @@ export default async function CodePage({
         sponsors={sponsors.map(({ id, name, badge }) => ({ id, name, badge }))}
         canAddSponsor={ready && canEdit}
         others={codes.filter((c) => c.id !== code.id)}
-        save={saveCode.bind(null, isNew ? null : code.id)}
+        save={moveOnly ? moveCode.bind(null, code.id) : saveCode.bind(null, isNew ? null : code.id)}
         remove={isNew ? undefined : deleteCode.bind(null, code.id)}
         prizes={prizes.filter((p) => p.rule === "code" && p.rule_code === code.id).map((p) => p.name)}
         seenOn={settings.seen_from ?? false}
         seenReady={settings.seen_from !== undefined}
         seeFrom={settings.far_view ? settings.see_metres ?? null : null}
         canEdit={canEdit}
+        moveOnly={moveOnly}
       />
     </>
   );

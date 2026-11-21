@@ -40,13 +40,15 @@ export function Head({
  * For an admin while the hunt is on (lib/dal.ts huntLock): why the QR codes, prizes and locations
  * can only be looked at, and until when.
  */
-export function HuntLocked({ until }: { until: string }) {
+export function HuntLocked({ until, move = false }: { until: string; move?: boolean }) {
   return (
     <p className="banner">
       <LockIcon />
       <span>
         The hunt is on, so QR codes, prizes and locations can&apos;t be changed until it ends ({time(until)}, {day(until)}).
-        The prize desk works as usual.
+        {move
+          ? " You can still move this code: its map pin, GPS spot and collect distance (Where it is). Nobody's finds or points change."
+          : " The prize desk works as usual."}
       </span>
     </p>
   );

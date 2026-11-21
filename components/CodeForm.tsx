@@ -70,6 +70,7 @@ export function CodeForm({
   seenReady = false,
   seeFrom = null,
   canEdit,
+  moveOnly = false,
 }: {
   code: Code;
   /** Every location's areas (each code is in one of its location's) */
@@ -91,8 +92,14 @@ export function CodeForm({
   /** Players see codes from this far (Settings, "See codes from farther away" on), else null */
   seeFrom?: number | null;
   canEdit: boolean;
+  /**
+   * The hunt is on (an admin): only "Where it is" can be changed (`save` moves it: lib/actions/codes.ts
+   * moveCode); the rest stays as it is.
+   */
+  moveOnly?: boolean;
 }) {
-  const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canEdit);
+  const canMove = canEdit || moveOnly;
+  const { formRef, state, pending, waiting, onSubmit, onChange, changed } = useAutoSave(save, Boolean(remove) && canMove);
   const [rarity, setRarity] = useState<Rarity>(code.rarity);
   const [points, setPoints] = useState(String(code.points));
   const [pos, setPos] = useState({ x: code.x, y: code.y });
@@ -358,7 +365,7 @@ export function CodeForm({
         </section>
       </fieldset>
 
-      <fieldset className="edit__side" disabled={!canEdit}>
+      <fieldset className="edit__side" disabled={!canMove}>
         <section className="panel" {...show(1)}>
           <h2 className="panel__title">
             <PinIcon />
@@ -367,7 +374,7 @@ export function CodeForm({
           {locations.length > 1 && (
             <label className="field">
               <span className="field__label">Location</span>
-              <select value={location.id} onChange={(e) => moveTo(e.target.value)}>
+              <select value={location.id} onChange={(e) => moveTo(e.target.value)} disabled={moveOnly}>
                 {locations.map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.name}
@@ -402,7 +409,7 @@ export function CodeForm({
             zones={areas}
             selected={code.id}
             move={
-              canEdit
+              canMove
                 ? (x, y) => {
                     setPos({ x, y });
                     setGeo({ ...plan.toLatLng(x, y), accuracy: null, from: "pin" });
@@ -413,7 +420,7 @@ export function CodeForm({
             label="Place the pin: tap or drag on the map"
           />
           <span className="field__hint">
-            {canEdit ? "Tap or drag on the map to place it: its GPS spot below moves with it. " : ""}Other codes are shown faded.
+            {canMove ? "Tap or drag on the map to place it: its GPS spot below moves with it. " : ""}Other codes are shown faded.
           </span>
           <input type="hidden" name="x" value={pos.x} />
           <input type="hidden" name="y" value={pos.y} />
@@ -464,7 +471,7 @@ export function CodeForm({
               </p>
             )
           )}
-          {canEdit && <GpsFix onFix={(r) => putSpot({ ...r, from: "gps" })} />}
+          {canMove && <GpsFix onFix={(r) => putSpot({ ...r, from: "gps" })} />}
           <label className="field">
             <span className="field__label">Or paste it</span>
             <input
@@ -532,7 +539,7 @@ export function CodeForm({
             }}
             on={seenOn}
             ready={seenReady}
-            canEdit={canEdit}
+            canEdit={canMove}
           />
           <input type="hidden" name="lat" value={geo.lat} />
           <input type="hidden" name="lng" value={geo.lng} />
@@ -540,6 +547,12 @@ export function CodeForm({
         </section>
       </fieldset>
 
+      {/* The hunt is on: moving it saves by itself, as ever */}
+      {moveOnly && (
+        <div className="savebar">
+          <AutoSaveToast state={state} pending={pending} waiting={waiting} />
+        </div>
+      )}
       {canEdit && (
         <div className={stepped ? "savebar savebar--steps" : "savebar"}>
           {stepped && (

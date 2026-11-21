@@ -152,6 +152,41 @@ export async function saveCode(id: string | null, _: FormState, fd: FormData): P
   return done("Saved");
 }
 
+/**
+ * Moves a QR code while the hunt is on (its edits are locked then: lib/dal.ts huntLock): its map pin,
+ * GPS spot, collect distance, area, spot name and "Seen from" side. Nobody's progress changes (what's
+ * found stays found, points stay), so this is the one change allowed mid-hunt; what players see,
+ * points, on/off and deleting stay locked.
+ */
+export async function moveCode(id: string, _: FormState, fd: FormData): Promise<FormState> {
+  if (!(await adminOnly())) return failed(NOT_ADMIN);
+  let v;
+  try {
+    v = {
+      x: decimal(fd, "x", "The pin", 0, 360),
+      y: decimal(fd, "y", "The pin", 0, 520),
+      zone_id: text(fd, "zone_id", "Zone", { max: 24, required: true }),
+      spot: text(fd, "spot", "Spot", { max: 60 }),
+      ...readSpot(fd),
+      ...readSeen(fd),
+    };
+  } catch (e) {
+    if (e instanceof Invalid) return failed(e.message);
+    throw e;
+  }
+  const sb = await supabase();
+  const { data: code } = await sb.from("codes").select("location_id").eq("id", id).maybeSingle();
+  if (!code) return failed("This QR code was removed by someone else.");
+  const { data: zone } = await sb.from("zones").select("location_id").eq("id", v.zone_id).maybeSingle();
+  if (zone?.location_id && zone.location_id !== code.location_id)
+    return failed("Choose an area of this location for the code (the Zone list).");
+  const { data, error } = await sb.from("codes").update(v).eq("id", id).select("id");
+  if (error) return failed(dbError(error));
+  if (!data?.length) return failed("This QR code was removed by someone else.");
+  revalidatePath("/", "layout");
+  return done("Moved");
+}
+
 export async function deleteCode(id: string): Promise<FormState> {
   if (!(await adminOnly())) return failed(NOT_ADMIN);
   if (await huntLock()) return failed(HUNT_LOCKED);
