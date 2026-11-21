@@ -10,7 +10,7 @@ import { supabase } from "../supabase";
 
 const PHOTO_TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 const PHOTO_MAX = 5 * 1024 * 1024;
-const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code", "cost", "board"];
+const RULES: PrizeRule[] = ["all", "count", "legendary", "points", "code", "cost", "board", "rank"];
 
 function readPrize(fd: FormData) {
   const rule = oneOf(fd, "rule", "Who wins", RULES);
@@ -23,7 +23,9 @@ function readPrize(fd: FormData) {
         ? whole(fd, "rule_value", "The number of QR codes", 1, 99)
         : rule === "points" || rule === "cost"
           ? whole(fd, "rule_value", "The points", 1, 100000)
-          : null,
+          : rule === "rank"
+            ? whole(fd, "rule_value", "The place on the leaderboard", 1, 1000)
+            : null,
     // A chosen code: which, and the sentence players read (only sent then, so a database without
     // the prize code update still saves the other rules)
     ...(rule === "code" && {
@@ -43,7 +45,13 @@ function readPrize(fd: FormData) {
 const noCodeRule = (e: { code?: string }) => ["PGRST204", "42703", "23514"].includes(e.code ?? "");
 /** What a refused save says: a rule the database doesn't have yet names its update */
 const saveError = (rule: PrizeRule, e: { code?: string; message: string }) =>
-  rule === "code" && noCodeRule(e) ? NEEDS_PRIZE_CODE : rule === "cost" && e.code === "23514" ? NEEDS_POINT_PRIZES : dbError(e);
+  rule === "code" && noCodeRule(e)
+    ? NEEDS_PRIZE_CODE
+    : rule === "cost" && e.code === "23514"
+      ? NEEDS_POINT_PRIZES
+      : rule === "rank" && e.code === "23514"
+        ? "Not saved: a prize for a leaderboard place needs the database update first (20261121000000_winner_check.sql, in the SQL Editor)."
+        : dbError(e);
 
 /** Saves a prize (`id` null: adds one), with its photo: a new one replaces the old. */
 export async function savePrize(id: string | null, _: FormState, fd: FormData): Promise<FormState> {

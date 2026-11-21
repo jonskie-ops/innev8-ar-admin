@@ -103,3 +103,72 @@ export async function undoClaim(code: string): Promise<DeskAnswer> {
   revalidatePath("/", "layout");
   return said({ ok: "Taken back: it can be given again" });
 }
+
+// ---------------------------------------------------------------- winners, by their hunter QR
+
+/** A winner's hunter QR, scanned at the desk (…_winner_check.sql): who, their place, their check, the leaderboard prizes. */
+export type Winner = {
+  hunter: { id: string; name: string; province: string; tag: string };
+  test: boolean;
+  /** The leaderboard is final (the hunt is over, test mode off) */
+  final: boolean;
+  me: { rank: number; score: number; codes: number } | null;
+  /** The leaderboard prize they were given at the desk already (one each) */
+  checked: { prize: string; at: string; by: string | null; to: string | null }[];
+  /** The leaderboard prizes: `rank`, the place one is for (null: "the leaderboard decides") */
+  prizes: { id: string; name: string; stock: number; to: string | null; rank?: number | null }[];
+};
+export type WinnerAnswer = { winner?: Winner; ok?: string; error?: string; at: number };
+
+const NEEDS_WINNERS = "Checking winners needs the database update first (20261121000000_winner_check.sql, in the SQL Editor).";
+const saidW = (r: Omit<WinnerAnswer, "at">): WinnerAnswer => ({ ...r, at: Date.now() });
+type WinnerRefusal = { error: string; prize?: string; at?: string; by?: string | null };
+function whyWinner(r: WinnerRefusal) {
+  switch (r.error) {
+    case "team":
+      return NOT_TEAM;
+    case "tag":
+      return "No player has this hunter QR. Check it's their hunter QR, from the game's Me tab.";
+    case "pin":
+      return "This hunter QR has expired: it changes every minute. Ask them to open the Me tab and show it again (a screenshot won't work), then scan it again.";
+    case "noperson":
+      return "Type their name, from their ID or badge.";
+    case "noprize":
+      return "Choose one of the leaderboard prizes.";
+    case "already":
+      return `Already checked: they got ${r.prize ?? "a leaderboard prize"}${r.at ? `, ${stamp(r.at)}` : ""}${r.by ? ` (by ${r.by})` : ""}. One each.`;
+    case "nostock":
+      return "None of this prize left. Choose another.";
+    default:
+      return "Couldn't do it. Try again.";
+  }
+}
+
+/** Whose hunter QR this is (scanned: its tag and this minute's PIN), their place on the leaderboard, and the prizes. */
+export async function lookupWinner(tag: string, pin: string): Promise<WinnerAnswer> {
+  if (!(await teammateOnly())) return saidW({ error: NOT_TEAM });
+  const { data, error } = await (await supabase()).rpc("desk_winner", { p_tag: tag.slice(0, 8), p_pin: pin.slice(0, 8) });
+  if (missing(error)) return saidW({ error: NEEDS_WINNERS });
+  if (error || !data) return saidW({ error: "Couldn't check it. Try again." });
+  if ("error" in data) return saidW({ error: whyWinner(data as WinnerRefusal) });
+  return saidW({ winner: data as Winner });
+}
+
+/** Marks them checked, with the leaderboard prize they get (once each), given to the person named. */
+export async function checkWinner(tag: string, pin: string, prize: string, person: string): Promise<WinnerAnswer> {
+  if (!(await teammateOnly())) return saidW({ error: NOT_TEAM });
+  const name = person.trim().replace(/\s+/g, " ").slice(0, 80);
+  if (!name) return saidW({ error: whyWinner({ error: "noperson" }) });
+  const { data, error } = await (await supabase()).rpc("desk_check_winner", {
+    p_tag: tag.slice(0, 8),
+    p_pin: pin.slice(0, 8),
+    p_prize: prize,
+    p_person: name,
+  });
+  if (missing(error)) return saidW({ error: NEEDS_WINNERS });
+  if (error || !data) return saidW({ error: "Couldn't mark it. Try again." });
+  if ("error" in data) return saidW({ error: whyWinner(data as WinnerRefusal) });
+  revalidatePath("/", "layout");
+  const { left } = data as { left: number | null };
+  return saidW({ ok: left === null ? "Checked (test mode: the stock stays)" : `Checked · ${left.toLocaleString("en-PH")} left` });
+}

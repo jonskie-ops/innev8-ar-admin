@@ -2,11 +2,11 @@
 /* eslint-disable @next/next/no-img-element -- prize photos come from Supabase storage, already sized */
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { giveClaim, lookupClaim, undoClaim, type DeskAnswer, type Repeat } from "@/lib/actions/desk";
+import { checkWinner, giveClaim, lookupClaim, lookupWinner, undoClaim, type DeskAnswer, type Repeat, type WinnerAnswer } from "@/lib/actions/desk";
 import { stamp } from "@/lib/format";
 import { photoStyle, ruleText, type DeskClaim, type PhotoFit } from "@/lib/hunt";
 import { Avatar } from "./bits";
-import { DeskCamera } from "./DeskCamera";
+import { badgeInText, DeskCamera } from "./DeskCamera";
 import { ConfirmButton } from "./form";
 import { AlertIcon, CameraIcon, CheckIcon, CloseIcon, GiftIcon, KeyboardIcon, QrIcon, SearchIcon } from "./icons";
 import { Spinner } from "./Progress";
@@ -63,7 +63,11 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
   const [open, setOpen] = useState(false);
   const claim = answer?.claim;
   const state = claim ? standingOf(claim) : null;
-  const busy = Boolean(claim) || pending;
+  // A winner's hunter QR (the leaderboard prizes): who, and which prize they get
+  const [win, setWin] = useState<(WinnerAnswer & { tag?: string; pin?: string }) | null>(null);
+  const [prizeId, setPrizeId] = useState("");
+  const winner = win?.winner;
+  const busy = Boolean(claim) || Boolean(winner) || pending;
 
   const pick = (m: Mode) => {
     setMode(m);
@@ -73,12 +77,31 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
     setGave(null);
     setPerson("");
     setRepeat(null);
+    setPrizeId("");
+    // A hunter QR: a winner to check
+    if (code.startsWith("HUNTER:")) {
+      const [, tag, pin] = code.split(":");
+      setAnswer(null);
+      start(async () => {
+        const r = await lookupWinner(tag, pin);
+        setWin({ ...r, tag, pin });
+        // The prize for their place, picked for them (if there is one, and it's still there)
+        const w = r.winner;
+        const mine = w?.me ? w.prizes.find((p) => p.rank === w.me!.rank && (w.test || p.stock > 0)) : undefined;
+        if (mine && !w?.checked.length) setPrizeId(mine.id);
+      });
+      return;
+    }
+    setWin(null);
     start(async () => setAnswer(await lookupClaim(code)));
   };
   // Ready for the next card: the box empty (typing), or the camera reading again
   const next = () => {
     if (claim) last.current = { code: claim.code, until: Date.now() + SAME_CARD_MS };
+    if (win?.tag) last.current = { code: `HUNTER:${win.tag}:${win.pin}`, until: Date.now() + SAME_CARD_MS };
     setAnswer(null);
+    setWin(null);
+    setPrizeId("");
     setText("");
     setPerson("");
     setRepeat(null);
@@ -101,6 +124,8 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
     dialog.current?.close();
     setOpen(false);
     setAnswer(null);
+    setWin(null);
+    setPrizeId("");
     setGave(null);
     setText("");
     setPerson("");
@@ -115,6 +140,18 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
       setGave({ who: `${c.hunter.name} (${person.trim().replace(/\s+/g, " ")})`, prize: c.prize.name, note: r.ok ?? "Given", at: r.at });
       next();
     });
+  // Checked: this winner gets the chosen leaderboard prize
+  const mark = () => {
+    const w = win;
+    const prize = w?.winner?.prizes.find((p) => p.id === prizeId);
+    if (!w?.winner || !w.tag || !w.pin || !prize) return;
+    start(async () => {
+      const r = await checkWinner(w.tag!, w.pin!, prize.id, person);
+      if (r.error) return setWin({ ...w, error: r.error });
+      setGave({ who: `${w.winner!.hunter.name} (${person.trim().replace(/\s+/g, " ")})`, prize: prize.name, note: r.ok ?? "Checked", at: r.at });
+      next();
+    });
+  };
   useEffect(() => {
     if (!open) return;
     if (!dialog.current?.open) dialog.current?.showModal();
@@ -242,6 +279,90 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
       </div>
     </section>
   );
+  // A winner's hunter QR: valid (their own phone, live) or already checked, and the prize they get
+  const checked = winner?.checked[0];
+  const winnerCard = winner && (
+    <section className={checked ? "panel desk__claim is-not" : "panel desk__claim is-ready"} aria-label="Their hunter QR">
+      <div className="desk__who">
+        <Avatar name={winner.hunter.name} />
+        <span>
+          <b>
+            {winner.hunter.name}
+            <span className="tag">{winner.hunter.tag}</span>
+            {winner.test && <span className="tag tag--wait">Test</span>}
+          </b>
+          <small>
+            {winner.hunter.province} ·{" "}
+            {winner.me
+              ? `#${winner.me.rank} on the leaderboard${winner.final ? " (final)" : ""} · ${winner.me.score.toLocaleString("en-PH")} points · ${winner.me.codes} QR codes`
+              : "Not on the leaderboard yet"}
+          </small>
+        </span>
+      </div>
+      <p className={checked ? "desk__state is-not" : "desk__state is-ready"} role="status">
+        {checked ? <AlertIcon /> : <CheckIcon />}
+        {checked
+          ? `Already checked: they got ${checked.prize}, ${stamp(checked.at)}${checked.by ? `, by ${checked.by}` : ""}.`
+          : "Valid hunter QR: their own phone, live."}
+      </p>
+      {!checked &&
+        (winner.prizes.length ? (
+          <>
+            <div className="desk__pick" role="radiogroup" aria-label="The leaderboard prize they get">
+              <span className="field__label">The leaderboard prize they get</span>
+              {winner.prizes.map((p) => {
+                const out = !winner.test && p.stock <= 0;
+                return (
+                  <label key={p.id} className={out ? "desk__opt is-out" : "desk__opt"}>
+                    <input type="radio" name="winner-prize" checked={prizeId === p.id} disabled={out} onChange={() => setPrizeId(p.id)} />
+                    <span>
+                      <b>{p.name}</b>
+                      <small>
+                        {p.rank ? `For #${p.rank}${winner.me?.rank === p.rank ? " (their place)" : ""} · ` : ""}
+                        {p.to ? `Given to ${p.to}` : out ? "None left" : `${p.stock.toLocaleString("en-PH")} left`}
+                      </small>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+            <label className="field desk__person">
+              <span className="field__label">Their name, from their ID or badge</span>
+              <input
+                value={person}
+                onChange={(e) => setPerson(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && person.trim() && prizeId && !pending) mark();
+                }}
+                placeholder="Juan Dela Cruz"
+                maxLength={80}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </label>
+          </>
+        ) : (
+          <p className="field__hint">No leaderboard prizes are on. In Prizes, add one with &ldquo;the leaderboard decides&rdquo;.</p>
+        ))}
+      {win?.error && (
+        <p className="status status--error" role="alert">
+          <AlertIcon />
+          {win.error}
+        </p>
+      )}
+      <div className="desk__acts">
+        {!checked && winner.prizes.length > 0 && (
+          <button type="button" className="btn btn--primary desk__give" disabled={pending || !prizeId || !person.trim()} onClick={mark}>
+            {pending ? <Spinner /> : <CheckIcon />}
+            Mark as checked
+          </button>
+        )}
+        <button type="button" className="btn btn--ghost" onClick={next}>
+          {mode === "camera" ? "Scan the next one" : "Next player"}
+        </button>
+      </div>
+    </section>
+  );
   // The last prize given, and a code that isn't a prize card
   const after = (
     <>
@@ -262,13 +383,26 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
           {answer.error}
         </p>
       )}
+      {win?.error && !winner && (
+        <p className="status status--error" role="alert">
+          <AlertIcon />
+          {win.error}
+        </p>
+      )}
     </>
   );
 
   return (
     <>
       {/* (phones) Floating above the tabs on every page: the scanner, ready to read a prize card */}
-      <button type="button" className="deskfab" aria-haspopup="dialog" aria-label="Scan a prize card" title="Scan a prize card" onClick={() => openDesk()}>
+      <button
+        type="button"
+        className="deskfab"
+        aria-haspopup="dialog"
+        aria-label="Scan a prize card or a hunter QR"
+        title="Scan a prize card or a hunter QR"
+        onClick={() => openDesk()}
+      >
         <QrIcon />
       </button>
       <dialog
@@ -301,8 +435,8 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
                   <CloseIcon />
                 </button>
               </div>
-              {card ? (
-                <div className="scan__sheet">{card}</div>
+              {card || winnerCard ? (
+                <div className="scan__sheet">{card || winnerCard}</div>
               ) : (
                 <div className="scan__foot">
                   {after}
@@ -316,13 +450,13 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
             <div className="confirm__box desk__box">
               <div className="confirm__head">
                 <h2 className="confirm__title" id="desk-check">
-                  {claim ? "Their prize card" : "Check a prize card"}
+                  {claim ? "Their prize card" : winner ? "Their hunter QR" : "Check a prize card"}
                 </h2>
                 <button type="button" className="icon-btn" aria-label="Close" onClick={close} disabled={pending}>
                   <CloseIcon />
                 </button>
               </div>
-              {card || (
+              {card || winnerCard || (
                 <>
                   <div className="seg" role="group" aria-label="How to check it">
                     <button type="button" className="seg__btn" aria-pressed="true">
@@ -338,7 +472,10 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
                     className="desk__find"
                     onSubmit={(e) => {
                       e.preventDefault();
-                      if (text.trim()) check(text);
+                      if (!text.trim()) return;
+                      // (their hunter tag and PIN, as written under their hunter QR: a winner to check)
+                      const badge = badgeInText(text);
+                      check(badge ? `HUNTER:${badge.tag}:${badge.pin}` : text);
                     }}
                   >
                     <label className="field">
@@ -358,7 +495,8 @@ export function DeskCheck({ prizes, total, isAdmin, typing }: { prizes: DeskPriz
                         />
                       </span>
                       <span className="field__hint" id="desk-hint">
-                        The code under the QR on the player&apos;s prize card. A USB scanner types it for you.
+                        The code under the QR on the player&apos;s prize card, or their hunter tag and PIN (Me tab). A USB scanner types
+                        it for you.
                       </span>
                     </label>
                     <button type="submit" className="btn btn--primary" disabled={pending || !text.trim()}>

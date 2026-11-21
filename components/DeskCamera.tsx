@@ -7,6 +7,15 @@ import { Spinner } from "./Progress";
 type Detector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
 type DetectorClass = new (opts: { formats: string[] }) => Detector;
 
+/**
+ * A player's hunter QR ("INNEV8-HUNTER:K7M2Q:1234", the game's Me tab), or typed ("K7M2Q 1234", as
+ * written under it): its tag and PIN, or null.
+ */
+export function badgeInText(text: string) {
+  const m = /INNEV8-HUNTER:([A-Z0-9]{5}):(\d{4})/i.exec(text) ?? /^\s*([A-Z0-9]{5})[\s·:.-]+(\d{4})\s*$/i.exec(text);
+  return m ? { tag: m[1].toUpperCase(), pin: m[2] } : null;
+}
+
 /** The claim code in a prize card's QR ("INNEV8-PRIZE:K7M2P9QX"), or null for any other QR. */
 export function claimInQr(text: string) {
   const m = /INNEV8-PRIZE:([A-Z0-9]{8})/i.exec(text) ?? /^\s*([A-Z0-9]{4})-?([A-Z0-9]{4})\s*$/i.exec(text);
@@ -79,7 +88,9 @@ export function DeskCamera({ paused, onCode }: { paused: boolean; onCode: (code:
             const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
             text = jsQR(img.data, img.width, img.height, { inversionAttempts: "attemptBoth" })?.data ?? null;
           }
-          const code = text ? claimInQr(text) : null;
+          // A prize card's claim code, or a hunter QR (as "HUNTER:<tag>:<PIN>")
+          const badge = text ? badgeInText(text) : null;
+          const code = badge ? `HUNTER:${badge.tag}:${badge.pin}` : text ? claimInQr(text) : null;
           if (code && !stopped && !latest.current.paused) {
             navigator.vibrate?.(60);
             latest.current.onCode(code);

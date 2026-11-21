@@ -194,8 +194,11 @@ export type SponsorView = { id: string; name: string; badge: string };
 export const sponsorIn = (sponsors: SponsorView[], id: string | undefined): SponsorView | null =>
   sponsors.find((s) => s.id === id) ?? null;
 
-/** …and "board": no rule of its own, the top hunters on the final leaderboard (the organisers give it). */
-export type PrizeRule = "all" | "count" | "legendary" | "points" | "code" | "cost" | "board";
+/**
+ * …and "board": no rule of its own, the top hunters on the final leaderboard (the organisers give it);
+ * "rank": the same, for one place on it (its number: #1, #2…).
+ */
+export type PrizeRule = "all" | "count" | "legendary" | "points" | "code" | "cost" | "board" | "rank";
 export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "all", label: "Collect every QR code" },
   { id: "count", label: "Collect a number of QR codes", value: "QR codes" },
@@ -204,6 +207,7 @@ export const PRIZE_RULES: { id: PrizeRule; label: string; value?: string }[] = [
   { id: "code", label: "Find a chosen QR code" },
   { id: "cost", label: "Costs points (the desk takes them)", value: "points" },
   { id: "board", label: "Nothing: the leaderboard decides, after the hunt" },
+  { id: "rank", label: "A place on the leaderboard, after the hunt: #", value: "on the leaderboard" },
 ];
 
 export type Prize = {
@@ -257,6 +261,8 @@ export function ruleText(p: Pick<Prize, "rule" | "rule_value" | "rule_text">, to
       return `Costs ${(p.rule_value ?? 0).toLocaleString("en-PH")} points`;
     case "board":
       return "Top hunters on the leaderboard, after the hunt";
+    case "rank":
+      return `Prize for #${p.rule_value ?? 1} on the leaderboard, after the hunt`;
   }
 }
 
@@ -279,6 +285,8 @@ export function prizeNeeds(p: Pick<Prize, "rule" | "rule_value">, codes: number,
       return { needs: `Costs ${v.toLocaleString("en-PH")} pts`, share: of(v, points) };
     case "board":
       return { needs: "The leaderboard, after the hunt", share: 100 };
+    case "rank":
+      return { needs: `#${v} on the leaderboard`, share: 100 };
   }
 }
 

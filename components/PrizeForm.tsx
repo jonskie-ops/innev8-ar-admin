@@ -99,8 +99,10 @@ export function PrizeForm({
                     <input
                       name="rule_value"
                       inputMode="numeric"
-                      defaultValue={prize.rule === r.id ? (prize.rule_value ?? "") : r.id === "count" ? 4 : r.id === "cost" ? 100 : 1000}
-                      aria-label={`How many ${r.value}`}
+                      defaultValue={
+                        prize.rule === r.id ? (prize.rule_value ?? "") : r.id === "count" ? 4 : r.id === "cost" ? 100 : r.id === "rank" ? 1 : 1000
+                      }
+                      aria-label={r.id === "rank" ? "The place on the leaderboard" : `How many ${r.value}`}
                       required
                     />
                     {r.value}
@@ -114,6 +116,14 @@ export function PrizeForm({
             <p className="field__hint rules__note">
               Players get it for points: once they have enough to spend, their prize card shows, and the desk takes the points as it
               gives the prize. One each. Their score on the leaderboard stays the same.
+            </p>
+          )}
+          {/* A leaderboard place: what that means for players and the desk */}
+          {rule === "rank" && (
+            <p className="field__hint rules__note">
+              Players see it in the game as the prize for that place (&ldquo;Prize for #1 on the leaderboard&rdquo;), but the game
+              doesn&apos;t give it. After the hunt, scan the winner&apos;s hunter QR with the scan button: the prize for their place is
+              picked for you.
             </p>
           )}
           {/* The leaderboard decides: what that means for players and the desk */}
