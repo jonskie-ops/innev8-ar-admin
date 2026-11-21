@@ -2343,7 +2343,14 @@ a.more:hover .ico {
   font: 600 13px/1.45 var(--font-h);
 }
 
-/* The prizes, fanned out */
+/* The prizes, fanned out: the side cards slide under the panel's edges (clipped there), not over the
+   page beside it */
+.pc {
+  --pad: 20px;
+  margin-inline: calc(-1 * var(--pad));
+  padding-inline: var(--pad);
+  overflow: hidden;
+}
 .pc__stage {
   position: relative;
   aspect-ratio: 2.25;
@@ -6885,6 +6892,9 @@ html[data-full-map] .navbar {
 @media (max-width: 600px) {
   .panel {
     padding: 16px;
+  }
+  .pc {
+    --pad: 16px;
   }
   .panel--flush {
     padding: 0;
