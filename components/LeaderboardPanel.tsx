@@ -7,7 +7,7 @@ import type { BoardEntry } from "@/lib/hunt";
 import { SearchIcon, TrophyIcon } from "./icons";
 
 /** How often the board is read again while it's open (players' new finds show up by themselves) */
-const REFRESH_MS = 30_000;
+const REFRESH_MS = 10_000;
 /** How many rows show at first (and each Show more adds) */
 const PAGE = 100;
 
@@ -21,7 +21,7 @@ function when(iso: string) {
  * The leaderboard page, as it would show on a big screen: a trophy over "Top hunters", then every
  * hunter with a confirmed find, ranked as the game ranks them, in large rows (rank, gold, silver and
  * bronze for the first three; name and tag; province and their last find; points and codes found).
- * Find one by name, province or tag. It reads the board again every 30 s while it's on screen, so it
+ * Find one by name, province or tag. It reads the board again every 10 s while it's on screen, so it
  * can be left open (or put on a projector, with the browser's full screen) to follow the hunt.
  */
 export function LeaderboardPanel({
